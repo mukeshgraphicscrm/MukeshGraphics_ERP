@@ -4,6 +4,7 @@ import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import CustomSelect from '../components/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Settings() {
@@ -153,9 +154,18 @@ export default function Settings() {
                   name="mobile"
                   required
                   value={formData.mobile}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, '');
+                    if (val.length <= 10) {
+                      setFormData(prev => ({ ...prev, mobile: val }));
+                    }
+                  }}
+                  pattern="[0-9]{10}"
+                  maxLength="10"
+                  minLength="10"
+                  title="Mobile number must be exactly 10 digits"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
-                  placeholder="e.g. +91 9876543210"
+                  placeholder="e.g. 9876543210"
                 />
               </div>
 
@@ -200,21 +210,17 @@ export default function Settings() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Designation *</label>
-                <div className="relative">
-                  <select
-                    name="designation"
-                    required
-                    value={formData.designation}
-                    onChange={handleChange}
-                    className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm appearance-none bg-white"
-                  >
-                    <option value="Employee">Employee</option>
-                    <option value="Manager">Manager</option>
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                  </div>
-                </div>
+                <CustomSelect
+                  name="designation"
+                  required
+                  value={formData.designation}
+                  onChange={handleChange}
+                  options={[
+                    { label: 'Employee', value: 'Employee' },
+                    { label: 'Manager', value: 'Manager' }
+                  ]}
+                  placeholder="Select designation"
+                />
               </div>
 
               <div className="pt-2">

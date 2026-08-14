@@ -94,6 +94,17 @@ export default function Products() {
 
       drawHeader();
 
+      // Preload images concurrently for faster PDF generation
+      const imagePromises = filteredProducts.map(p => {
+        if (p.image) {
+          const imgUrl = p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`;
+          return loadImage(imgUrl).then(base64 => ({ id: p.id, base64 }));
+        }
+        return Promise.resolve({ id: p.id, base64: null });
+      });
+      const preloadedImages = await Promise.all(imagePromises);
+      const imageMap = new Map(preloadedImages.map(img => [img.id, img.base64]));
+
       for (let i = 0; i < filteredProducts.length; i++) {
         const p = filteredProducts[i];
 
@@ -117,8 +128,7 @@ export default function Products() {
         doc.rect(xPos, yPos + 20, cardWidth, 20, "F"); // cover bottom corners
 
         if (p.image) {
-          const imgUrl = p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`;
-          const imgBase64 = await loadImage(imgUrl);
+          const imgBase64 = imageMap.get(p.id);
           if (imgBase64) {
             doc.addImage(imgBase64, 'PNG', xPos + (cardWidth - 36) / 2, yPos + 2, 36, 36);
           }

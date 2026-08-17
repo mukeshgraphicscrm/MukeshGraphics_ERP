@@ -52,20 +52,20 @@ export function DataProvider({ children }) {
         api.get('/dashboard/kpi'),
       ]);
 
-      if (custRes.status === 'fulfilled') setCustomers(custRes.value.data);
-      if (prodRes.status === 'fulfilled') setProducts(prodRes.value.data);
-      if (catRes.status === 'fulfilled') setCategories(catRes.value.data);
-      if (leadsRes.status === 'fulfilled') setLeads(leadsRes.value.data);
-      if (ordersRes.status === 'fulfilled') setOrders(ordersRes.value.data);
-      if (quotRes.status === 'fulfilled') setQuotations(quotRes.value.data);
-      if (dspRes.status === 'fulfilled') setDispatches(dspRes.value.data || []);
-      if (invRes.status === 'fulfilled') setInvoices(invRes.value.data || []);
-      if (inventoryRes.status === 'fulfilled') setInventory(inventoryRes.value.data);
-      if (jobsRes.status === 'fulfilled') setProductionJobs(jobsRes.value.data);
-      if (poRes.status === 'fulfilled') setPurchaseOrders(poRes.value.data);
-      if (grnRes.status === 'fulfilled') setGrnData(grnRes.value.data);
-      if (supRes.status === 'fulfilled') setSuppliers(supRes.value.data);
-      if (artRes.status === 'fulfilled') setArtworks(artRes.value.data);
+      if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
+      if (prodRes.status === 'fulfilled') setProducts(Array.isArray(prodRes.value.data) ? prodRes.value.data : []);
+      if (catRes.status === 'fulfilled') setCategories(Array.isArray(catRes.value.data) ? catRes.value.data : []);
+      if (leadsRes.status === 'fulfilled') setLeads(Array.isArray(leadsRes.value.data) ? leadsRes.value.data : []);
+      if (ordersRes.status === 'fulfilled') setOrders(Array.isArray(ordersRes.value.data) ? ordersRes.value.data : []);
+      if (quotRes.status === 'fulfilled') setQuotations(Array.isArray(quotRes.value.data) ? quotRes.value.data : []);
+      if (dspRes.status === 'fulfilled') setDispatches(Array.isArray(dspRes.value.data) ? dspRes.value.data : []);
+      if (invRes.status === 'fulfilled') setInvoices(Array.isArray(invRes.value.data) ? invRes.value.data : []);
+      if (inventoryRes.status === 'fulfilled') setInventory(Array.isArray(inventoryRes.value.data) ? inventoryRes.value.data : []);
+      if (jobsRes.status === 'fulfilled') setProductionJobs(Array.isArray(jobsRes.value.data) ? jobsRes.value.data : []);
+      if (poRes.status === 'fulfilled') setPurchaseOrders(Array.isArray(poRes.value.data) ? poRes.value.data : []);
+      if (grnRes.status === 'fulfilled') setGrnData(Array.isArray(grnRes.value.data) ? grnRes.value.data : []);
+      if (supRes.status === 'fulfilled') setSuppliers(Array.isArray(supRes.value.data) ? supRes.value.data : []);
+      if (artRes.status === 'fulfilled') setArtworks(Array.isArray(artRes.value.data) ? artRes.value.data : []);
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
     } catch (err) {
       console.error('DataContext fetch error:', err);
@@ -102,25 +102,33 @@ export function DataProvider({ children }) {
   // Helper maps derived from arrays
   const customerMap = React.useMemo(() => {
     const m = {};
-    customers.forEach(c => (m[c.id] = c));
+    if (Array.isArray(customers)) {
+      customers.forEach(c => (m[c.id] = c));
+    }
     return m;
   }, [customers]);
 
   const productMap = React.useMemo(() => {
     const m = {};
-    products.forEach(p => (m[p.id] = p));
+    if (Array.isArray(products)) {
+      products.forEach(p => (m[p.id] = p));
+    }
     return m;
   }, [products]);
 
   const supplierMap = React.useMemo(() => {
     const m = {};
-    suppliers.forEach(s => (m[s.id] = s));
+    if (Array.isArray(suppliers)) {
+      suppliers.forEach(s => (m[s.id] = s));
+    }
     return m;
   }, [suppliers]);
 
   const leadMap = React.useMemo(() => {
     const m = {};
-    leads.forEach(l => (m[l.id] = l));
+    if (Array.isArray(leads)) {
+      leads.forEach(l => (m[l.id] = l));
+    }
     return m;
   }, [leads]);
 

@@ -146,7 +146,7 @@ export default function Orders() {
     return result;
   }, [data, fromDate, toDate]);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Orders...</div>;
+
 
   const handleOrderAdded = (newOrder) => {
     setData(prev => [newOrder, ...prev]);

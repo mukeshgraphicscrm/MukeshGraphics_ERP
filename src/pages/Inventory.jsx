@@ -42,7 +42,7 @@ export default function Inventory() {
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
   ];
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Inventory...</div>;
+
 
   return (
     <>

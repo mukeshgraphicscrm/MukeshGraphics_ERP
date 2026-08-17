@@ -87,7 +87,7 @@ export default function Production() {
     return match;
   });
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Production Floor...</div>;
+
 
   return (
     <>

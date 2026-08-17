@@ -256,7 +256,7 @@ export default function Products() {
     ...categories.map(cat => ({ label: cat.name, value: cat.name }))
   ];
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Product Master...</div>;
+
 
   return (
     <>

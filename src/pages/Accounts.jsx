@@ -74,7 +74,7 @@ export default function Accounts() {
     };
   }).sort((a, b) => b.outstanding - a.outstanding);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Accounts...</div>;
+
 
   return (
     <div className="space-y-6">

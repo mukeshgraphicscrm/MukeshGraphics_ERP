@@ -149,7 +149,7 @@ export default function Customers() {
     )},
   ];
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Customers...</div>;
+
 
   const handleCustomerAdded = (newCustomer) => {
     setData((prev) => [newCustomer, ...prev]);

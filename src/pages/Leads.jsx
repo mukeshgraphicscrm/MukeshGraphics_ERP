@@ -79,7 +79,7 @@ export default function Leads() {
     setLeads(prev => prev.filter(lead => lead.id !== deletedLeadId));
   };
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Leads...</div>;
+
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">

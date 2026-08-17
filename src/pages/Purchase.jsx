@@ -51,7 +51,7 @@ export default function Purchase() {
     { header: 'DATE', accessor: row => new Date(row.date).toLocaleDateString('en-IN'), render: row => <span className="text-[13px] text-gray-500">{new Date(row.date).toLocaleDateString('en-IN')}</span> },
   ];
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Purchase module...</div>;
+
 
   return (
     <>

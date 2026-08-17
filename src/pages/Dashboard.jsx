@@ -25,8 +25,8 @@ export default function Dashboard() {
       });
   }, []);
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Executive Dashboard...</div>;
-  if (!data) return <div className="p-8 text-center text-red-500">Failed to load dashboard data.</div>;
+
+  if (!data) return null;
 
   const { kpi, charts } = data;
 

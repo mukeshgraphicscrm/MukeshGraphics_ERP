@@ -174,7 +174,7 @@ export default function Quotations() {
   ];
 
 
-  if (loading) return <div className="p-8 text-center text-gray-500">Loading Quotations...</div>;
+
 
   
   const handleEdit = (row) => {

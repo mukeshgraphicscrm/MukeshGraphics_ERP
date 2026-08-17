@@ -7,11 +7,7 @@
   },
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    },
-    {
-      "source": "/((?!assets|favicon|logo).*)",
+      "source": "/((?!api|assets|favicon|logo).*)",
       "destination": "/index.html"
     }
   ],

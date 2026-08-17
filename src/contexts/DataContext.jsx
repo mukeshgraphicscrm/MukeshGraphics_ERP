@@ -99,7 +99,7 @@ export function DataProvider({ children }) {
     }
   }, [currentUser, isLoaded, fetchAll]);
 
-  // Helper maps derived from arrays
+  // Helper maps derived from arrays — Array.isArray guards prevent crashes if any state is non-array
   const customerMap = React.useMemo(() => {
     const m = {};
     if (Array.isArray(customers)) {

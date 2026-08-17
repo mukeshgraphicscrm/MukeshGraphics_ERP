@@ -5,12 +5,11 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreateOrderModal from '../components/CreateOrderModal';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
 
 export default function Orders() {
-  const [data, setData] = useState([]);
-  const [customers, setCustomers] = useState({});
-  const [products, setProducts] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { orders: data, setOrders: setData, customerMap: customers, productMap: products } = useData();
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
@@ -24,35 +23,10 @@ export default function Orders() {
     if (location.state?.convertQuote) {
       setInitialData(location.state.convertQuote);
       setIsModalOpen(true);
-      // Clean up state
       navigate('/orders', { replace: true, state: {} });
     }
   }, [location, navigate]);
 
-
-  useEffect(() => {
-    // In a real app, you might fetch populated data from the backend. 
-    // Here we fetch multiple and join.
-    Promise.all([
-      api.get('/orders'),
-      api.get('/customers'),
-      api.get('/products')
-    ]).then(([ordersRes, custRes, prodRes]) => {
-      const custMap = {};
-      custRes.data.forEach(c => custMap[c.id] = c);
-      setCustomers(custMap);
-
-      const prodMap = {};
-      prodRes.data.forEach(p => prodMap[p.id] = p);
-      setProducts(prodMap);
-
-      setData(ordersRes.data);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching orders:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const columns = [
     { header: 'Order No.', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },

@@ -4,6 +4,7 @@ import api from '../lib/api';
 import CreateJobModal from '../components/CreateJobModal';
 import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
 import CustomSelect from '../components/CustomSelect';
+import { useData } from '../contexts/DataContext';
 const stages = [
   { id: 1, name: 'Printing', key: 'Printing' },
   { id: 2, name: 'Lamination', key: 'Lamination' },
@@ -15,8 +16,7 @@ const stages = [
 ];
 
 export default function Production() {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { productionJobs: jobs, setProductionJobs: setJobs } = useData();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   
@@ -32,17 +32,6 @@ export default function Production() {
     setIsCreateModalOpen(true);
   };
 
-  useEffect(() => {
-    api.get('/productionJobs')
-      .then(res => {
-        setJobs(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching production jobs:', err);
-        setLoading(false);
-      });
-  }, []);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

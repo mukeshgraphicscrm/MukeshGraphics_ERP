@@ -5,6 +5,7 @@ import AddLeadModal from '../components/AddLeadModal';
 import EditLeadModal from '../components/EditLeadModal';
 import ViewLeadModal from '../components/ViewLeadModal';
 import LostReasonModal from '../components/LostReasonModal';
+import { useData } from '../contexts/DataContext';
 const columnsConfig = [
   { id: 'New Inquiry', label: 'New Inquiry', color: 'bg-blue-500' },
   { id: 'Follow Up', label: 'Follow Up', color: 'bg-amber-500' },
@@ -14,8 +15,7 @@ const columnsConfig = [
 ];
 
 export default function Leads() {
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { leads, setLeads } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -29,20 +29,15 @@ export default function Leads() {
     try {
       const res = await api.get('/leads');
       setLeads(res.data);
-      setLoading(false);
     } catch (err) {
       console.error('Error fetching leads:', err);
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
-
     const intervalId = setInterval(() => {
       fetchLeads();
-    }, 6000);
-
+    }, 30000);
     return () => clearInterval(intervalId);
   }, []);
 

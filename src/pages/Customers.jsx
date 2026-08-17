@@ -5,10 +5,10 @@ import AddCustomerModal from '../components/AddCustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
 
 export default function Customers() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { customers: data, setCustomers: setData } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -21,18 +21,6 @@ export default function Customers() {
     const handleClickOutside = () => setOpenDropdownId(null);
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    api.get('/customers')
-      .then(res => {
-        setData(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching customers:', err);
-        setLoading(false);
-      });
   }, []);
 
   const confirmDeleteCustomer = (customer, e) => {

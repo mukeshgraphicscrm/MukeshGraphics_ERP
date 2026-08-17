@@ -7,16 +7,16 @@ import api from '../lib/api';
 import { cn } from '../lib/utils';
 import { jsPDF } from 'jspdf';
 import toast from 'react-hot-toast';
+import { useData } from '../contexts/DataContext';
+
 
 export default function Products() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { products, setProducts, categories, setCategories } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
-  const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isExporting, setIsExporting] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -219,21 +219,8 @@ export default function Products() {
     }
   };
 
-  useEffect(() => {
-    api.get('/products')
-      .then(res => {
-        setProducts(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching products:', err);
-        setLoading(false);
-      });
 
-    api.get('/categories')
-      .then(res => setCategories(res.data))
-      .catch(err => console.error('Error fetching categories:', err));
-  }, []);
+
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -413,13 +400,13 @@ export default function Products() {
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
         onCategoryAdded={(newCat) => {
-          setCategories(prev => [...prev, newCat]);
+          setCategories([...categories, newCat]);
         }}
         onCategoryUpdated={(updatedCat) => {
-          setCategories(prev => prev.map(c => c.id === updatedCat.id ? updatedCat : c));
+          setCategories(categories.map(c => c.id === updatedCat.id ? updatedCat : c));
         }}
         onCategoryDeleted={(catId) => {
-          setCategories(prev => prev.filter(c => c.id !== catId));
+          setCategories(categories.filter(c => c.id !== catId));
         }}
       />
       {showExportModal && (

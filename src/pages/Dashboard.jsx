@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, TrendingUp, Activity } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -8,23 +8,10 @@ import {
 import KpiCard from '../components/KpiCard';
 import api from '../lib/api';
 import { cn } from '../lib/utils';
+import { useData } from '../contexts/DataContext';
 
 export default function Dashboard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.get('/dashboard/kpi')
-      .then(res => {
-        setData(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching dashboard data:', err);
-        setLoading(false);
-      });
-  }, []);
-
+  const { dashboardData: data } = useData();
 
   if (!data) return null;
 

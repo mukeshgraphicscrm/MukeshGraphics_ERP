@@ -10,14 +10,11 @@ import ConfirmMoveModal from '../components/ConfirmMoveModal';
 import CreateQuotationModal from '../components/CreateQuotationModal';
 import api from '../lib/api';
 import { generateQuotationPDF } from '../lib/pdfGenerator';
+import { useData } from '../contexts/DataContext';
 
 
 export default function Quotations() {
-  const [data, setData] = useState([]);
-  const [customers, setCustomers] = useState({});
-  const [products, setProducts] = useState({});
-  const [leads, setLeads] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { quotations: data, setQuotations: setData, customerMap: customers, productMap: products, leadMap: leads } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quotationToEdit, setQuotationToEdit] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
@@ -28,33 +25,6 @@ export default function Quotations() {
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [quotationToMove, setQuotationToMove] = useState(null);
 
-
-  useEffect(() => {
-    Promise.all([
-      api.get('/quotations'),
-      api.get('/customers'),
-      api.get('/products'),
-      api.get('/leads')
-    ]).then(([qtnsRes, custRes, prodRes, leadsRes]) => {
-      const custMap = {};
-      custRes.data.forEach(c => custMap[c.id] = c);
-      setCustomers(custMap);
-
-      const prodMap = {};
-      prodRes.data.forEach(p => prodMap[p.id] = p);
-      setProducts(prodMap);
-
-      const leadsMap = {};
-      leadsRes.data.forEach(l => leadsMap[l.id] = l);
-      setLeads(leadsMap);
-
-      setData(qtnsRes.data);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching quotations:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const columns = [
     { 

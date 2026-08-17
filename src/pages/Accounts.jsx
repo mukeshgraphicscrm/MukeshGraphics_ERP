@@ -4,29 +4,13 @@ import StatusBadge from '../components/StatusBadge';
 import { Wallet, AlertCircle, TrendingUp, Plus } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
 
 export default function Accounts() {
-  const [invoices, setInvoices] = useState([]);
-  const [customers, setCustomers] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { invoices, setInvoices, customerMap: customers } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/invoices'),
-      api.get('/customers'),
-    ]).then(([invRes, custRes]) => {
-      const custMap = {};
-      custRes.data.forEach(c => custMap[c.id] = c);
-      setCustomers(custMap);
-      setInvoices(invRes.data || []);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching accounts data:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const totalOutstanding = invoices
     .filter(i => i.status !== 'Paid')

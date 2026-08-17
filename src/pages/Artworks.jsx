@@ -5,11 +5,10 @@ import CustomSelect from '../components/CustomSelect';
 import { Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
 
 export default function Artworks() {
-  const [data, setData] = useState([]);
-  const [customers, setCustomers] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { artworks: data, setArtworks: setData, customerMap: customers } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -20,21 +19,6 @@ export default function Artworks() {
   });
   const [selectedFile, setSelectedFile] = useState(null);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/artworks'),
-      api.get('/customers'),
-    ]).then(([artRes, custRes]) => {
-      const custMap = {};
-      custRes.data.forEach(c => custMap[c.id] = c);
-      setCustomers(custMap);
-      setData(artRes.data);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching artworks:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const handleModalClose = () => {
     setIsModalOpen(false);

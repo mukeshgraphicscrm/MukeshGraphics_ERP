@@ -5,34 +5,14 @@ import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
 import AddSupplierModal from '../components/AddSupplierModal';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
 
 export default function Purchase() {
-  const [poData, setPoData] = useState([]);
-  const [grnData, setGrnData] = useState([]);
-  const [suppliers, setSuppliers] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers } = useData();
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/purchaseOrders'),
-      api.get('/grn'),
-      api.get('/suppliers')
-    ]).then(([poRes, grnRes, supRes]) => {
-      const supMap = {};
-      supRes.data.forEach(s => supMap[s.id] = s);
-      setSuppliers(supMap);
-
-      setPoData(poRes.data);
-      setGrnData(grnRes.data);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching purchase data:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const poColumns = [
     { header: 'PO #', accessor: row => row.poNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.poNo}</span> },

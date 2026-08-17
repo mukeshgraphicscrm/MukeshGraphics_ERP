@@ -6,11 +6,10 @@ import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { useData } from '../contexts/DataContext';
 
 export default function Dispatch() {
-  const [data, setData] = useState([]);
-  const [customers, setCustomers] = useState({});
-  const [loading, setLoading] = useState(true);
+  const { dispatches: data, setDispatches: setData, customerMap: customers } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dispatchToEdit, setDispatchToEdit] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -30,21 +29,6 @@ export default function Dispatch() {
     }
   };
 
-  useEffect(() => {
-    Promise.all([
-      api.get('/dispatches'),
-      api.get('/customers'),
-    ]).then(([dspRes, custRes]) => {
-      const custMap = {};
-      custRes.data.forEach(c => custMap[c.id] = c);
-      setCustomers(custMap);
-      setData(dspRes.data || []);
-      setLoading(false);
-    }).catch(err => {
-      console.error('Error fetching dispatches:', err);
-      setLoading(false);
-    });
-  }, []);
 
   const columns = [
     { header: 'DISPATCH No.', accessor: row => row.dispatchNo, render: row => <span className="font-bold text-gray-900 text-[13px]">{row.dispatchNo}</span> },

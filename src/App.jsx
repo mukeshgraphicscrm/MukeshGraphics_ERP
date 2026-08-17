@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
 import Login from './pages/Login';
 
 // Page imports
@@ -25,30 +26,32 @@ import Settings from './pages/Settings';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="customers" element={<Customers />} />
-              <Route path="leads" element={<Leads />} />
-              <Route path="quotations" element={<Quotations />} />
-              <Route path="orders" element={<Orders />} />
-              <Route path="products" element={<Products />} />
-              <Route path="jobcard" element={<Jobcard />} />
-              <Route path="production" element={<Production />} />
-              <Route path="dispatch" element={<Dispatch />} />
-              <Route path="inventory" element={<Inventory />} />
-              <Route path="purchase" element={<Purchase />} />
-              <Route path="accounts" element={<Accounts />} />
-              <Route path="settings" element={<Settings />} />
+      <DataProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="customers" element={<Customers />} />
+                <Route path="leads" element={<Leads />} />
+                <Route path="quotations" element={<Quotations />} />
+                <Route path="orders" element={<Orders />} />
+                <Route path="products" element={<Products />} />
+                <Route path="jobcard" element={<Jobcard />} />
+                <Route path="production" element={<Production />} />
+                <Route path="dispatch" element={<Dispatch />} />
+                <Route path="inventory" element={<Inventory />} />
+                <Route path="purchase" element={<Purchase />} />
+                <Route path="accounts" element={<Accounts />} />
+                <Route path="settings" element={<Settings />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
-      </BrowserRouter>
-      <Toaster position="top-right" />
+          </Routes>
+        </BrowserRouter>
+        <Toaster position="top-right" />
+      </DataProvider>
     </AuthProvider>
   );
 }

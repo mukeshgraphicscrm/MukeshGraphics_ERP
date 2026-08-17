@@ -4,24 +4,16 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import AddMaterialModal from '../components/AddMaterialModal';
 import api from '../lib/api';
+import { useData } from '../contexts/DataContext';
+
 
 export default function Inventory() {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { inventory: data, setInventory: setData } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState(null);
 
-  useEffect(() => {
-    api.get('/inventory')
-      .then(res => {
-        setData(res.data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching inventory:', err);
-        setLoading(false);
-      });
-  }, []);
+
+
 
   const lowStockItems = data.filter(item => item.status === 'Low Stock');
 

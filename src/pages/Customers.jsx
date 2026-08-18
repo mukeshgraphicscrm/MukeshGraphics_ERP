@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Customers() {
-  const { customers: data, setCustomers: setData, isLoaded } = useData();
+  const { customers: data, orders = [], setCustomers: setData, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -16,6 +16,16 @@ export default function Customers() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
+
+  const customerBusinessMap = React.useMemo(() => {
+    const map = {};
+    orders.forEach(o => {
+      if (o.customerId) {
+        map[o.customerId] = (map[o.customerId] || 0) + (Number(o.amount) || 0);
+      }
+    });
+    return map;
+  }, [orders]);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdownId(null);
@@ -90,8 +100,8 @@ export default function Customers() {
         ₹{row.outstanding?.toLocaleString('en-IN') || 0}
       </span>
     )},
-    { header: 'Total Business', accessor: row => row.totalBusiness, render: row => (
-      <span className="font-bold text-gray-900 text-[13px]">₹{row.totalBusiness?.toLocaleString('en-IN') || 0}</span>
+    { header: 'Total Business', accessor: row => customerBusinessMap[row.id] || 0, render: row => (
+      <span className="font-bold text-gray-900 text-[13px]">₹{(customerBusinessMap[row.id] || 0).toLocaleString('en-IN')}</span>
     )},
     { header: 'Actions', accessor: row => row.id, render: row => (
       <div className="relative">

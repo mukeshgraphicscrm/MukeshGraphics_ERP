@@ -14,9 +14,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     productId: '',
     leadId: '',
     specs: '',
-    qty: '',
     price: '',
     status: 'Draft',
+    date: new Date().toISOString().split('T')[0],
   });
 
   const [activeTab, setActiveTab] = useState('Customer Quotation');
@@ -95,6 +95,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         setActiveTab(quotationToEdit.quotationType || 'Customer Quotation');
         setFormData({
           quotationNo: quotationToEdit.quotationNo || '',
+          date: quotationToEdit.date ? new Date(quotationToEdit.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           companyName: quotationToEdit.companyName || '',
           customerId: quotationToEdit.customerId || '',
           leadId: quotationToEdit.leadId || '',
@@ -140,6 +141,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       productId: [],
       items: tab === 'Lead Quotation' ? [{ productId: '', specs: '', qty: '', price: '' }] : [],
       status: 'Draft',
+      date: new Date().toISOString().split('T')[0],
     });
   };
 
@@ -194,7 +196,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       return;
     }
 
-    const upperValue = typeof value === 'string' && !['customerId', 'leadId'].includes(name) ? value.toUpperCase() : value;
+    const upperValue = typeof value === 'string' && !['customerId', 'leadId', 'date'].includes(name) ? value.toUpperCase() : value;
     setFormData((prev) => {
       const newData = { ...prev, [name]: upperValue };
 
@@ -346,7 +348,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Quotation No *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Quotation No <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="quotationNo"
@@ -357,7 +359,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name <span className="text-red-500">*</span></label>
                 {activeTab === 'Lead Quotation' ? (
                   <input
                     type="text"
@@ -383,7 +385,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Customer *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Customer <span className="text-red-500">*</span></label>
                 {activeTab === 'Lead Quotation' ? (
                   <input
                     type="text"
@@ -410,7 +412,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
               {activeTab === 'Customer Quotation' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name <span className="text-red-500">*</span></label>
                   <CustomSelect
                     name="productId"
                     value={formData.productId}
@@ -426,17 +428,31 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
               {activeTab === 'Lead Quotation' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead (Optional)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead <span className="text-red-500">*</span></label>
                   <CustomSelect
                     name="leadId"
                     value={formData.leadId}
                     onChange={handleChange}
                     options={leadOptions}
                     placeholder="Select a Lead to Link"
+                    required
                     disabled={isViewMode}
                   />
                 </div>
               )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Date <span className="text-red-500">*</span></label>
+                <input
+                  type="date"
+                  name="date"
+                  value={formData.date || ''}
+                  onChange={handleChange}
+                  required
+                  disabled={isViewMode}
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                />
+              </div>
             </div>
 
             {formData.items && formData.items.length > 0 && (
@@ -447,7 +463,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                     <div key={index} className="border-t border-gray-100 pt-4 relative group">
                       {activeTab === 'Lead Quotation' ? (
                         <div className="mb-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Name <span className="text-red-500">*</span></label>
                           <input
                             type="text"
                             required
@@ -480,7 +496,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                       )}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                         <div className="md:col-span-2">
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs <span className="text-red-500">*</span></label>
                           <input
                             type="text"
                             required
@@ -493,7 +509,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Quantity <span className="text-red-500">*</span></label>
                           <input
                             type="text"
                             required
@@ -507,7 +523,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) *</label>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Unit Price (₹) <span className="text-red-500">*</span></label>
                           <input
                             type="text"
                             required

@@ -268,19 +268,46 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Stage <span className="text-red-500">*</span></label>
-              <CustomSelect
-                name="stage"
-                value={formData.stage}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Products</label>
+              <textarea
+                name="products"
+                rows="3"
+                value={formData.products}
                 onChange={handleChange}
-                options={[
-                  { label: 'New Inquiry', value: 'New Inquiry' },
-                  { label: 'Follow Up', value: 'Follow Up' },
-                  { label: 'Quotation Sent', value: 'Quotation Sent' },
-                  { label: 'Won', value: 'Won' },
-                  { label: 'Lost', value: 'Lost' }
-                ]}
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors resize-none"
+                placeholder="e.g. 53MM LID GREY BACK 350GSM PAPER"
+              ></textarea>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Stage <span className="text-red-500">*</span></label>
+                <CustomSelect
+                  name="stage"
+                  value={formData.stage}
+                  onChange={handleChange}
+                  options={[
+                    { label: 'New Inquiry', value: 'New Inquiry' },
+                    { label: 'Follow Up', value: 'Follow Up' },
+                    { label: 'Quotation Sent', value: 'Quotation Sent' },
+                    { label: 'Won', value: 'Won' },
+                    { label: 'Lost', value: 'Lost' }
+                  ]}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employees</label>
+                <CustomSelect
+                  name="employee"
+                  value={formData.employee}
+                  onChange={handleChange}
+                  options={[
+                    { label: 'Select Employee', value: '' },
+                    ...users.map(user => ({ label: user.name, value: user.name }))
+                  ]}
+                />
+              </div>
             </div>
 
             {formData.stage === 'Lost' && (
@@ -299,31 +326,6 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
                 ></textarea>
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Products</label>
-              <textarea
-                name="products"
-                rows="3"
-                value={formData.products}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors resize-none"
-                placeholder="e.g. 53MM LID GREY BACK 350GSM PAPER"
-              ></textarea>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Employees</label>
-              <CustomSelect
-                name="employee"
-                value={formData.employee}
-                onChange={handleChange}
-                options={[
-                  { label: 'Select Employee', value: '' },
-                  ...users.map(user => ({ label: user.name, value: user.name }))
-                ]}
-              />
-            </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b pb-2">

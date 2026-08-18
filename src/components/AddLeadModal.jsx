@@ -233,36 +233,38 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-              <CustomSelect
-                name="country"
-                value={formData.country}
-                onChange={handleChange}
-                options={countries}
-                searchable
-              />
-            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <CustomSelect
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  options={countries}
+                  searchable
+                />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source <span className="text-red-500">*</span></label>
-              <CustomSelect
-                name="leadSource"
-                value={formData.leadSource}
-                onChange={handleChange}
-                required
-                options={[
-                  { label: 'Website', value: 'Website' },
-                  { label: 'Digital Marketing', value: 'Digital Marketing' },
-                  { label: 'Call', value: 'Call' },
-                  { label: 'Email', value: 'Email' },
-                  { label: 'WhatsApp', value: 'WhatsApp' },
-                  { label: 'Referral', value: 'Referral' },
-                  { label: 'Social Media', value: 'Social Media' },
-                  { label: 'Walk-in', value: 'Walk-in' },
-                  { label: 'Other', value: 'Other' }
-                ]}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Lead Source <span className="text-red-500">*</span></label>
+                <CustomSelect
+                  name="leadSource"
+                  value={formData.leadSource}
+                  onChange={handleChange}
+                  required
+                  options={[
+                    { label: 'Website', value: 'Website' },
+                    { label: 'Digital Marketing', value: 'Digital Marketing' },
+                    { label: 'Call', value: 'Call' },
+                    { label: 'Email', value: 'Email' },
+                    { label: 'WhatsApp', value: 'WhatsApp' },
+                    { label: 'Referral', value: 'Referral' },
+                    { label: 'Social Media', value: 'Social Media' },
+                    { label: 'Walk-in', value: 'Walk-in' },
+                    { label: 'Other', value: 'Other' }
+                  ]}
+                />
+              </div>
             </div>
 
             <div>

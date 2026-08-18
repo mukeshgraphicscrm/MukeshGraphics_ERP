@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit } from 'lucide-react';
+import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit, Key } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -8,7 +8,7 @@ import CustomSelect from '../components/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Settings() {
-  const { currentUser } = useAuth();
+  const { currentUser, changePassword } = useAuth();
   
   // Protect the route
   if (currentUser?.profile?.designation === 'Employee') {
@@ -18,6 +18,9 @@ export default function Settings() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [adminPasswordLoading, setAdminPasswordLoading] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
   const [formData, setFormData] = useState({
@@ -27,6 +30,26 @@ export default function Settings() {
     password: '',
     designation: 'Employee'
   });
+
+  const handleAdminPasswordChange = async (e) => {
+    e.preventDefault();
+    if (!adminPassword) return toast.error('Password is required');
+    setAdminPasswordLoading(true);
+    try {
+      await changePassword(adminPassword);
+      toast.success('Password changed successfully');
+      setAdminPassword('');
+    } catch (err) {
+      console.error('Error changing password:', err);
+      if (err.code === 'auth/requires-recent-login') {
+        toast.error('Please log out and log in again to change password.');
+      } else {
+        toast.error('Failed to change password');
+      }
+    } finally {
+      setAdminPasswordLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -116,8 +139,8 @@ export default function Settings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Add User Form */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full">
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2 bg-gray-50/50">
               {userToEdit ? <Edit className="w-5 h-5 text-[#1b2f63]" /> : <UserPlus className="w-5 h-5 text-[#1b2f63]" />}
               <h3 className="font-bold text-gray-900">{userToEdit ? 'Edit User' : 'Add New User'}</h3>
@@ -235,6 +258,52 @@ export default function Settings() {
               </div>
             </form>
           </div>
+
+          {/* Change Admin Password Form */}
+          {(!currentUser?.profile || currentUser?.profile?.designation === 'Administrator') && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2 bg-gray-50/50">
+                <Key className="w-5 h-5 text-[#1b2f63]" />
+                <h3 className="font-bold text-gray-900">Change Admin Password</h3>
+              </div>
+              <form onSubmit={handleAdminPasswordChange} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password *</label>
+                  <div className="relative">
+                    <input
+                      type={showAdminPassword ? "text" : "password"}
+                      required
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      className="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      {showAdminPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={adminPasswordLoading}
+                    className="w-full flex justify-center items-center space-x-2 bg-[#1b2f63] text-white px-4 py-2.5 rounded-lg hover:bg-[#12224d] transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{adminPasswordLoading ? 'Updating...' : 'Update Password'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
         </div>
 
         {/* Users List */}

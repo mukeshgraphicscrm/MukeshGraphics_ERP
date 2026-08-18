@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { 
   signInWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  updatePassword
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { Loader2 } from 'lucide-react';
@@ -25,6 +26,11 @@ export function AuthProvider({ children }) {
 
   function logout() {
     return signOut(auth);
+  }
+
+  function changePassword(newPassword) {
+    if (!auth.currentUser) throw new Error("No authenticated user");
+    return updatePassword(auth.currentUser, newPassword);
   }
 
   useEffect(() => {
@@ -59,7 +65,8 @@ export function AuthProvider({ children }) {
   const value = {
     currentUser,
     login,
-    logout
+    logout,
+    changePassword
   };
 
   return (

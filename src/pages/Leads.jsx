@@ -28,6 +28,8 @@ export default function Leads() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('all');
 
+  const showToggle = currentUser?.profile?.designation === 'Employee' || currentUser?.profile?.designation === 'Manager';
+
   const [expandedStages, setExpandedStages] = useState({
     'New Inquiry': true,
   });
@@ -70,20 +72,22 @@ export default function Leads() {
         <div>
           <h2 className="text-xl font-bold text-gray-900">Lead Pipeline</h2>
           <p className="text-sm text-gray-500 mt-1 mb-4">Drag and drop leads through the sales pipeline.</p>
-          <div className="flex bg-gray-100/80 p-1 rounded-lg w-fit border border-gray-200/60">
-            <button
-              onClick={() => setViewMode('my')}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${viewMode === 'my' ? 'bg-white text-[#1b2f63] shadow-sm border border-gray-200/50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'}`}
-            >
-              My Leads
-            </button>
-            <button
-              onClick={() => setViewMode('all')}
-              className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${viewMode === 'all' ? 'bg-white text-[#1b2f63] shadow-sm border border-gray-200/50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'}`}
-            >
-              All Leads
-            </button>
-          </div>
+          {showToggle && (
+            <div className="flex bg-gray-100/80 p-1 rounded-lg w-fit border border-gray-200/60">
+              <button
+                onClick={() => setViewMode('my')}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${viewMode === 'my' ? 'bg-white text-[#1b2f63] shadow-sm border border-gray-200/50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'}`}
+              >
+                My Leads
+              </button>
+              <button
+                onClick={() => setViewMode('all')}
+                className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all duration-200 ${viewMode === 'all' ? 'bg-white text-[#1b2f63] shadow-sm border border-gray-200/50' : 'text-gray-500 hover:text-gray-800 hover:bg-gray-200/50'}`}
+              >
+                All Leads
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
           <div className="relative flex-1">
@@ -109,7 +113,7 @@ export default function Leads() {
       <div className="flex-1 overflow-y-auto pb-4 px-1 space-y-4">
         {columnsConfig.map(col => {
           const filteredLeads = leads.filter(lead => {
-            if (viewMode === 'my' && lead.employee !== currentUser?.profile?.name) return false;
+            if (showToggle && viewMode === 'my' && lead.employee !== currentUser?.profile?.name) return false;
             if (!searchTerm) return true;
             const search = searchTerm.toLowerCase();
             return (

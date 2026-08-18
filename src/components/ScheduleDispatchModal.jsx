@@ -11,7 +11,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
     vehicleNo: '',
     driver: '',
     date: '',
-    status: 'Scheduled',
+    status: 'SCHEDULED',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -20,11 +20,11 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
     if (isOpen) {
       if (dispatchToEdit) {
         const normalizeStatus = (s) => {
-          if (!s) return 'Scheduled';
-          const match = ['Scheduled', 'Loading', 'Out For Delivery', 'Delivered'].find(
-            (opt) => opt.toLowerCase() === s.toLowerCase()
+          if (!s) return 'SCHEDULED';
+          const match = ['SCHEDULED', 'LOADING', 'OUT FOR DELIVERY', 'DELIVERED'].find(
+            (opt) => opt === s.toUpperCase()
           );
-          return match || s;
+          return match || s.toUpperCase();
         };
 
         setFormData({
@@ -53,7 +53,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
             vehicleNo: '',
             driver: '',
             date: new Date().toISOString().split('T')[0],
-            status: 'Scheduled',
+            status: 'SCHEDULED',
           });
         }).catch(err => {
           console.error('Error fetching dispatches for sequence:', err);
@@ -64,7 +64,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
             vehicleNo: '',
             driver: '',
             date: new Date().toISOString().split('T')[0],
-            status: 'Scheduled',
+            status: 'SCHEDULED',
           });
         });
       }
@@ -125,7 +125,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
         toast.success('Dispatch scheduled successfully!');
       }
 
-      setFormData({ dispatchNo: '', customer: '', vehicleNo: '', driver: '', date: '', status: 'Scheduled' });
+      setFormData({ dispatchNo: '', customer: '', vehicleNo: '', driver: '', date: '', status: 'SCHEDULED' });
       onClose();
     } catch (err) {
       console.error('Error saving dispatch:', err);
@@ -225,10 +225,10 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
                   value={formData.status}
                   onChange={handleChange}
                   options={[
-                    { value: 'Scheduled', label: 'Scheduled' },
-                    { value: 'Loading', label: 'Loading' },
-                    { value: 'Out For Delivery', label: 'Out For Delivery' },
-                    { value: 'Delivered', label: 'Delivered' }
+                    { value: 'SCHEDULED', label: 'SCHEDULED' },
+                    { value: 'LOADING', label: 'LOADING' },
+                    { value: 'OUT FOR DELIVERY', label: 'OUT FOR DELIVERY' },
+                    { value: 'DELIVERED', label: 'DELIVERED' }
                   ]}
                   required
                 />

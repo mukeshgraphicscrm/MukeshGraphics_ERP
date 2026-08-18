@@ -49,10 +49,10 @@ export default function Products() {
       const pageWidth = doc.internal.pageSize.width || doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.height || doc.internal.pageSize.getHeight();
       const margin = 15;
-      const cardWidth = (pageWidth - margin * 2 - 10) / 2; // 2 cols, 10mm gap
-      const cardHeight = 100;
+      const cardWidth = (pageWidth - margin * 2 - 8) / 2; // 2 cols, 8mm gap
+      const cardHeight = 108;
 
-      let yPos = 40;
+      let yPos = 50;
       let col = 0;
 
       const loadImage = (url) => {
@@ -75,21 +75,32 @@ export default function Products() {
       const logoBase64 = await loadImage('/logo.png');
 
       const drawHeader = () => {
+        // Full width header background
+        doc.setFillColor(27, 47, 99); // Brand Dark Blue
+        doc.rect(0, 0, pageWidth, 35, 'F');
+        
+        // Add subtle accent line
+        doc.setFillColor(234, 88, 12); // Brand Orange
+        doc.rect(0, 35, pageWidth, 2, 'F');
+
         if (logoBase64) {
-          doc.addImage(logoBase64, 'PNG', margin, 10, 20, 20);
+          // Draw white circle background for logo
+          doc.setFillColor(255, 255, 255);
+          doc.circle(margin + 10, 17.5, 12, 'F');
+          doc.addImage(logoBase64, 'PNG', margin + 2, 9.5, 16, 16);
         }
+        
+        const textStartX = margin + (logoBase64 ? 28 : 0);
+
         doc.setFont("helvetica", "bold");
         doc.setFontSize(22);
-        doc.setTextColor(27, 47, 99);
-        doc.text("Mukesh Graphics", margin + (logoBase64 ? 25 : 0), 20);
+        doc.setTextColor(255, 255, 255);
+        doc.text("MUKESH GRAPHICS", textStartX, 19);
 
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text("Product Catalog", margin + (logoBase64 ? 25 : 0), 26);
-
-        doc.setDrawColor(200, 200, 200);
-        doc.line(margin, 35, pageWidth - margin, 35);
+        doc.setTextColor(200, 210, 230);
+        doc.text("P R E M I U M   P R O D U C T   C A T A L O G", textStartX, 26);
       };
 
       drawHeader();
@@ -108,91 +119,100 @@ export default function Products() {
       for (let i = 0; i < filteredProducts.length; i++) {
         const p = filteredProducts[i];
 
-        if (yPos + cardHeight > pageHeight - margin - 10) {
+        if (yPos + cardHeight > pageHeight - 15) {
           doc.addPage();
           drawHeader();
-          yPos = 40;
+          yPos = 50;
           col = 0;
         }
 
-        const xPos = margin + col * (cardWidth + 10);
+        const xPos = margin + col * (cardWidth + 8);
 
         // Draw Card Border
-        doc.setDrawColor(220, 220, 220);
+        doc.setDrawColor(226, 232, 240); // Slate 200
+        doc.setLineWidth(0.5);
         doc.setFillColor(255, 255, 255);
         doc.roundedRect(xPos, yPos, cardWidth, cardHeight, 3, 3, "FD");
 
-        // Draw Image area background
-        doc.setFillColor(27, 47, 99);
-        doc.roundedRect(xPos, yPos, cardWidth, 40, 3, 3, "F");
-        doc.rect(xPos, yPos + 20, cardWidth, 20, "F"); // cover bottom corners
+        // Image container (light grey)
+        doc.setFillColor(248, 250, 252); // Slate 50
+        doc.roundedRect(xPos + 0.5, yPos + 0.5, cardWidth - 1, 45, 2.5, 2.5, "F");
+        doc.rect(xPos + 0.5, yPos + 35, cardWidth - 1, 10.5, "F"); // square bottom
 
         if (p.image) {
           const imgBase64 = imageMap.get(p.id);
           if (imgBase64) {
-            doc.addImage(imgBase64, 'PNG', xPos + (cardWidth - 36) / 2, yPos + 2, 36, 36);
+            doc.addImage(imgBase64, 'PNG', xPos + (cardWidth - 36) / 2, yPos + 4.5, 36, 36);
           }
         }
 
         // Product Name
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
-        doc.setTextColor(30, 30, 30);
+        doc.setTextColor(15, 23, 42); // Slate 900
         const splitTitle = doc.splitTextToSize(p.name || '-', cardWidth - 10);
-        doc.text(splitTitle[0], xPos + 5, yPos + 48);
+        doc.text(splitTitle[0], xPos + 5, yPos + 54);
 
-        // Category
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        doc.setTextColor(100, 100, 100);
-        doc.text(p.category || 'Uncategorized', xPos + 5, yPos + 54);
+        // Category Badge
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        const categoryText = (p.category || 'Uncategorized').toUpperCase();
+        const catWidth = doc.getTextWidth(categoryText) + 4;
+        doc.setFillColor(241, 245, 249); // Slate 100
+        doc.roundedRect(xPos + 5, yPos + 58, catWidth, 6, 2, 2, 'F');
+        doc.setTextColor(100, 116, 139); // Slate 500
+        doc.text(categoryText, xPos + 7, yPos + 62.5);
+
+        // Specs background
+        doc.setFillColor(248, 250, 252); // Slate 50
+        doc.roundedRect(xPos + 5, yPos + 68, cardWidth - 10, 24, 2, 2, 'F');
 
         // Details Grid
         doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text("Material", xPos + 5, yPos + 62);
-        doc.text("GSM", xPos + cardWidth / 2 + 2, yPos + 62);
+        doc.setTextColor(100, 116, 139); // Slate 500
+        doc.setFont("helvetica", "normal");
+        doc.text("Material", xPos + 8, yPos + 74);
+        doc.text("GSM", xPos + cardWidth / 2, yPos + 74);
 
-        doc.setTextColor(50, 50, 50);
+        doc.setTextColor(15, 23, 42); // Slate 900
         doc.setFont("helvetica", "bold");
-        const mat = doc.splitTextToSize(p.material || '-', cardWidth / 2 - 5)[0];
-        const gsm = doc.splitTextToSize(p.gsm?.toString() || '-', cardWidth / 2 - 5)[0];
-        doc.text(mat, xPos + 5, yPos + 66);
-        doc.text(gsm, xPos + cardWidth / 2 + 2, yPos + 66);
+        const mat = doc.splitTextToSize(p.material || '-', cardWidth / 2 - 10)[0];
+        const gsm = doc.splitTextToSize(p.gsm?.toString() || '-', cardWidth / 2 - 10)[0];
+        doc.text(mat, xPos + 8, yPos + 78);
+        doc.text(gsm, xPos + cardWidth / 2, yPos + 78);
 
         doc.setFont("helvetica", "normal");
-        doc.setTextColor(150, 150, 150);
-        doc.text("Printing", xPos + 5, yPos + 74);
-        doc.text("Dimensions", xPos + cardWidth / 2 + 2, yPos + 74);
+        doc.setTextColor(100, 116, 139);
+        doc.text("Printing", xPos + 8, yPos + 84);
+        doc.text("Dimensions", xPos + cardWidth / 2, yPos + 84);
 
-        doc.setTextColor(50, 50, 50);
+        doc.setTextColor(15, 23, 42);
         doc.setFont("helvetica", "bold");
-        const prt = doc.splitTextToSize(p.printing || '-', cardWidth / 2 - 5)[0];
-        const dim = doc.splitTextToSize(p.dimensions || '-', cardWidth / 2 - 5)[0];
-        doc.text(prt, xPos + 5, yPos + 78);
-        doc.text(dim, xPos + cardWidth / 2 + 2, yPos + 78);
-
-        // Line separator
-        doc.setDrawColor(240, 240, 240);
-        doc.line(xPos, yPos + 86, xPos + cardWidth, yPos + 86);
+        const prt = doc.splitTextToSize(p.printing || '-', cardWidth / 2 - 10)[0];
+        const dim = doc.splitTextToSize(p.dimensions || '-', cardWidth / 2 - 10)[0];
+        doc.text(prt, xPos + 8, yPos + 88);
+        doc.text(dim, xPos + cardWidth / 2, yPos + 88);
 
         if (withPrice) {
-          // Unit Price
+          // Separator
+          doc.setDrawColor(226, 232, 240); // Slate 200
+          doc.line(xPos + 5, yPos + 97, xPos + cardWidth - 5, yPos + 97);
+
           doc.setFont("helvetica", "normal");
           doc.setFontSize(9);
-          doc.setTextColor(150, 150, 150);
-          doc.text("Unit price", xPos + 5, yPos + 94);
+          doc.setTextColor(100, 116, 139);
+          doc.text("Unit Price", xPos + 5, yPos + 104);
 
           doc.setFont("helvetica", "bold");
-          doc.setFontSize(11);
-          doc.setTextColor(27, 47, 99);
-          doc.text(`Rs ${Number(p.unitPrice || 0).toLocaleString('en-IN')}`, xPos + cardWidth - 5, yPos + 94, { align: 'right' });
+          doc.setFontSize(12);
+          doc.setTextColor(234, 88, 12); // Orange 600
+          doc.text(`Rs ${Number(p.unitPrice || 0).toLocaleString('en-IN')}`, xPos + cardWidth - 5, yPos + 104, { align: 'right' });
         }
 
         col++;
         if (col === 2) {
           col = 0;
-          yPos += cardHeight + 10;
+          yPos += cardHeight + 8;
         }
       }
 
@@ -200,9 +220,15 @@ export default function Products() {
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        
+        // Footer background
+        doc.setFillColor(27, 47, 99);
+        doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
+        
         doc.setFontSize(8);
-        doc.setTextColor(150, 150, 150);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+        doc.setTextColor(255, 255, 255);
+        doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, margin, pageHeight - 4.5);
+        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 4.5, { align: 'right' });
       }
 
       const date = new Date();

@@ -113,7 +113,8 @@ router.put('/:id', async (req, res) => {
       }
     }
     
-    res.json({ id: req.params.id, ...data });
+    const updatedDoc = await db.collection('users').doc(req.params.id).get();
+    res.json({ id: updatedDoc.id, ...updatedDoc.data() });
   } catch (error) {
     console.error(`Error updating user:`, error);
     res.status(500).json({ error: 'Internal server error' });

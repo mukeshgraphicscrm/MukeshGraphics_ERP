@@ -81,7 +81,8 @@ const createCrudRouter = (collectionName) => {
       const data = req.body;
       delete data.id; // Prevent updating the ID
       await db.collection(collectionName).doc(req.params.id).update(data);
-      res.json({ id: req.params.id, ...data });
+      const updatedDoc = await db.collection(collectionName).doc(req.params.id).get();
+      res.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {
       console.error(`Error updating ${collectionName}:`, error);
       res.status(500).json({ error: 'Internal server error' });

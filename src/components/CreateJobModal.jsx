@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
 
 const stageOptions = [
   { value: 'Printing', label: 'Printing' },
@@ -23,6 +24,7 @@ const statusOptions = [
 
 export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdated, jobs = [], jobToEdit }) {
   const { currentUser } = useAuth();
+  const { customers, products } = useData();
   const [formData, setFormData] = useState({
     jobCardNo: '',
     productName: '',
@@ -158,9 +160,11 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     } else {
       setFormData((prev) => {
         const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        const extraUpdates = name === 'customerName' ? { productName: '' } : {};
         return { 
           ...prev, 
           [name]: updatedValue,
+          ...extraUpdates,
           ...(isEmployeeEditing && { employee: autoEmployee })
         };
       });
@@ -199,6 +203,29 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
 
 
+  const customerOptions = customers ? customers.map(cust => ({
+    value: cust.name,
+    label: cust.name,
+  })) : [];
+  if (formData.customerName && !customerOptions.find(opt => opt.value === formData.customerName)) {
+    customerOptions.push({
+      value: formData.customerName,
+      label: formData.customerName,
+    });
+  }
+
+  const filteredProducts = products ? products.filter(p => p.companyName === formData.customerName) : [];
+  const productOptions = filteredProducts.map(prod => ({
+    value: prod.name,
+    label: prod.name,
+  }));
+  if (formData.productName && !productOptions.find(opt => opt.value === formData.productName)) {
+    productOptions.push({
+      value: formData.productName,
+      label: formData.productName,
+    });
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[90vh]">
@@ -227,28 +254,25 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-              <input
-                type="text"
-                name="productName"
-                required
-                value={formData.productName}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
+              <CustomSelect
+                name="customerName"
+                value={formData.customerName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="Enter product name"
+                options={[{ label: 'Select Customer', value: '' }, ...customerOptions]}
+                required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-              <input
-                type="text"
-                name="customerName"
-                required
-                value={formData.customerName}
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+              <CustomSelect
+                name="productName"
+                value={formData.productName}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="Enter customer name"
+                options={[{ label: 'Select Product', value: '' }, ...productOptions]}
+                required
+                disabled={!formData.customerName && productOptions.length === 0}
               />
             </div>
 

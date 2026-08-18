@@ -201,7 +201,7 @@ export default function Production() {
                   {/* Top Row */}
                   <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <span className="text-sm font-medium text-gray-500">{job.jobCardNo}</span>
+                      <span className="text-lg font-bold text-gray-900">{job.jobCardNo}</span>
                       <span className="text-sm text-gray-400 font-medium whitespace-nowrap">
                         | Date: {job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-IN') : '-'}
                       </span>

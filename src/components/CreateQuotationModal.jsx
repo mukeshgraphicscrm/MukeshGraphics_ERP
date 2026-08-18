@@ -196,7 +196,14 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       return;
     }
 
-    const upperValue = typeof value === 'string' && !['customerId', 'leadId', 'date'].includes(name) ? value.toUpperCase() : value;
+    let upperValue = value;
+    if (typeof value === 'string' && !['date', 'leadId'].includes(name)) {
+      if (name === 'customerId' && activeTab === 'Customer Quotation') {
+        upperValue = value;
+      } else {
+        upperValue = value.toUpperCase();
+      }
+    }
     setFormData((prev) => {
       const newData = { ...prev, [name]: upperValue };
 
@@ -257,15 +264,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         toast.error('Please fill in all required fields.');
         return;
       }
-      if (!formData.items || formData.items.length === 0) {
-        toast.error('Please add at least one product.');
-        return;
-      }
-      const invalidItems = formData.items.some(item => !item.productId || !item.specs || !item.qty || !item.price);
-      if (invalidItems) {
-        toast.error('Please complete all product details.');
-        return;
-      }
+    }
+
+    if (!formData.items || formData.items.length === 0) {
+      toast.error('Please add at least one product.');
+      return;
+    }
+    const invalidItems = formData.items.some(item => !item.productId || !item.specs || !item.qty || !item.price);
+    if (invalidItems) {
+      toast.error('Please complete all product details.');
+      return;
     }
 
     setLoading(true);

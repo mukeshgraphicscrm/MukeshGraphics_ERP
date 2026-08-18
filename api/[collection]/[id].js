@@ -40,7 +40,8 @@ export default async function handler(req, res) {
       const data = { ...req.body };
       delete data.id;
       await db.collection(collection).doc(id).update(data);
-      res.json({ id, ...data });
+      const updatedDoc = await db.collection(collection).doc(id).get();
+      res.json({ id, ...updatedDoc.data() });
     }
     else if (req.method === 'DELETE') {
       if (!db) {

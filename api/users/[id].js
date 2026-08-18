@@ -62,7 +62,8 @@ export default async function handler(req, res) {
         }
       }
 
-      res.json({ id, ...data });
+      const updatedDoc = await db.collection('users').doc(id).get();
+      res.json({ id, ...updatedDoc.data() });
     }
     else if (req.method === 'DELETE') {
       if (!db || !auth) {

@@ -214,19 +214,27 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'notes') {
-      setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
-    } else if (name === 'employee') {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => {
+      const isEmployeeEditing = orderToEdit && currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      if (name === 'notes') {
+        return { ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      } else if (name === 'employee') {
+        return { ...prev, [name]: value, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      } else {
+        return { ...prev, [name]: value, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      }
+    });
   };
 
   const handleNumberChange = (e) => {
     const { name, value } = e.target;
     const formatted = formatIndianNumber(value);
-    setFormData((prev) => ({ ...prev, [name]: formatted }));
+    setFormData((prev) => {
+      const isEmployeeEditing = orderToEdit && currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      return { ...prev, [name]: formatted, ...(isEmployeeEditing && { employee: autoEmployee }) };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -434,7 +442,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                                 }
                               }
 
-                              return { ...prev, quantities: newQuantities, amounts: newAmounts };
+                              const isEmployeeEditing = orderToEdit && currentUser?.profile?.designation === 'Employee';
+                              const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+                              return { ...prev, quantities: newQuantities, amounts: newAmounts, ...(isEmployeeEditing && { employee: autoEmployee }) };
                             });
                           }}
                           disabled={isViewMode}
@@ -452,7 +462,11 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                           value={formData.amounts[id] || ''}
                           onChange={(e) => {
                             const formatted = formatIndianNumber(e.target.value);
-                            setFormData(prev => ({ ...prev, amounts: { ...prev.amounts, [id]: formatted } }));
+                            setFormData(prev => {
+                              const isEmployeeEditing = orderToEdit && currentUser?.profile?.designation === 'Employee';
+                              const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+                              return { ...prev, amounts: { ...prev.amounts, [id]: formatted }, ...(isEmployeeEditing && { employee: autoEmployee }) };
+                            });
                           }}
                           disabled={isViewMode}
                           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'

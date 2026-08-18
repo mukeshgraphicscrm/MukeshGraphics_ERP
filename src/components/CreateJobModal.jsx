@@ -133,6 +133,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     const isTextLike = ['jobCardNo', 'productName', 'customerName', 'notes'].includes(name);
     const updatedValue = isTextLike ? value.toUpperCase() : value;
 
+    const isEmployeeEditing = jobToEdit && currentUser?.profile?.designation === 'Employee';
+
     if (name === 'stage') {
       const stageProgressMap = {
         'Printing': 20,
@@ -144,13 +146,24 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         'Dispatched': 100,
       };
       const calculatedProgress = stageProgressMap[updatedValue] || 0;
-      setFormData((prev) => ({
-        ...prev,
-        [name]: updatedValue,
-        progress: calculatedProgress.toString()
-      }));
+      setFormData((prev) => {
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return {
+          ...prev,
+          [name]: updatedValue,
+          progress: calculatedProgress.toString(),
+          ...(isEmployeeEditing && { employee: autoEmployee })
+        };
+      });
     } else {
-      setFormData((prev) => ({ ...prev, [name]: updatedValue }));
+      setFormData((prev) => {
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return { 
+          ...prev, 
+          [name]: updatedValue,
+          ...(isEmployeeEditing && { employee: autoEmployee })
+        };
+      });
     }
   };
 

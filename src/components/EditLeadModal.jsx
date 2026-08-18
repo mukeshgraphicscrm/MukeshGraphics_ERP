@@ -97,32 +97,54 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
 
     if (name === 'mobile') {
       const numericValue = value.replace(/\D/g, '').slice(0, 10);
-      setFormData(prev => ({ ...prev, [name]: numericValue }));
+      setFormData(prev => {
+        const isEmployeeEditing = currentUser?.profile?.designation === 'Employee';
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return { ...prev, [name]: numericValue, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      });
       return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email' || name === 'country') ? value : value.toUpperCase()
-    }));
+    setFormData(prev => {
+      const isEmployeeEditing = currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      return {
+        ...prev,
+        [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email' || name === 'country') ? value : value.toUpperCase(),
+        ...(isEmployeeEditing && { employee: autoEmployee })
+      };
+    });
   };
 
   const handleFollowUpChange = (index, field, value) => {
-    const newFollowUps = [...formData.followUps];
-    newFollowUps[index][field] = (field === 'date' || field === 'time') ? value : value.toUpperCase();
-    setFormData(prev => ({ ...prev, followUps: newFollowUps }));
+    setFormData(prev => {
+      const isEmployeeEditing = currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      const newFollowUps = [...prev.followUps];
+      newFollowUps[index][field] = (field === 'date' || field === 'time') ? value : value.toUpperCase();
+      return { ...prev, followUps: newFollowUps, ...(isEmployeeEditing && { employee: autoEmployee }) };
+    });
   };
 
   const addFollowUp = () => {
-    setFormData(prev => ({
-      ...prev,
-      followUps: [...prev.followUps, { date: '', time: '', notes: '' }]
-    }));
+    setFormData(prev => {
+      const isEmployeeEditing = currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      return {
+        ...prev,
+        followUps: [...prev.followUps, { date: '', time: '', notes: '' }],
+        ...(isEmployeeEditing && { employee: autoEmployee })
+      };
+    });
   };
 
   const removeFollowUp = (index) => {
-    const newFollowUps = formData.followUps.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, followUps: newFollowUps }));
+    setFormData(prev => {
+      const isEmployeeEditing = currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      const newFollowUps = prev.followUps.filter((_, i) => i !== index);
+      return { ...prev, followUps: newFollowUps, ...(isEmployeeEditing && { employee: autoEmployee }) };
+    });
   };
 
   const handleSubmit = async (e) => {

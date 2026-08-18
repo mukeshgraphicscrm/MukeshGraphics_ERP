@@ -122,10 +122,18 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    const isEmployeeEditing = productToEdit && currentUser?.profile?.designation === 'Employee';
+    
     if (name === 'category' || name === 'companyName' || name === 'employee') {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => {
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return { ...prev, [name]: value, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      });
     } else {
-      setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
+      setFormData((prev) => {
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return { ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      });
     }
   };
 
@@ -143,7 +151,11 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
           'Content-Type': 'multipart/form-data',
         },
       });
-      setFormData(prev => ({ ...prev, image: res.data.url }));
+      setFormData(prev => {
+        const isEmployeeEditing = productToEdit && currentUser?.profile?.designation === 'Employee';
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        return { ...prev, image: res.data.url, ...(isEmployeeEditing && { employee: autoEmployee }) };
+      });
       toast.success('Image uploaded successfully');
     } catch (err) {
       console.error('Error uploading image:', err);

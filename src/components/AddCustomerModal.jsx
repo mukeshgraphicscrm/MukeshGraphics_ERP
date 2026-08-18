@@ -87,7 +87,15 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: (name === 'country' || name === 'employee') ? value : value.toUpperCase() }));
+    setFormData((prev) => {
+      const isEmployeeEditing = customerToEdit && currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      return { 
+        ...prev, 
+        [name]: (name === 'country' || name === 'employee') ? value : value.toUpperCase(),
+        ...(isEmployeeEditing && { employee: autoEmployee })
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -285,8 +293,20 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
                   <button
                     key={star}
                     type="button"
+                    onClick={() => {
+                      if (!isViewMode) {
+                        setFormData(prev => {
+                          const isEmployeeEditing = customerToEdit && currentUser?.profile?.designation === 'Employee';
+                          const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+                          return {
+                            ...prev,
+                            rating: star,
+                            ...(isEmployeeEditing && { employee: autoEmployee })
+                          };
+                        });
+                      }
+                    }}
                     disabled={isViewMode}
-                    onClick={() => setFormData(prev => ({ ...prev, rating: star }))}
                     className={`p-1 focus:outline-none transition-colors ${
                       star <= formData.rating ? 'text-yellow-400' : 'text-gray-300'
                     } ${!isViewMode && star > formData.rating ? 'hover:text-gray-400' : ''} ${isViewMode ? 'cursor-default' : ''}`}

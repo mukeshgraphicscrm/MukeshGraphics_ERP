@@ -239,6 +239,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
     if (name === 'productId') {
       setFormData(prev => {
+        const isEmployeeEditing = quotationToEdit && currentUser?.profile?.designation === 'Employee';
+        const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+        
         const newItems = value.map(id => {
           const existing = (prev.items || []).find(item => item.productId === id);
           if (existing) return existing;
@@ -248,7 +251,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
           return { productId: id, specs: '', qty: '', price: defaultPrice };
         });
-        return { ...prev, productId: value, items: newItems };
+        return { ...prev, productId: value, items: newItems, ...(isEmployeeEditing && { employee: autoEmployee }) };
       });
       return;
     }
@@ -262,7 +265,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       }
     }
     setFormData((prev) => {
-      const newData = { ...prev, [name]: upperValue };
+      const isEmployeeEditing = quotationToEdit && currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
+      const newData = { ...prev, [name]: upperValue, ...(isEmployeeEditing && { employee: autoEmployee }) };
 
       // Auto-fill customer if company name is selected
       if (name === 'companyName') {
@@ -293,17 +298,21 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const handleItemChange = (index, field, value) => {
     setFormData(prev => {
+      const isEmployeeEditing = quotationToEdit && currentUser?.profile?.designation === 'Employee';
+      const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
       const newItems = [...(prev.items || [])];
+      
       if (field === 'qty' || field === 'price') {
         newItems[index] = { ...newItems[index], [field]: formatIndianNumber(value) };
       } else {
         newItems[index] = { ...newItems[index], [field]: typeof value === 'string' ? value.toUpperCase() : value };
       }
+      
       let newProductIds = prev.productId;
       if (activeTab === 'Lead Quotation' && field === 'productId') {
         newProductIds = newItems.map(i => i.productId).filter(Boolean);
       }
-      return { ...prev, items: newItems, productId: newProductIds };
+      return { ...prev, items: newItems, productId: newProductIds, ...(isEmployeeEditing && { employee: autoEmployee }) };
     });
   };
 

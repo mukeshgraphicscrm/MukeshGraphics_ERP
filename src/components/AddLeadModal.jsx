@@ -17,7 +17,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     city: '',
     state: '',
     country: 'India',
-    leadSource: 'Website',
+    leadSource: '',
     products: '',
     employee: currentUser?.profile?.name || '',
     stage: 'New Inquiry',
@@ -38,7 +38,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
         city: '',
         state: '',
         country: 'India',
-        leadSource: 'Website',
+        leadSource: '',
         products: '',
         employee: currentUser?.profile?.name || '',
         stage: 'New Inquiry',
@@ -126,7 +126,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
       if (onLeadAdded) onLeadAdded(res.data);
       toast.success('Lead added successfully!');
       setFormData({ 
-        company: '', contactPerson: '', mobile: '', email: '', city: '', state: '', country: 'India', leadSource: 'Website', products: '', employee: currentUser?.profile?.name || '', 
+        company: '', contactPerson: '', mobile: '', email: '', city: '', state: '', country: 'India', leadSource: '', products: '', employee: currentUser?.profile?.name || '', 
         stage: 'New Inquiry', lostReason: '', followUps: [{ date: '', time: '', notes: '' }] 
       });
       onClose();
@@ -250,6 +250,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
                 name="leadSource"
                 value={formData.leadSource}
                 onChange={handleChange}
+                required
                 options={[
                   { label: 'Website', value: 'Website' },
                   { label: 'Digital Marketing', value: 'Digital Marketing' },

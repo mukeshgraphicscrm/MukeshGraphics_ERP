@@ -17,7 +17,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     city: '',
     state: '',
     country: 'India',
-    leadSource: 'Website',
+    leadSource: '',
     products: '',
     employee: '',
     stage: 'New Inquiry',
@@ -39,7 +39,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
         city: lead.city || '',
         state: lead.state || '',
         country: lead.country || 'India',
-        leadSource: lead.leadSource || 'Website',
+        leadSource: lead.leadSource || '',
         products: lead.products || '',
         employee: lead.employee || currentUser?.profile?.name || '',
         stage: lead.stage || 'New Inquiry',
@@ -273,6 +273,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                 name="leadSource"
                 value={formData.leadSource}
                 onChange={handleChange}
+                required
                 options={[
                   { label: 'Website', value: 'Website' },
                   { label: 'Digital Marketing', value: 'Digital Marketing' },

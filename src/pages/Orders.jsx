@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Orders() {
-  const { orders: data, setOrders: setData, customerMap: customers, productMap: products } = useData();
+  const { orders: data, setOrders: setData, customerMap: customers, productMap: products, isLoaded } = useData();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
@@ -155,6 +155,7 @@ export default function Orders() {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <DataTable
+        isLoading={!isLoaded}
         title="Order Management"
         subtitle="Track and manage all customer orders."
         toolbarExtra={dateFilterToolbar}

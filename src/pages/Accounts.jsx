@@ -7,7 +7,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Accounts() {
-  const { invoices, setInvoices, customerMap: customers } = useData();
+  const { invoices, setInvoices, customerMap: customers, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
 
@@ -125,6 +125,7 @@ export default function Accounts() {
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-[70%] h-[500px]">
           <DataTable
+            isLoading={!isLoaded}
             title="Invoices"
             searchPlaceholder="Search invoices..."
             columns={columns}

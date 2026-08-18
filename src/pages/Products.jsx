@@ -11,7 +11,7 @@ import { useData } from '../contexts/DataContext';
 
 
 export default function Products() {
-  const { products, setProducts, categories, setCategories } = useData();
+  const { products, setProducts, categories, setCategories, isLoaded } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -335,7 +335,26 @@ export default function Products() {
 
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map(product => (
+          {(!isLoaded) ? (
+            [...Array(8)].map((_, idx) => (
+              <div key={`loading-${idx}`} className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200 animate-pulse">
+                <div className="bg-gray-200 h-32 w-full"></div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="h-5 bg-gray-200 rounded w-3/4 mb-4"></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+                <div className="px-5 py-4 border-t border-gray-100 flex justify-between">
+                  <div className="h-4 bg-gray-200 rounded w-1/4"></div>
+                  <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+                </div>
+              </div>
+            ))
+          ) : filteredProducts.map(product => (
             <div
               key={product.id}
               className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group flex flex-col border border-gray-200 cursor-pointer"
@@ -396,7 +415,7 @@ export default function Products() {
             </div>
           ))}
 
-          {filteredProducts.length === 0 && (
+          {(isLoaded && filteredProducts.length === 0) && (
             <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-lg border border-gray-200 border-dashed">
               No products found matching your search.
             </div>

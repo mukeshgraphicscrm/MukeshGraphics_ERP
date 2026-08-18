@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Artworks() {
-  const { artworks: data, setArtworks: setData, customerMap: customers } = useData();
+  const { artworks: data, setArtworks: setData, customerMap: customers, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [formData, setFormData] = useState({
@@ -120,6 +120,7 @@ export default function Artworks() {
       {/* Data Table */}
       <div className="h-[calc(100vh-12rem)]">
         <DataTable
+          isLoading={!isLoaded}
           title="Artwork Management"
           subtitle="Manage all customer artwork assets and approval statuses."
           actionButton={

@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import { useData } from '../contexts/DataContext';
 
 export default function Dispatch() {
-  const { dispatches: data, setDispatches: setData, customerMap: customers } = useData();
+  const { dispatches: data, setDispatches: setData, customerMap: customers, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dispatchToEdit, setDispatchToEdit] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -77,6 +77,7 @@ export default function Dispatch() {
     <>
       <div className="h-[calc(100vh-8rem)]">
         <DataTable
+          isLoading={!isLoaded}
           title="Dispatch"
           subtitle="Transporters, locations and delivery challans — every shipment tracked."
           searchPlaceholder="Search dispatch no., transporter, location..."

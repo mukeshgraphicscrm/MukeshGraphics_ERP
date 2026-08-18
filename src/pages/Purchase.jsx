@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Purchase() {
-  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers } = useData();
+  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, isLoaded } = useData();
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
@@ -80,6 +80,7 @@ export default function Purchase() {
         {/* PO Table */}
         <div>
           <DataTable
+            isLoading={!isLoaded}
             title="Purchase Orders"
             columns={poColumns}
             data={poData}
@@ -93,6 +94,7 @@ export default function Purchase() {
         {/* GRN Table */}
         <div>
           <DataTable
+            isLoading={!isLoaded}
             title="Goods Receipt Notes"
             columns={grnColumns}
             data={grnData}

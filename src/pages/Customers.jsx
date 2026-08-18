@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Customers() {
-  const { customers: data, setCustomers: setData } = useData();
+  const { customers: data, setCustomers: setData, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -150,6 +150,7 @@ export default function Customers() {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <DataTable
+        isLoading={!isLoaded}
         title="Customers"
         subtitle="Manage clients, outstanding balances and business history."
         searchPlaceholder="Search customers, GST, city..."

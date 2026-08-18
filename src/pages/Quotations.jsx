@@ -14,7 +14,7 @@ import { useData } from '../contexts/DataContext';
 
 
 export default function Quotations() {
-  const { quotations: data, setQuotations: setData, customerMap: customers, productMap: products, leadMap: leads } = useData();
+  const { quotations: data, setQuotations: setData, customerMap: customers, productMap: products, leadMap: leads, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [quotationToEdit, setQuotationToEdit] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
@@ -208,6 +208,7 @@ export default function Quotations() {
   return (
     <div className="h-[calc(100vh-8rem)]">
       <DataTable
+        isLoading={!isLoaded}
         title="Quotations"
         subtitle="Manage and send price estimations to customers."
         actionButton={

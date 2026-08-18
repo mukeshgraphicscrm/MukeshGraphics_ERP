@@ -8,7 +8,7 @@ import { useData } from '../contexts/DataContext';
 
 
 export default function Inventory() {
-  const { inventory: data, setInventory: setData } = useData();
+  const { inventory: data, setInventory: setData, isLoaded } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState(null);
 
@@ -132,6 +132,7 @@ export default function Inventory() {
       {/* Table */}
       <div className="h-[500px]">
         <DataTable
+          isLoading={!isLoaded}
           title=""
           searchPlaceholder="Search materials, categories..."
           columns={columns}

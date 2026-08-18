@@ -10,7 +10,8 @@ export default function DataTable({
   data,
   onRowClick,
   searchPlaceholder = "Search records...",
-  toolbarExtra
+  toolbarExtra,
+  isLoading = false
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -247,7 +248,17 @@ export default function DataTable({
             )}
           </thead>
           <tbody className="bg-white divide-y divide-gray-100">
-            {filteredData.length > 0 ? (
+            {isLoading ? (
+              [...Array(5)].map((_, idx) => (
+                <tr key={`loading-${idx}`} className="animate-pulse">
+                  {columns.map((col, colIdx) => (
+                    <td key={colIdx} className="px-6 py-4 whitespace-nowrap">
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : filteredData.length > 0 ? (
               filteredData.map((row, idx) => (
                 <tr
                   key={row.id || idx}

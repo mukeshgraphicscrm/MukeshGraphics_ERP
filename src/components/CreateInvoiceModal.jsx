@@ -136,7 +136,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers, onInvoi
                 required
                 value={formData.invoiceNo}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors mb-4"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
                 placeholder="e.g. INV-001"
               />
             </div>

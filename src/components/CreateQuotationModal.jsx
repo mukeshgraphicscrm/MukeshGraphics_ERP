@@ -548,7 +548,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   name="employee"
                   value={formData.employee}
                   onChange={handleChange}
-                  disabled={isViewMode}
+                  disabled={isViewMode || (!!quotationToEdit && currentUser?.profile?.designation === 'Employee')}
                   options={[
                     { label: 'Select Employee', value: '' },
                     ...users.map(user => ({ label: user.name, value: user.name }))

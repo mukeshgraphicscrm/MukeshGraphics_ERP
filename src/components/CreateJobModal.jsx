@@ -310,6 +310,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 name="employee"
                 value={formData.employee}
                 onChange={handleChange}
+                disabled={!!jobToEdit && currentUser?.profile?.designation === 'Employee'}
                 options={[
                   { label: 'Select Employee', value: '' },
                   ...users.map(user => ({ label: user.name, value: user.name }))

@@ -325,6 +325,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                   name="employee"
                   value={formData.employee}
                   onChange={handleChange}
+                  disabled={currentUser?.profile?.designation === 'Employee'}
                   options={[
                     { label: 'Select Employee', value: '' },
                     ...users.map(user => ({ label: user.name, value: user.name }))

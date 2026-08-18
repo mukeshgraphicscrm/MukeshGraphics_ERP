@@ -500,7 +500,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     name="employee"
                     value={formData.employee}
                     onChange={handleChange}
-                    disabled={isViewMode}
+                    disabled={isViewMode || (!!orderToEdit && currentUser?.profile?.designation === 'Employee')}
                     options={[
                       { label: 'Select Employee', value: '' },
                       ...users.map(user => ({ label: user.name, value: user.name }))

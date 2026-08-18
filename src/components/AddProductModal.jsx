@@ -282,7 +282,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                   { label: 'Select Employee', value: '' },
                   ...users.map(user => ({ label: user.name, value: user.name }))
                 ]}
-                disabled={isViewMode}
+                disabled={isViewMode || (!!productToEdit && currentUser?.profile?.designation === 'Employee')}
               />
             </div>
 

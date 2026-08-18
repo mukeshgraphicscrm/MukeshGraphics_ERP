@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, MapPin, Plus, Trash2, MoreVertical, Edit2 } from 'lucide-react';
+import { Phone, MapPin, Plus, Trash2, MoreVertical, Edit2, Package } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AddCustomerModal from '../components/AddCustomerModal';
 import DeleteConfirmModal from '../components/DeleteConfirmModal';
+import CustomerOrderHistoryModal from '../components/CustomerOrderHistoryModal';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Customers() {
-  const { customers: data, orders = [], setCustomers: setData, isLoaded } = useData();
+  const { customers: data, orders = [], products = [], setCustomers: setData, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [customerForHistory, setCustomerForHistory] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
@@ -116,7 +119,7 @@ export default function Customers() {
           <MoreVertical className="w-4 h-4" />
         </button>
         {openDropdownId === row.id && (
-          <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50">
+          <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 z-50">
             <div className="py-1">
               <button
                 onClick={(e) => {
@@ -129,6 +132,17 @@ export default function Customers() {
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
               >
                 <Edit2 className="w-4 h-4 mr-2" /> Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  setCustomerForHistory(row);
+                  setHistoryModalOpen(true);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <Package className="w-4 h-4 mr-2" /> View Order History
               </button>
               <button
                 onClick={(e) => {
@@ -210,6 +224,16 @@ export default function Customers() {
             Are you sure you want to delete <span className="font-bold">{customerToDelete?.name}</span>? This action cannot be undone.
           </>
         }
+      />
+      <CustomerOrderHistoryModal
+        isOpen={historyModalOpen}
+        onClose={() => {
+          setHistoryModalOpen(false);
+          setCustomerForHistory(null);
+        }}
+        customer={customerForHistory}
+        orders={orders}
+        products={products}
       />
     </div>
   );

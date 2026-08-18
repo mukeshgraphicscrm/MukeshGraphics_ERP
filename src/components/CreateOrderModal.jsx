@@ -167,6 +167,41 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     }
   }, [formData.customerId, formData.productId, customers, products]);
 
+  const productHistories = React.useMemo(() => {
+    if (!orders || orders.length === 0 || !formData.productId || formData.productId.length === 0) return [];
+    
+    const histories = [];
+    
+    formData.productId.forEach(prodId => {
+      // Find all orders containing this product, excluding the one currently being edited (if any)
+      const matchingOrders = orders.filter(o => {
+        if (orderToEdit && o.id === orderToEdit.id) return false;
+        return o.productId === prodId || (Array.isArray(o.productId) && o.productId.includes(prodId));
+      });
+      
+      if (matchingOrders.length > 0) {
+        // Sort by orderDate descending
+        matchingOrders.sort((a, b) => new Date(b.orderDate || b.createdAt || 0) - new Date(a.orderDate || a.createdAt || 0));
+        const lastOrder = matchingOrders[0];
+        
+        const qty = (lastOrder.quantities && lastOrder.quantities[prodId]) || lastOrder.quantity || '0';
+        const amount = (lastOrder.amounts && lastOrder.amounts[prodId]) || lastOrder.amount || '0';
+        
+        histories.push({
+          productId: prodId,
+          orderNo: lastOrder.orderNo,
+          date: lastOrder.orderDate || lastOrder.createdAt,
+          qty: qty,
+          amount: amount,
+          status: lastOrder.status,
+          notes: lastOrder.notes
+        });
+      }
+    });
+    
+    return histories;
+  }, [formData.productId, orders, orderToEdit]);
+
   if (!isOpen) return null;
 
   const handleChange = (e) => {
@@ -322,6 +357,42 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     required
                   />
                 </div>
+
+                {productHistories.length > 0 && (
+                  <div className="md:col-span-2 mt-2 p-4 bg-[#E8A33D]/10 border border-[#E8A33D]/30 rounded-lg">
+                    <h4 className="text-sm font-bold text-[#E8A33D] mb-3 flex items-center">
+                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Previous Order History
+                    </h4>
+                    <div className="space-y-3">
+                      {productHistories.map((history, idx) => {
+                        const productName = products.find(p => p.id === history.productId)?.name || 'Unknown Product';
+                        return (
+                          <div key={idx} className="text-sm text-gray-700 bg-white p-3 rounded-md border border-[#E8A33D]/20 shadow-sm">
+                            <div className="font-bold text-gray-900 mb-2 flex justify-between items-center">
+                              <span>{productName}</span>
+                              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{history.orderNo}</span>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                              <div><span className="text-gray-500 block text-xs">Date</span> <span className="font-medium">{history.date ? new Date(history.date).toLocaleDateString() : 'N/A'}</span></div>
+                              <div><span className="text-gray-500 block text-xs">Quantity</span> <span className="font-medium">{history.qty}</span></div>
+                              <div><span className="text-gray-500 block text-xs">Amount</span> <span className="font-medium">₹{history.amount}</span></div>
+                              <div><span className="text-gray-500 block text-xs">Status</span> <span className="font-medium">{history.status}</span></div>
+                              {history.notes && (
+                                <div className="col-span-2 md:col-span-4 mt-1 pt-2 border-t border-gray-100">
+                                  <span className="text-gray-500 block text-xs">Notes / Specs</span>
+                                  <span className="font-medium whitespace-pre-wrap text-xs">{history.notes}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {formData.productId.length > 0 && formData.productId.map((id, index) => {
                   const product = products.find(p => p.id === id);

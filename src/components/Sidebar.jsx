@@ -15,7 +15,7 @@ const navItems = [
   { name: 'Products', path: '/products', icon: Package },
   { name: 'Quotations', path: '/quotations', icon: FileText },
   { name: 'Orders', path: '/orders', icon: ShoppingCart },
-  { name: 'Jobcard', path: '/jobcard', icon: ClipboardList },
+  { name: 'Job Data', path: '/jobcard', icon: ClipboardList },
   { name: 'Production', path: '/production', icon: Factory },
   { name: 'Dispatch', path: '/dispatch', icon: Truck },
   {

@@ -7,7 +7,7 @@ export default function Topbar({ onMenuClick }) {
   const { currentUser, logout } = useAuth();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   
-  const name = currentUser?.displayName || currentUser?.profile?.name || 'Mukesh Patel';
+  const name = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
   const designation = currentUser?.profile?.designation || 'Administrator';
   
   const handleLogout = async () => {

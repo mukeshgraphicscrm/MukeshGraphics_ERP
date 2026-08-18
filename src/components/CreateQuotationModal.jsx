@@ -145,6 +145,55 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     });
   };
 
+  const productHistories = React.useMemo(() => {
+    if (!quotations || quotations.length === 0 || !formData.items || formData.items.length === 0) return [];
+    
+    const histories = [];
+    const currentProductIds = [...new Set(formData.items.map(item => item.productId).filter(Boolean))];
+    
+    currentProductIds.forEach(prodId => {
+      // Find all quotations containing this product, excluding the one currently being edited (if any)
+      const matchingQuotations = quotations.filter(q => {
+        if (quotationToEdit && q.id === quotationToEdit.id) return false;
+        
+        if (q.items && q.items.length > 0) {
+          return q.items.some(item => item.productId === prodId);
+        }
+        return q.productId === prodId || (Array.isArray(q.productId) && q.productId.includes(prodId));
+      });
+      
+      if (matchingQuotations.length > 0) {
+        // Sort by date descending
+        matchingQuotations.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+        const lastQuotation = matchingQuotations[0];
+        
+        let lastItemDetails = null;
+        if (lastQuotation.items && lastQuotation.items.length > 0) {
+          lastItemDetails = lastQuotation.items.find(item => item.productId === prodId);
+        } else {
+          lastItemDetails = {
+             specs: lastQuotation.specs,
+             qty: lastQuotation.qty,
+             price: lastQuotation.price
+          };
+        }
+        
+        if (lastItemDetails) {
+          histories.push({
+            productId: prodId,
+            quotationNo: lastQuotation.quotationNo,
+            date: lastQuotation.date,
+            specs: lastItemDetails.specs,
+            qty: lastItemDetails.qty,
+            price: lastItemDetails.price
+          });
+        }
+      }
+    });
+    
+    return histories;
+  }, [formData.items, quotations, quotationToEdit]);
+
   const handleTabSwitch = (newTab) => {
     if (newTab === activeTab) return;
 
@@ -485,6 +534,36 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                 />
               </div>
             </div>
+
+            {productHistories.length > 0 && (
+              <div className="mt-4 p-4 bg-[#E8A33D]/10 border border-[#E8A33D]/30 rounded-lg">
+                <h4 className="text-sm font-bold text-[#E8A33D] mb-3 flex items-center">
+                  <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Previous Quotation History
+                </h4>
+                <div className="space-y-3">
+                  {productHistories.map((history, idx) => {
+                    const productName = activeTab === 'Lead Quotation' ? history.productId : (products.find(p => p.id === history.productId)?.name || history.productId);
+                    return (
+                      <div key={idx} className="text-sm text-gray-700 bg-white p-3 rounded-md border border-[#E8A33D]/20 shadow-sm">
+                        <div className="font-bold text-gray-900 mb-2 flex justify-between items-center">
+                          <span>{productName}</span>
+                          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{history.quotationNo}</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                          <div><span className="text-gray-500 block text-xs">Date</span> <span className="font-medium">{new Date(history.date).toLocaleDateString()}</span></div>
+                          <div><span className="text-gray-500 block text-xs">Quantity</span> <span className="font-medium">{history.qty}</span></div>
+                          <div><span className="text-gray-500 block text-xs">Unit Price</span> <span className="font-medium">₹{history.price}</span></div>
+                          <div className="col-span-2 md:col-span-4"><span className="text-gray-500 block text-xs">Product Specs</span> <span className="font-medium">{history.specs || 'N/A'}</span></div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {formData.items && formData.items.length > 0 && (
               <div className="mt-6 space-y-6">

@@ -121,21 +121,24 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEditClick }) {
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Follow-ups / Notes</p>
               <div className="space-y-3">
-                {followUps.map((followUp, index) => (
-                  <div key={index} className="p-4 bg-[#FCF9F2] rounded-xl border border-[#E8A33D]/20">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-semibold text-[#1b2f63]">Note {index + 1}</span>
-                      <span className="text-xs font-medium text-gray-500">
-                        {followUp.date || '-'} {followUp.time ? `at ${followUp.time}` : ''}
-                      </span>
-                    </div>
-                    {followUp.notes && (
-                      <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-                        {followUp.notes}
+                {[...followUps].reverse().map((followUp, index) => {
+                  const originalIndex = followUps.length - 1 - index;
+                  return (
+                    <div key={originalIndex} className="p-4 bg-[#FCF9F2] rounded-xl border border-[#E8A33D]/20">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-semibold text-[#1b2f63]">Note {originalIndex + 1}</span>
+                        <span className="text-xs font-medium text-gray-500">
+                          {followUp.date || '-'} {followUp.time ? `at ${followUp.time}` : ''}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
+                      {followUp.notes && (
+                        <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
+                          {followUp.notes}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

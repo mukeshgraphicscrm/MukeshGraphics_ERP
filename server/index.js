@@ -88,7 +88,7 @@ const collections = [
   'customers', 'leads', 'quotations', 'orders', 'products',
   'artworks', 'productionJobs', 'inventory', 'suppliers',
   'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories',
-  'contact form', 'contact_form'
+  'contact form', 'contact_form', 'notifications'
 ];
 
 app.use('/api/users', usersRouter);

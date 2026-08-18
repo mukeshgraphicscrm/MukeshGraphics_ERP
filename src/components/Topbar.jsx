@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Bell, Menu, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
+import NotificationsDropdown from './NotificationsDropdown';
 
 export default function Topbar({ onMenuClick }) {
   const { currentUser, logout } = useAuth();
+  const { notifications } = useData();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   
   const name = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
   const designation = currentUser?.profile?.designation || 'Administrator';
@@ -55,6 +59,23 @@ export default function Topbar({ onMenuClick }) {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4 md:space-x-6">
+          {/* Notifications */}
+          <div className="relative">
+            <button
+              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative focus:outline-none"
+            >
+              <Bell className="w-5 h-5" />
+              {notifications?.some(n => !n.read) && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+              )}
+            </button>
+            <NotificationsDropdown 
+              isOpen={isNotificationsOpen} 
+              onClose={() => setIsNotificationsOpen(false)} 
+            />
+          </div>
+
           {/* Profile */}
           <div className="flex items-center space-x-3 border-l border-gray-200 pl-4 md:pl-6">
             <div className="text-right hidden sm:block">

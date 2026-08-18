@@ -124,6 +124,26 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     try {
       const res = await api.post('/leads', formData);
       if (onLeadAdded) onLeadAdded(res.data);
+      
+      // Notify assigned employee
+      const userDesignation = currentUser?.profile?.designation || 'Administrator';
+      const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+      const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+      
+      if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+        try {
+          await api.post('/notifications', {
+            title: 'New Lead Assigned',
+            message: `Lead for ${formData.company} has been assigned to you.`,
+            employee: formData.employee,
+            read: false,
+            createdAt: new Date().toISOString()
+          });
+        } catch (notifErr) {
+          console.error('Failed to send notification:', notifErr);
+        }
+      }
+
       toast.success('Lead added successfully!');
       setFormData({ 
         company: '', contactPerson: '', mobile: '', email: '', city: '', state: '', country: 'India', leadSource: '', products: '', employee: currentUser?.profile?.name || '', 

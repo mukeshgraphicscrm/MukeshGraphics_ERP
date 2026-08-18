@@ -154,6 +154,26 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     try {
       const res = await api.put(`/leads/${lead.id}`, formData);
       if (onLeadUpdated) onLeadUpdated(res.data);
+      
+      // Notify assigned employee if changed
+      const userDesignation = currentUser?.profile?.designation || 'Administrator';
+      const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+      const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+      
+      if (isAdminOrManager && formData.employee && formData.employee !== lead.employee && formData.employee !== userName) {
+        try {
+          await api.post('/notifications', {
+            title: 'Lead Re-assigned',
+            message: `Lead for ${formData.company} has been re-assigned to you.`,
+            employee: formData.employee,
+            read: false,
+            createdAt: new Date().toISOString()
+          });
+        } catch (notifErr) {
+          console.error('Failed to send notification:', notifErr);
+        }
+      }
+
       toast.success('Lead updated successfully!');
       onClose();
     } catch (err) {

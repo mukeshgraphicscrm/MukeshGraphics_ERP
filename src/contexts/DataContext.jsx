@@ -25,6 +25,7 @@ export function DataProvider({ children }) {
   const [grnData, setGrnData] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [artworks, setArtworks] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
@@ -33,7 +34,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, dashRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -49,6 +50,7 @@ export function DataProvider({ children }) {
         api.get('/grn'),
         api.get('/suppliers'),
         api.get('/artworks'),
+        api.get('/notifications'),
         api.get('/dashboard/kpi'),
       ]);
 
@@ -66,6 +68,19 @@ export function DataProvider({ children }) {
       if (grnRes.status === 'fulfilled') setGrnData(Array.isArray(grnRes.value.data) ? grnRes.value.data : []);
       if (supRes.status === 'fulfilled') setSuppliers(Array.isArray(supRes.value.data) ? supRes.value.data : []);
       if (artRes.status === 'fulfilled') setArtworks(Array.isArray(artRes.value.data) ? artRes.value.data : []);
+      
+      if (notifRes.status === 'fulfilled') {
+        const allNotifs = Array.isArray(notifRes.value.data) ? notifRes.value.data : [];
+        setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+      } else {
+        // Find notification response in Promise.allSettled array (index 14)
+        try {
+          const res = await api.get('/notifications');
+          const allNotifs = Array.isArray(res.data) ? res.data : [];
+          setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+        } catch(e) {}
+      }
+
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
     } catch (err) {
       console.error('DataContext fetch error:', err);
@@ -95,6 +110,7 @@ export function DataProvider({ children }) {
       setGrnData([]);
       setSuppliers([]);
       setArtworks([]);
+      setNotifications([]);
       setDashboardData(null);
     }
   }, [currentUser, isLoaded, fetchAll]);
@@ -148,6 +164,7 @@ export function DataProvider({ children }) {
     grnData, setGrnData,
     suppliers, setSuppliers,
     artworks, setArtworks,
+    notifications, setNotifications,
     dashboardData, setDashboardData,
     // helper maps
     customerMap,

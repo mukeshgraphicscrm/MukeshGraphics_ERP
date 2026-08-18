@@ -30,9 +30,7 @@ export default function Leads() {
 
   const showToggle = currentUser?.profile?.designation === 'Employee' || currentUser?.profile?.designation === 'Manager';
 
-  const [expandedStages, setExpandedStages] = useState({
-    'New Inquiry': true,
-  });
+  const [expandedStages, setExpandedStages] = useState({});
   const [activeDropdownLeadId, setActiveDropdownLeadId] = useState(null);
 
   useEffect(() => {

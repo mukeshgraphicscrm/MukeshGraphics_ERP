@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AddProductModal({ isOpen, onClose, onProductAdded, onProductUpdated, onProductDeleted, productToEdit, startInEditMode }) {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
     name: '',
@@ -16,11 +18,13 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
     printing: '',
     unitPrice: '',
     image: '',
+    employee: currentUser?.profile?.name || '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [users, setUsers] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -47,12 +51,14 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   const fetchData = async () => {
     try {
-      const [catRes, custRes] = await Promise.all([
+      const [catRes, custRes, usersRes] = await Promise.all([
         api.get('/categories'),
-        api.get('/customers')
+        api.get('/customers'),
+        api.get('/users')
       ]);
       setCategories(catRes.data);
       setCustomers(custRes.data);
+      setUsers(usersRes.data);
     } catch (err) {
       console.error('Error fetching data:', err);
     }
@@ -70,6 +76,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         printing: productToEdit.printing || '',
         unitPrice: productToEdit.unitPrice ? formatIndianNumber(productToEdit.unitPrice) : '',
         image: productToEdit.image || '',
+        employee: productToEdit.employee || currentUser?.profile?.name || '',
       });
       setIsViewMode(!startInEditMode);
     } else {
@@ -83,10 +90,11 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         printing: '',
         unitPrice: '',
         image: '',
+        employee: currentUser?.profile?.name || '',
       });
       setIsViewMode(false);
     }
-  }, [productToEdit, isOpen]);
+  }, [productToEdit, isOpen, currentUser]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -114,7 +122,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name === 'category' || name === 'companyName') {
+    if (name === 'category' || name === 'companyName' || name === 'employee') {
       setFormData((prev) => ({ ...prev, [name]: value }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
@@ -260,6 +268,20 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
                 onChange={handleChange}
                 options={categoryOptions}
                 required
+                disabled={isViewMode}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <CustomSelect
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                options={[
+                  { label: 'Select Employee', value: '' },
+                  ...users.map(user => ({ label: user.name, value: user.name }))
+                ]}
                 disabled={isViewMode}
               />
             </div>

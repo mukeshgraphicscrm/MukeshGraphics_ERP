@@ -5,8 +5,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { generateQuotationPDF } from '../lib/pdfGenerator';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded, onQuotationUpdated, onQuotationDeleted, quotations = [], quotationToEdit, startInEditMode }) {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     quotationNo: '',
     companyName: '',
@@ -17,6 +19,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     price: '',
     status: 'Draft',
     date: new Date().toISOString().split('T')[0],
+    employee: currentUser?.profile?.name || '',
   });
 
   const [activeTab, setActiveTab] = useState('Customer Quotation');
@@ -25,6 +28,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
   const [leads, setLeads] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
@@ -77,11 +81,13 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       Promise.all([
         api.get('/customers'),
         api.get('/products'),
-        api.get('/leads')
-      ]).then(([custRes, prodRes, leadsRes]) => {
+        api.get('/leads'),
+        api.get('/users')
+      ]).then(([custRes, prodRes, leadsRes, usersRes]) => {
         setCustomers(custRes.data);
         setProducts(prodRes.data);
         setLeads(leadsRes.data);
+        setUsers(usersRes.data);
         setFetching(false);
       }).catch(err => {
         console.error('Error fetching data:', err);
@@ -109,13 +115,14 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
             }
           ].filter(i => i.productId),
           status: quotationToEdit.status || 'Draft',
+          employee: quotationToEdit.employee || currentUser?.profile?.name || '',
         });
       } else {
         setSavedForms({});
         initFreshForm('Customer Quotation');
       }
     }
-  }, [isOpen, quotations, quotationToEdit, startInEditMode]);
+  }, [isOpen, quotations, quotationToEdit, startInEditMode, currentUser]);
 
   const initFreshForm = (tab = 'Customer Quotation') => {
     const year = new Date().getFullYear();
@@ -142,6 +149,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       items: tab === 'Lead Quotation' ? [{ productId: '', specs: '', qty: '', price: '' }] : [],
       status: 'Draft',
       date: new Date().toISOString().split('T')[0],
+      employee: currentUser?.profile?.name || '',
     });
   };
 
@@ -246,7 +254,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     }
 
     let upperValue = value;
-    if (typeof value === 'string' && !['date', 'leadId'].includes(name)) {
+    if (typeof value === 'string' && !['date', 'leadId', 'employee'].includes(name)) {
       if (name === 'customerId' && activeTab === 'Customer Quotation') {
         upperValue = value;
       } else {
@@ -530,7 +538,21 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   onChange={handleChange}
                   required
                   disabled={isViewMode}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                <CustomSelect
+                  name="employee"
+                  value={formData.employee}
+                  onChange={handleChange}
+                  disabled={isViewMode}
+                  options={[
+                    { label: 'Select Employee', value: '' },
+                    ...users.map(user => ({ label: user.name, value: user.name }))
+                  ]}
                 />
               </div>
             </div>

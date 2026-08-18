@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { countries } from '../lib/countries';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onCustomerUpdated, customerToEdit, startInEditMode }) {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     brandName: '',
@@ -17,7 +19,9 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
     gstNumber: '',
     notes: '',
     rating: 0,
+    employee: currentUser?.profile?.name || '',
   });
+  const [users, setUsers] = useState([]);
   const [isViewMode, setIsViewMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,13 +39,26 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
         gstNumber: customerToEdit.gstNumber || '',
         notes: customerToEdit.notes || '',
         rating: customerToEdit.rating || 0,
+        employee: customerToEdit.employee || currentUser?.profile?.name || '',
       });
       setIsViewMode(!startInEditMode);
     } else {
-      setFormData({ name: '', brandName: '', contactPerson: '', mobile: '', city: '', state: '', country: 'India', gstNumber: '', notes: '', rating: 0 });
+      setFormData({ name: '', brandName: '', contactPerson: '', mobile: '', city: '', state: '', country: 'India', gstNumber: '', notes: '', rating: 0, employee: currentUser?.profile?.name || '' });
       setIsViewMode(false);
     }
-  }, [customerToEdit, isOpen]);
+
+    if (isOpen) {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
+    }
+  }, [customerToEdit, isOpen, currentUser]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -70,7 +87,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: name === 'country' ? value : value.toUpperCase() }));
+    setFormData((prev) => ({ ...prev, [name]: (name === 'country' || name === 'employee') ? value : value.toUpperCase() }));
   };
 
   const handleSubmit = async (e) => {
@@ -244,6 +261,20 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors disabled:bg-gray-50 disabled:text-gray-500"
                 placeholder="Add any additional notes here..."
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <CustomSelect
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                disabled={isViewMode}
+                options={[
+                  { label: 'Select Employee', value: '' },
+                  ...users.map(user => ({ label: user.name, value: user.name }))
+                ]}
               />
             </div>
             

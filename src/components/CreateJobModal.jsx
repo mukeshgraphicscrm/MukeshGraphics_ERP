@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import { useAuth } from '../contexts/AuthContext';
 
 const stageOptions = [
   { value: 'Printing', label: 'Printing' },
@@ -21,6 +22,7 @@ const statusOptions = [
 ];
 
 export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdated, jobs = [], jobToEdit }) {
+  const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     jobCardNo: '',
     productName: '',
@@ -32,10 +34,12 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     deadline: '',
     sheetQuantity: '',
     notes: '',
+    employee: currentUser?.profile?.name || '',
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [users, setUsers] = useState([]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -61,6 +65,16 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   useEffect(() => {
     if (isOpen) {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
+
       if (jobToEdit) {
         setFormData({
           jobCardNo: jobToEdit.jobCardNo || '',
@@ -73,6 +87,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           deadline: jobToEdit.deadline ? new Date(jobToEdit.deadline).toISOString().split('T')[0] : '',
           sheetQuantity: jobToEdit.sheetQuantity || '',
           notes: jobToEdit.notes || '',
+          employee: jobToEdit.employee || currentUser?.profile?.name || '',
         });
       } else {
         const currentYear = new Date().getFullYear();
@@ -103,10 +118,11 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           deadline: new Date().toISOString().split('T')[0],
           sheetQuantity: '',
           notes: '',
+          employee: currentUser?.profile?.name || '',
         });
       }
     }
-  }, [isOpen, jobs, jobToEdit]);
+  }, [isOpen, jobs, jobToEdit, currentUser]);
 
   if (!isOpen) return null;
 
@@ -285,6 +301,19 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 value={formData.deadline}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+              <CustomSelect
+                name="employee"
+                value={formData.employee}
+                onChange={handleChange}
+                options={[
+                  { label: 'Select Employee', value: '' },
+                  ...users.map(user => ({ label: user.name, value: user.name }))
+                ]}
               />
             </div>
 

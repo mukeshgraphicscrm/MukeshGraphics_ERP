@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrderUpdated, onOrderDeleted, orders = [], orderToEdit, startInEditMode, initialData }) {
+  const { currentUser } = useAuth();
   const [isViewMode, setIsViewMode] = useState(false);
   const [formData, setFormData] = useState({
     orderNo: '',
@@ -18,10 +20,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     deliveryDate: '',
     notes: '',
     status: 'Approved',
+    employee: currentUser?.profile?.name || '',
   });
 
   const [customers, setCustomers] = useState([]);
   const [products, setProducts] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
@@ -57,10 +61,12 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
       setFetching(true);
       Promise.all([
         api.get('/customers'),
-        api.get('/products')
-      ]).then(([custRes, prodRes]) => {
+        api.get('/products'),
+        api.get('/users')
+      ]).then(([custRes, prodRes, usersRes]) => {
         setCustomers(custRes.data);
         setProducts(prodRes.data);
+        setUsers(usersRes.data);
         setFetching(false);
       }).catch(err => {
         console.error('Error fetching data:', err);
@@ -92,6 +98,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           deliveryDate: orderToEdit.deliveryDate ? new Date(orderToEdit.deliveryDate).toISOString().split('T')[0] : '',
           notes: orderToEdit.notes || '',
           status: orderToEdit.status || 'Approved',
+          employee: orderToEdit.employee || currentUser?.profile?.name || '',
         });
       } else {
         let nextNum = 1;
@@ -141,12 +148,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           deliveryDate: new Date().toISOString().split('T')[0],
           notes: initialNotes,
           status: 'Approved',
+          employee: currentUser?.profile?.name || '',
         });
 
         setIsViewMode(false);
       }
     }
-  }, [isOpen, orders, orderToEdit, startInEditMode, initialData]);
+  }, [isOpen, orders, orderToEdit, startInEditMode, initialData, currentUser]);
 
   useEffect(() => {
     if (formData.customerId && formData.productId && formData.productId.length > 0) {
@@ -208,6 +216,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     const { name, value } = e.target;
     if (name === 'notes') {
       setFormData((prev) => ({ ...prev, [name]: typeof value === 'string' ? value.toUpperCase() : value }));
+    } else if (name === 'employee') {
+      setFormData((prev) => ({ ...prev, [name]: value }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -481,6 +491,20 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     disabled={isViewMode}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
                       }`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                  <CustomSelect
+                    name="employee"
+                    value={formData.employee}
+                    onChange={handleChange}
+                    disabled={isViewMode}
+                    options={[
+                      { label: 'Select Employee', value: '' },
+                      ...users.map(user => ({ label: user.name, value: user.name }))
+                    ]}
                   />
                 </div>
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import CustomSelect from './CustomSelect';
+import { countries } from '../lib/countries';
 
 export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onCustomerUpdated, customerToEdit, startInEditMode }) {
   const [formData, setFormData] = useState({
@@ -11,7 +13,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
     mobile: '',
     city: '',
     state: '',
-    country: '',
+    country: 'India',
     gstNumber: '',
     notes: '',
     rating: 0,
@@ -29,14 +31,14 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
         mobile: customerToEdit.mobile || '',
         city: customerToEdit.city || '',
         state: customerToEdit.state || '',
-        country: customerToEdit.country || '',
+        country: customerToEdit.country || 'India',
         gstNumber: customerToEdit.gstNumber || '',
         notes: customerToEdit.notes || '',
         rating: customerToEdit.rating || 0,
       });
       setIsViewMode(!startInEditMode);
     } else {
-      setFormData({ name: '', brandName: '', contactPerson: '', mobile: '', city: '', state: '', country: '', gstNumber: '', notes: '', rating: 0 });
+      setFormData({ name: '', brandName: '', contactPerson: '', mobile: '', city: '', state: '', country: 'India', gstNumber: '', notes: '', rating: 0 });
       setIsViewMode(false);
     }
   }, [customerToEdit, isOpen]);
@@ -68,7 +70,7 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
+    setFormData((prev) => ({ ...prev, [name]: name === 'country' ? value : value.toUpperCase() }));
   };
 
   const handleSubmit = async (e) => {
@@ -208,14 +210,13 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                <input
-                  type="text"
+                <CustomSelect
                   name="country"
-                  disabled={isViewMode}
                   value={formData.country}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors disabled:bg-gray-50 disabled:text-gray-500"
-                  placeholder="e.g. India"
+                  options={countries}
+                  disabled={isViewMode}
+                  searchable
                 />
               </div>
             </div>

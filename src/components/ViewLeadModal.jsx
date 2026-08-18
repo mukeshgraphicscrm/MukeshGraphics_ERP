@@ -95,7 +95,7 @@ export default function ViewLeadModal({ isOpen, onClose, lead, onEditClick }) {
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Location</p>
               <p className="text-base font-semibold text-gray-900">
-                {lead.city || lead.state ? `${lead.city}${lead.city && lead.state ? ', ' : ''}${lead.state}` : '-'}
+                {[lead.city, lead.state, lead.country].filter(Boolean).join(', ') || '-'}
               </p>
             </div>
             <div>

@@ -201,9 +201,9 @@ export default function Production() {
                     <div className="flex items-center gap-2 sm:gap-3">
                       <span className="text-sm font-medium text-gray-500">{job.jobCardNo}</span>
                       <span className={`whitespace-nowrap px-2 py-0.5 text-xs font-semibold rounded ${job.displayStatus === 'On Schedule' ? 'bg-emerald-100 text-emerald-700' :
-                          job.displayStatus === 'At Risk' ? 'bg-amber-100 text-amber-700' :
-                            job.displayStatus === 'Delayed' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
+                        job.displayStatus === 'At Risk' ? 'bg-amber-100 text-amber-700' :
+                          job.displayStatus === 'Delayed' ? 'bg-red-100 text-red-700' :
+                            'bg-gray-100 text-gray-700'
                         }`}>
                         {job.displayStatus}
                       </span>

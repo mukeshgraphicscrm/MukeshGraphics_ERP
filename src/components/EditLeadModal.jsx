@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
+import { countries } from '../lib/countries';
 
 export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDeleted, lead }) {
   const { currentUser } = useAuth();
@@ -15,6 +16,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
     email: '',
     city: '',
     state: '',
+    country: 'India',
     leadSource: 'Website',
     products: '',
     employee: '',
@@ -36,6 +38,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
         email: lead.email || '',
         city: lead.city || '',
         state: lead.state || '',
+        country: lead.country || 'India',
         leadSource: lead.leadSource || 'Website',
         products: lead.products || '',
         employee: lead.employee || currentUser?.profile?.name || '',
@@ -100,7 +103,7 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
 
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email' || name === 'country') ? value : value.toUpperCase()
     }));
   };
 
@@ -251,6 +254,17 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
                   placeholder="e.g. Maharashtra"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <CustomSelect
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                options={countries}
+                searchable
+              />
             </div>
 
             <div>

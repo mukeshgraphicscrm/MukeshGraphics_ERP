@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
+import { countries } from '../lib/countries';
 
 export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
   const { currentUser } = useAuth();
@@ -15,6 +16,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     email: '',
     city: '',
     state: '',
+    country: 'India',
     leadSource: 'Website',
     products: '',
     employee: currentUser?.profile?.name || '',
@@ -35,6 +37,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
         email: '',
         city: '',
         state: '',
+        country: 'India',
         leadSource: 'Website',
         products: '',
         employee: currentUser?.profile?.name || '',
@@ -92,7 +95,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
 
     setFormData(prev => ({
       ...prev,
-      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email') ? value : value.toUpperCase()
+      [name]: (name === 'stage' || name === 'employee' || name === 'date' || name === 'time' || name === 'leadSource' || name === 'email' || name === 'country') ? value : value.toUpperCase()
     }));
   };
 
@@ -123,7 +126,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
       if (onLeadAdded) onLeadAdded(res.data);
       toast.success('Lead added successfully!');
       setFormData({ 
-        company: '', contactPerson: '', mobile: '', email: '', city: '', state: '', leadSource: 'Website', products: '', employee: currentUser?.profile?.name || '', 
+        company: '', contactPerson: '', mobile: '', email: '', city: '', state: '', country: 'India', leadSource: 'Website', products: '', employee: currentUser?.profile?.name || '', 
         stage: 'New Inquiry', lostReason: '', followUps: [{ date: '', time: '', notes: '' }] 
       });
       onClose();
@@ -228,6 +231,17 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
                   placeholder="e.g. Maharashtra"
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+              <CustomSelect
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                options={countries}
+                searchable
+              />
             </div>
 
             <div>

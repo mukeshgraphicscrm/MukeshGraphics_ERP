@@ -2,13 +2,16 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-export default function CustomSelect({ options, value, onChange, placeholder = "Select...", name, required, placement = "bottom", icon: Icon, triggerClassName, disabled, isMulti = false }) {
+export default function CustomSelect({ options, value, onChange, placeholder = "Select...", name, required, placement = "bottom", icon: Icon, triggerClassName, disabled, isMulti = false, searchable = false }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
 
   const selectedOption = !isMulti ? options.find(opt => opt.value === value) : null;
   const selectedOptions = isMulti ? options.filter(opt => Array.isArray(value) && value.includes(opt.value)) : [];
+
+  const filteredOptions = searchable ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase())) : options;
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -69,12 +72,18 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       <div
         className={triggerClassName || `w-full ${Icon ? 'pl-9 pr-3' : 'px-3'} py-2 border rounded-md transition-colors ${disabled ? 'bg-gray-50 text-gray-500 cursor-not-allowed border-gray-300' : 'cursor-pointer bg-white border-gray-300 hover:border-gray-400'} flex justify-between items-center ${isOpen ? 'border-[#1b2f63] ring-2 ring-[#1b2f63]/50' : ''
           }`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(!isOpen);
+            if (!isOpen) setSearchTerm('');
+          }
+        }}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsOpen(!isOpen);
+            if (!isOpen) setSearchTerm('');
           }
         }}
       >
@@ -91,45 +100,61 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       <input type="hidden" name={name} value={isMulti ? (Array.isArray(value) ? value.join(',') : '') : value} required={required && (!value || value.length === 0)} />
 
       {isOpen && createPortal(
-        <div className={`custom-select-portal-element bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-y-auto focus:outline-none scrollbar-thin scrollbar-thumb-gray-300`} style={dropdownStyle}>
-          {options.length === 0 ? (
-            <div className="px-3 py-2 text-gray-500 text-sm">No options available</div>
-          ) : (
-            <ul className="py-1">
-              {options.map((option) => {
-                const isSelected = isMulti ? Array.isArray(value) && value.includes(option.value) : value === option.value;
-                return (
-                  <li
-                    key={option.value}
-                    className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${isSelected
-                      ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                      }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isMulti) {
-                        const currentValues = Array.isArray(value) ? value : [];
-                        const newValues = currentValues.includes(option.value)
-                          ? currentValues.filter(v => v !== option.value)
-                          : [...currentValues, option.value];
-                        onChange({ target: { name, value: newValues } });
-                      } else {
-                        onChange({ target: { name, value: option.value } });
-                        setIsOpen(false);
-                      }
-                    }}
-                  >
-                    {isMulti && (
-                      <div className={`w-4 h-4 mr-2 border rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-[#E8A33D] bg-[#E8A33D]' : 'border-gray-300'}`}>
-                        {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>}
-                      </div>
-                    )}
-                    <span className="truncate">{option.label}</span>
-                  </li>
-                );
-              })}
-            </ul>
+        <div className={`custom-select-portal-element bg-white border border-gray-200 rounded-md shadow-lg max-h-60 flex flex-col focus:outline-none`} style={dropdownStyle}>
+          {searchable && (
+            <div className="p-2 border-b border-gray-100 shrink-0">
+              <input
+                type="text"
+                autoFocus
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-[#1b2f63] focus:border-[#1b2f63]"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              />
+            </div>
           )}
+          <div className="overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 flex-1">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-2 text-gray-500 text-sm">No options available</div>
+            ) : (
+              <ul className="py-1">
+                {filteredOptions.map((option) => {
+                  const isSelected = isMulti ? Array.isArray(value) && value.includes(option.value) : value === option.value;
+                  return (
+                    <li
+                      key={option.value}
+                      className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${isSelected
+                        ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
+                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        }`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (isMulti) {
+                          const currentValues = Array.isArray(value) ? value : [];
+                          const newValues = currentValues.includes(option.value)
+                            ? currentValues.filter(v => v !== option.value)
+                            : [...currentValues, option.value];
+                          onChange({ target: { name, value: newValues } });
+                        } else {
+                          onChange({ target: { name, value: option.value } });
+                          setIsOpen(false);
+                        }
+                      }}
+                    >
+                      {isMulti && (
+                        <div className={`w-4 h-4 mr-2 border rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-[#E8A33D] bg-[#E8A33D]' : 'border-gray-300'}`}>
+                          {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>}
+                        </div>
+                      )}
+                      <span className="truncate">{option.label}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
         </div>,
         document.body
       )}

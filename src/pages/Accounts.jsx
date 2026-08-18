@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { Wallet, AlertCircle, TrendingUp, Plus } from 'lucide-react';
+import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
@@ -10,8 +10,13 @@ export default function Accounts() {
   const { invoices, setInvoices, customerMap: customers, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
-
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdownId(null);
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
   const totalOutstanding = invoices
     .filter(i => i.status !== 'Paid')
     .reduce((sum, i) => sum + i.amount + i.gst, 0);
@@ -37,6 +42,48 @@ export default function Accounts() {
     { header: 'GST', accessor: row => `₹${row.gst.toLocaleString('en-IN')}`, render: row => <span className="text-[13px] text-gray-500">₹{row.gst.toLocaleString('en-IN')}</span> },
     { header: 'DUE', accessor: row => new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), render: row => <span className="text-[13px] text-gray-500">{new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
+    { header: 'ACTIONS', accessor: row => row.id, render: row => (
+      <div className="relative">
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenDropdownId(openDropdownId === row.id ? null : row.id);
+          }}
+          className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+          title="More Actions"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+        {openDropdownId === row.id && (
+          <div className="absolute right-0 mt-1 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50">
+            <div className="py-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  setInvoiceToEdit(row);
+                  setIsModalOpen(true);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <Edit2 className="w-4 h-4 mr-2" /> Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenDropdownId(null);
+                  setInvoiceToEdit(row);
+                  setIsModalOpen(true);
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+              >
+                <Eye className="w-4 h-4 mr-2" /> View
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )},
   ];
 
   // Calculate customer ledger (group by customer, sum outstanding)
@@ -130,10 +177,6 @@ export default function Accounts() {
             searchPlaceholder="Search invoices..."
             columns={columns}
             data={invoices}
-            onRowClick={(row) => {
-              setInvoiceToEdit(row);
-              setIsModalOpen(true);
-            }}
           />
         </div>
 

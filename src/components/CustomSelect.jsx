@@ -96,8 +96,24 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
         <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''} flex-shrink-0 ml-2`} />
       </div>
 
-      {/* Hidden input to support required prop in forms */}
-      <input type="hidden" name={name} value={isMulti ? (Array.isArray(value) ? value.join(',') : '') : value} required={required && (!value || value.length === 0)} />
+      {/* Visually hidden input to support HTML5 required validation */}
+      <input 
+        type="text" 
+        name={name} 
+        value={isMulti ? (Array.isArray(value) ? value.join(',') : '') : (value || '')} 
+        onChange={() => {}}
+        required={required} 
+        style={{
+          position: 'absolute',
+          opacity: 0,
+          pointerEvents: 'none',
+          height: 0,
+          width: 0,
+          left: '50%',
+          bottom: 0,
+        }}
+        tabIndex={-1} 
+      />
 
       {isOpen && createPortal(
         <div className={`custom-select-portal-element bg-white border border-gray-200 rounded-md shadow-lg max-h-60 flex flex-col focus:outline-none`} style={dropdownStyle}>

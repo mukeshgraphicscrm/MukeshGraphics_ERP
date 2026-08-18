@@ -245,6 +245,29 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Manual validation
+    if (activeTab === 'Customer Quotation') {
+      if (!formData.companyName || !formData.customerId || !formData.productId || formData.productId.length === 0 || !formData.date) {
+        toast.error('Please fill in all required fields.');
+        return;
+      }
+    } else {
+      if (!formData.companyName || !formData.customerId || !formData.leadId || !formData.date) {
+        toast.error('Please fill in all required fields.');
+        return;
+      }
+      if (!formData.items || formData.items.length === 0) {
+        toast.error('Please add at least one product.');
+        return;
+      }
+      const invalidItems = formData.items.some(item => !item.productId || !item.specs || !item.qty || !item.price);
+      if (invalidItems) {
+        toast.error('Please complete all product details.');
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -343,7 +366,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         {fetching ? (
           <div className="p-8 text-center text-gray-500">Loading form data...</div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
+          <form onSubmit={handleSubmit} noValidate className="p-6 overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300">
             {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">

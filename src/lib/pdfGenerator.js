@@ -24,11 +24,10 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // Load Logo
   const logoBase64 = await loadImage('/logo.png');
 
-  // Brand Colors
-  const primaryColor = [27, 47, 99]; // #1b2f63
-  const accentColor = [232, 163, 61]; // #E8A33D
-  const grayText = [80, 80, 80];
-  const lightGray = [240, 240, 240];
+  // Brand Colors (from tailwind config)
+  const primaryColor = [30, 42, 74]; // #1E2A4A
+  const accentColor = [212, 165, 116]; // #D4A574
+  const lightGray = [245, 245, 245];
 
   // Helper for formatting Indian currency
   const formatMoney = (amount) => {
@@ -40,9 +39,6 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   const margin = 14;
 
   // --- HEADER SECTION ---
-
-  // Background for top header (Removed blue fill so logo text is visible on white)
-  // We'll use a clean white header with premium colored typography instead.
 
   // Title "ESTIMATE"
   doc.setTextColor(...primaryColor); // Use premium blue for title
@@ -56,7 +52,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // Center title
   doc.text("ESTIMATE", pageWidth / 2, 26, { align: 'center' });
 
-  // Add premium gold accent line below the header area
+  // Add premium accent line below the header area
   doc.setFillColor(...accentColor);
   doc.rect(0, 40, pageWidth, 2, 'F');
 
@@ -72,69 +68,44 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   doc.text(`Quotation No: ${quote.quotationNo || 'N/A'}`, pageWidth - margin, 20, { align: 'right' });
   doc.text(`Date: ${dateStr}`, pageWidth - margin, 27, { align: 'right' });
 
-  // --- COMPANY & CUSTOMER INFO ---
-
-  // Company Info (From)
-  let yPos = 55;
-  doc.setTextColor(...primaryColor);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("From:", margin, yPos);
-
-  yPos += 7;
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text("MUKESH GRAPHICS", margin, yPos);
-
-  yPos += 5;
-  doc.setTextColor(...grayText);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text("Bhavnagar, Gujarat.", margin, yPos);
-  yPos += 5;
-  doc.text("GST: 24ANVPB6301P1ZP", margin, yPos);
-  yPos += 5;
-  doc.text("MO: 9512007008 (Amanbhai)", margin, yPos);
-
-  // Customer Info (To)
+  // --- COMPANY & CUSTOMER INFO TABLE ---
+  
   const custName = customers[quote.customerId]?.name || quote.customerId || 'Customer';
   const custCity = customers[quote.customerId]?.city || '';
   const custGst = customers[quote.customerId]?.gstNumber || '';
   const custMobile = customers[quote.customerId]?.mobile || '';
 
-  let rightY = 55;
-  const rightX = pageWidth / 2 + 10;
+  const companyDetails = "MUKESH GRAPHICS\nBhavnagar, Gujarat.\nGST: 24ANVPB6301P1ZP\nMO: 9512007008 (Amanbhai)";
+  let customerDetails = custName.toUpperCase();
+  if (custCity) customerDetails += `\n${custCity.toUpperCase()}`;
+  if (custGst) customerDetails += `\nGST: ${custGst.toUpperCase()}`;
+  if (custMobile) customerDetails += `\nMO: ${custMobile}`;
 
-  doc.setTextColor(...primaryColor);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("To:", rightX, rightY);
+  autoTable(doc, {
+    startY: 48,
+    head: [['From:', 'To:']],
+    body: [[companyDetails, customerDetails]],
+    theme: 'grid',
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 11
+    },
+    bodyStyles: {
+      textColor: [0, 0, 0],
+      fontSize: 10,
+    },
+    columnStyles: {
+      0: { cellWidth: (pageWidth - margin * 2) / 2 },
+      1: { cellWidth: (pageWidth - margin * 2) / 2 },
+    },
+    margin: { left: margin, right: margin }
+  });
 
-  rightY += 7;
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(14);
-  doc.text(custName.toUpperCase(), rightX, rightY);
+  let yPos = doc.lastAutoTable.finalY + 10;
 
-  rightY += 5;
-  doc.setTextColor(...grayText);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  if (custCity) {
-    doc.text(custCity.toUpperCase(), rightX, rightY);
-    rightY += 5;
-  }
-  if (custGst) {
-    doc.text(`GST: ${custGst.toUpperCase()}`, rightX, rightY);
-    rightY += 5;
-  }
-  if (custMobile) {
-    doc.text(`MO: ${custMobile}`, rightX, rightY);
-    rightY += 5;
-  }
-
-  // --- TABLE SECTION ---
-
-  yPos = Math.max(yPos, rightY) + 15;
+  // --- ITEMS TABLE SECTION ---
 
   // Prepare table data
   const tableData = [];
@@ -199,77 +170,56 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     }
   });
 
-  // --- TOTALS SECTION ---
+  // --- TOTALS SECTION TABLE ---
 
-  yPos = doc.lastAutoTable.finalY + 5;
+  yPos = doc.lastAutoTable.finalY + 10;
 
   // Calculate GST (assuming 18%)
   const gstAmount = subtotal * 0.18;
   const finalTotal = subtotal + gstAmount;
 
-  const totalsX = pageWidth - margin;
-  const labelX = totalsX - 45;
+  const totalsData = [
+    ['Total', formatMoney(subtotal)],
+    ['+ Courier charges', '-'],
+    ['+ Transportation', '-'],
+    ['+ 18 % GST', formatMoney(gstAmount)],
+    ['+ Previous Due', '-'],
+    ['TOTAL', formatMoney(finalTotal)],
+    ['- Advance', '-'],
+    ['TOTAL AMOUNT', formatMoney(finalTotal)],
+  ];
 
-  // Add totals background
-  doc.setFillColor(250, 250, 250);
-  doc.rect(labelX - 45, yPos - 3, totalsX - (labelX - 45) + margin, 52, 'F');
+  autoTable(doc, {
+    startY: yPos,
+    body: totalsData,
+    theme: 'grid',
+    styles: {
+      fontSize: 10,
+      textColor: [0, 0, 0],
+      cellPadding: 4,
+    },
+    columnStyles: {
+      0: { halign: 'right', fontStyle: 'bold', fillColor: [250, 250, 250] },
+      1: { halign: 'right', cellWidth: 40 },
+    },
+    margin: { left: pageWidth - 120, right: margin }, // align to right
+    didParseCell: function (data) {
+      if (data.row.index === 5 || data.row.index === 7) {
+        data.cell.styles.fontStyle = 'bold';
+        if (data.row.index === 7) {
+            data.cell.styles.textColor = [220, 38, 38]; // Red color for final amount
+        } else {
+            data.cell.styles.textColor = primaryColor;
+        }
+      }
+    }
+  });
 
-  doc.setFontSize(10);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont("helvetica", "normal");
-
-  // 1. Total
-  yPos += 5;
-  doc.text("Total", labelX, yPos, { align: 'right' });
-  doc.text(formatMoney(subtotal), totalsX, yPos, { align: 'right' });
-
-  // 2. + Courier charges
-  yPos += 6;
-  doc.text("+ Courier charges", labelX, yPos, { align: 'right' });
-  doc.text("-", totalsX, yPos, { align: 'right' });
-
-  // 3. + Transportation :
-  yPos += 6;
-  doc.text("+ Transportation :", labelX, yPos, { align: 'right' });
-  doc.text("-", totalsX, yPos, { align: 'right' });
-
-  // 4. + 18 % GST
-  yPos += 6;
-  doc.text("+ 18 % GST", labelX, yPos, { align: 'right' });
-  doc.text(formatMoney(gstAmount), totalsX, yPos, { align: 'right' });
-
-  // 5. + Previous Due
-  yPos += 6;
-  doc.text("+ Previous Due", labelX, yPos, { align: 'right' });
-  doc.text("-", totalsX, yPos, { align: 'right' });
-
-  // 6. TOTAL (highlighted)
-  yPos += 2;
-  doc.setFillColor(230, 230, 235);
-  doc.rect(labelX - 40, yPos, totalsX - (labelX - 40), 7, 'F');
-  yPos += 5;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...primaryColor);
-  doc.text("TOTAL", labelX, yPos, { align: 'right' });
-  doc.text(formatMoney(finalTotal), totalsX, yPos, { align: 'right' });
-
-  // 7. - Advance :
-  yPos += 8;
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(0, 0, 0);
-  doc.text("- Advance :", labelX, yPos, { align: 'right' });
-  doc.text("-", totalsX, yPos, { align: 'right' });
-
-  // 8. TOTAL AMOUNT (red/colored)
-  yPos += 8;
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(220, 38, 38); // Red color
-  doc.text("TOTAL AMOUNT", labelX, yPos, { align: 'right' });
-  doc.text(formatMoney(finalTotal), totalsX, yPos, { align: 'right' });
+  yPos = doc.lastAutoTable.finalY;
 
   // --- FOOTER NOTE ---
   const pageBottom = pageHeight - 30;
-  yPos = Math.max(yPos + 20, pageBottom - 20); // ensure it's not overlapping totals
+  yPos = Math.max(yPos + 15, pageBottom - 20); // ensure it's not overlapping totals
 
   doc.setFillColor(255, 248, 204); // subtle highlight yellow
   doc.rect(margin, yPos, pageWidth - margin * 2, 20, 'F');

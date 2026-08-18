@@ -67,7 +67,10 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers, onInvoi
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    if (name === 'invoiceNo') {
+      value = value.toUpperCase();
+    }
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 

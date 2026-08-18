@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Phone, MapPin, Plus, Trash2, MoreVertical, Edit2, Package } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import AddCustomerModal from '../components/AddCustomerModal';
@@ -17,7 +17,6 @@ export default function Customers() {
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
   const [customerForHistory, setCustomerForHistory] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [openDropdownId, setOpenDropdownId] = useState(null);
   const [startInEditMode, setStartInEditMode] = useState(false);
 
   const customerBusinessMap = React.useMemo(() => {
@@ -29,12 +28,6 @@ export default function Customers() {
     });
     return map;
   }, [orders]);
-
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdownId(null);
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
 
   const confirmDeleteCustomer = (customer, e) => {
     e.stopPropagation();
@@ -107,57 +100,19 @@ export default function Customers() {
       <span className="font-bold text-gray-900 text-[13px]">₹{(customerBusinessMap[row.id] || 0).toLocaleString('en-IN')}</span>
     )},
     { header: 'Actions', accessor: row => row.id, render: row => (
-      <div className="relative">
-        <button 
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpenDropdownId(openDropdownId === row.id ? null : row.id);
-          }}
-          className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
-          title="More Actions"
-        >
-          <MoreVertical className="w-4 h-4" />
-        </button>
-        {openDropdownId === row.id && (
-          <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-100 z-50">
-            <div className="py-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdownId(null);
-                  setStartInEditMode(true);
-                  setCustomerToEdit(row);
-                  setIsModalOpen(true);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
-              >
-                <Edit2 className="w-4 h-4 mr-2" /> Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdownId(null);
-                  setCustomerForHistory(row);
-                  setHistoryModalOpen(true);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
-              >
-                <Package className="w-4 h-4 mr-2" /> View Order History
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setOpenDropdownId(null);
-                  confirmDeleteCustomer(row, e);
-                }}
-                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-              >
-                <Trash2 className="w-4 h-4 mr-2" /> Delete
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <CustomerActions 
+        row={row}
+        onEdit={(r) => {
+          setStartInEditMode(true);
+          setCustomerToEdit(r);
+          setIsModalOpen(true);
+        }}
+        onViewHistory={(r) => {
+          setCustomerForHistory(r);
+          setHistoryModalOpen(true);
+        }}
+        onDelete={(r, e) => confirmDeleteCustomer(r, e)}
+      />
     )},
   ];
 
@@ -238,3 +193,84 @@ export default function Customers() {
     </div>
   );
 }
+
+const CustomerActions = ({ row, onEdit, onViewHistory, onDelete }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target) &&
+        buttonRef.current && !buttonRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
+
+  const toggleMenu = (e) => {
+    e.stopPropagation();
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.right - 192 }); // w-48 is 192px
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div onClick={e => e.stopPropagation()}>
+      <button 
+        ref={buttonRef}
+        onClick={toggleMenu}
+        className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
+        title="More Actions"
+      >
+        <MoreVertical className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div 
+          ref={menuRef}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+          className="w-48 bg-white rounded-md shadow-[0_0_15px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] py-1"
+        >
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsOpen(false); onEdit(row); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            <Edit2 className="w-4 h-4 mr-2" /> Edit
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsOpen(false); onViewHistory(row); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            <Package className="w-4 h-4 mr-2" /> View Order History
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); setIsOpen(false); onDelete(row, e); }}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+

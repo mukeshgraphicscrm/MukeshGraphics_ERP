@@ -35,9 +35,9 @@ export default function Dispatch() {
     { header: 'CUSTOMER', accessor: row => row.customer || customers[row.customerId]?.name || 'DELETED CUSTOMER', render: row => <span className="text-[13px] text-gray-700 font-medium">{row.customer || customers[row.customerId]?.name || 'DELETED CUSTOMER'}</span> },
     {
       header: 'TRANSPORTER', accessor: row => row.vehicleNo, render: row => (
-        <div className="flex items-center text-gray-600 text-[13px]">
-          <Truck className="w-4 h-4 mr-2 text-gray-400" />
-          <span className="font-mono">{row.vehicleNo}</span>
+        <div className="flex items-center text-gray-800 text-[15px]">
+          <Truck className="w-5 h-5 mr-2 text-gray-500" />
+          <span className="uppercase">{row.vehicleNo}</span>
         </div>
       )
     },

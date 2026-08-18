@@ -138,7 +138,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       customerId: '',
       leadId: '',
       productId: [],
-      items: [],
+      items: tab === 'Lead Quotation' ? [{ productId: '', specs: '', qty: '', price: '' }] : [],
       status: 'Draft',
     });
   };
@@ -211,6 +211,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
           }
         }
       }
+
+      // Auto-fill company and customer name if lead is selected
+      if (name === 'leadId' && value) {
+        const selectedLead = leads.find(l => l.id === value);
+        if (selectedLead) {
+          newData.companyName = (selectedLead.company || '').toUpperCase();
+          newData.customerId = (selectedLead.contactPerson || '').toUpperCase();
+        }
+      }
+
       return newData;
     });
   };
@@ -223,7 +233,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       } else {
         newItems[index] = { ...newItems[index], [field]: typeof value === 'string' ? value.toUpperCase() : value };
       }
-      return { ...prev, items: newItems };
+      let newProductIds = prev.productId;
+      if (activeTab === 'Lead Quotation' && field === 'productId') {
+        newProductIds = newItems.map(i => i.productId).filter(Boolean);
+      }
+      return { ...prev, items: newItems, productId: newProductIds };
     });
   };
 
@@ -394,27 +408,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                 )}
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                {activeTab === 'Lead Quotation' ? (
-                  <input
-                    type="text"
-                    name="productNameLead"
-                    value={formData.productId?.[0] || ''}
-                    onChange={(e) => {
-                       const val = e.target.value.toUpperCase();
-                       setFormData(prev => ({
-                         ...prev,
-                         productId: [val],
-                         items: [{ productId: val, specs: prev.items?.[0]?.specs || '', qty: prev.items?.[0]?.qty || '', price: prev.items?.[0]?.price || '' }]
-                       }));
-                    }}
-                    required
-                    disabled={isViewMode}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`}
-                    placeholder="Enter Product Name"
-                  />
-                ) : (
+              {activeTab === 'Customer Quotation' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
                   <CustomSelect
                     name="productId"
                     value={formData.productId}
@@ -425,11 +421,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                     disabled={isViewMode || !formData.companyName}
                     isMulti={true}
                   />
-                )}
-              </div>
+                </div>
+              )}
 
               {activeTab === 'Lead Quotation' && (
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead (Optional)</label>
                   <CustomSelect
                     name="leadId"
@@ -448,8 +444,40 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                 {formData.items.map((item, index) => {
                   const productName = activeTab === 'Lead Quotation' ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
                   return (
-                    <div key={item.productId} className="border-t border-gray-100 pt-4">
-                      <h3 className="text-sm font-bold text-[#E8A33D] mb-3">{productName}</h3>
+                    <div key={index} className="border-t border-gray-100 pt-4 relative group">
+                      {activeTab === 'Lead Quotation' ? (
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
+                          <input
+                            type="text"
+                            required
+                            value={item.productId || ''}
+                            onChange={(e) => handleItemChange(index, 'productId', e.target.value)}
+                            disabled={isViewMode}
+                            className={`w-full px-3 py-2 ${formData.items.length > 1 ? 'pr-10' : ''} border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                            placeholder="Enter Product Name"
+                          />
+                        </div>
+                      ) : (
+                        <h3 className="text-sm font-bold text-[#E8A33D] mb-3">{productName}</h3>
+                      )}
+                      
+                      {activeTab === 'Lead Quotation' && !isViewMode && formData.items.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setFormData(prev => {
+                              const newItems = [...prev.items];
+                              newItems.splice(index, 1);
+                              return { ...prev, items: newItems, productId: newItems.map(i => i.productId).filter(Boolean) };
+                            });
+                          }}
+                          className="absolute top-4 right-0 text-gray-400 hover:text-red-500 transition-colors p-2 bg-gray-50 hover:bg-red-50 rounded-md"
+                          title="Remove Product"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                         <div className="md:col-span-2">
                           <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs *</label>
@@ -496,6 +524,20 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                     </div>
                   );
                 })}
+                {activeTab === 'Lead Quotation' && !isViewMode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        items: [...(prev.items || []), { productId: '', specs: '', qty: '', price: '' }]
+                      }));
+                    }}
+                    className="text-[#E8A33D] hover:text-[#c78b32] text-sm font-bold flex items-center gap-1 mt-2 transition-colors"
+                  >
+                    + Add Another Product
+                  </button>
+                )}
               </div>
             )}
 

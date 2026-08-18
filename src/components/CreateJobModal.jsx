@@ -30,6 +30,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     status: 'On Schedule',
     progress: '0',
     deadline: '',
+    sheetQuantity: '',
     notes: '',
   });
 
@@ -70,6 +71,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           status: jobToEdit.status || 'On Schedule',
           progress: jobToEdit.progress || '0',
           deadline: jobToEdit.deadline ? new Date(jobToEdit.deadline).toISOString().split('T')[0] : '',
+          sheetQuantity: jobToEdit.sheetQuantity || '',
           notes: jobToEdit.notes || '',
         });
       } else {
@@ -99,6 +101,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           status: 'On Schedule',
           progress: '0',
           deadline: new Date().toISOString().split('T')[0],
+          sheetQuantity: '',
           notes: '',
         });
       }
@@ -144,6 +147,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         ...formData,
         units: Number(formData.units),
         progress: Number(formData.progress),
+        sheetQuantity: formData.sheetQuantity ? Number(formData.sheetQuantity) : null,
       };
       if (jobToEdit) {
         const res = await api.put(`/productionJobs/${jobToEdit.id}`, payload);
@@ -227,6 +231,19 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 onChange={handleChange}
                 options={stageOptions}
                 required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sheet Quantity</label>
+              <input
+                type="number"
+                name="sheetQuantity"
+                min="0"
+                value={formData.sheetQuantity || ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                placeholder="e.g. 500"
               />
             </div>
 

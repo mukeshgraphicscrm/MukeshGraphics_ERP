@@ -56,7 +56,9 @@ export default function Production() {
     return { ...job, displayStatus: derivedStatus };
   });
 
-  const filteredJobs = processedJobs.filter(job => {
+  const activeProcessedJobs = processedJobs.filter(j => j.stage !== 'Dispatched');
+
+  const filteredJobs = activeProcessedJobs.filter(job => {
     let match = true;
     if (statusFilter !== 'All' && job.displayStatus !== statusFilter) {
       match = false;
@@ -101,28 +103,28 @@ export default function Production() {
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-brand-line">
             <div>
               <p className="text-xs font-medium text-gray-500">Active Jobs</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.length}</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{activeProcessedJobs.length}</p>
             </div>
             <Settings className="w-6 h-6 text-brand-line opacity-20" />
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-green-500">
             <div>
               <p className="text-xs font-medium text-gray-500">On Schedule</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'On Schedule').length}</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{activeProcessedJobs.filter(j => j.displayStatus === 'On Schedule').length}</p>
             </div>
             <Clock className="w-6 h-6 text-green-500 opacity-20" />
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-amber-500">
             <div>
               <p className="text-xs font-medium text-gray-500">At Risk</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'At Risk').length}</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{activeProcessedJobs.filter(j => j.displayStatus === 'At Risk').length}</p>
             </div>
             <AlertTriangle className="w-6 h-6 text-amber-500 opacity-20" />
           </div>
           <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between border-l-4 border-l-red-500">
             <div>
               <p className="text-xs font-medium text-gray-500">Delayed</p>
-              <p className="text-xl font-bold text-gray-900 mt-1">{processedJobs.filter(j => j.displayStatus === 'Delayed').length}</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{activeProcessedJobs.filter(j => j.displayStatus === 'Delayed').length}</p>
             </div>
             <AlertTriangle className="w-6 h-6 text-red-500 opacity-20" />
           </div>
@@ -200,6 +202,9 @@ export default function Production() {
                   <div className="flex flex-wrap justify-between items-start gap-2 mb-2">
                     <div className="flex items-center gap-2 sm:gap-3">
                       <span className="text-sm font-medium text-gray-500">{job.jobCardNo}</span>
+                      <span className="text-sm text-gray-400 font-medium whitespace-nowrap">
+                        | Date: {job.createdAt ? new Date(job.createdAt).toLocaleDateString('en-IN') : '-'}
+                      </span>
                       <span className={`whitespace-nowrap px-2 py-0.5 text-xs font-semibold rounded ${job.displayStatus === 'On Schedule' ? 'bg-emerald-100 text-emerald-700' :
                         job.displayStatus === 'At Risk' ? 'bg-amber-100 text-amber-700' :
                           job.displayStatus === 'Delayed' ? 'bg-red-100 text-red-700' :
@@ -209,11 +214,11 @@ export default function Production() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-sm font-bold shrink-0">
-                        {getInitials(job.customerName)}
-                      </div>
-                      <span className="whitespace-nowrap px-3 py-1 bg-red-50 text-red-500 text-xs font-medium rounded-full border border-red-100">
+                      <span className="whitespace-nowrap px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-100 uppercase tracking-wider">
                         {job.stage}
+                      </span>
+                      <span className="text-xl font-bold text-emerald-600">
+                        {job.progress}%
                       </span>
                     </div>
                   </div>
@@ -229,26 +234,27 @@ export default function Production() {
                   </div>
 
                   {/* Progress Tracker */}
-                  <div className="w-full">
-                    {/* Continuous Progress Bar */}
-                    <div className="flex items-center mb-6">
-                      <div className="flex-1 bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-red-500 h-1.5 rounded-full transition-all duration-500"
-                          style={{ width: `${job.progress || 0}%` }}
-                        ></div>
-                      </div>
-                      <div className="ml-4 font-bold text-sm text-gray-900 w-10 text-right">
-                        {job.progress}%
-                      </div>
-                    </div>
-
+                  <div className="w-full mt-2">
                     {/* Segmented Pipeline */}
+                    <div className="flex space-x-1 mb-1 pr-14 items-end">
+                      {stages.map((stageItem, index) => {
+                        const isCurrent = index === currentStageIndex;
+                        return (
+                          <div key={`qty-${stageItem.id}`} className="flex-1 text-center h-4">
+                            {isCurrent && job.sheetQuantity && (
+                              <div className="text-[10px] text-gray-800 font-bold leading-none">
+                                {job.sheetQuantity} Sht
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
                     <div className="flex space-x-1 mb-2 pr-14">
                       {stages.map((stageItem, index) => {
                         const isCompleted = index <= currentStageIndex;
                         return (
-                          <div key={`bar-${stageItem.id}`} className={`flex-1 h-1 rounded-full ${isCompleted ? 'bg-red-500' : 'bg-gray-100'}`}></div>
+                          <div key={`bar-${stageItem.id}`} className={`flex-1 h-1 rounded-full ${isCompleted ? 'bg-emerald-500' : 'bg-gray-100'}`}></div>
                         );
                       })}
                     </div>
@@ -256,7 +262,7 @@ export default function Production() {
                       {stages.map((stageItem, index) => {
                         const isCurrent = index === currentStageIndex;
                         return (
-                          <div key={`label-${stageItem.id}`} className={`flex-1 text-center text-[10px] sm:text-xs font-medium truncate ${isCurrent ? 'text-red-500' : 'text-gray-400'}`}>
+                          <div key={`label-${stageItem.id}`} className={`flex-1 text-center text-[10px] sm:text-xs font-medium truncate ${isCurrent ? 'text-emerald-600' : 'text-gray-400'}`}>
                             {stageItem.name}
                           </div>
                         );

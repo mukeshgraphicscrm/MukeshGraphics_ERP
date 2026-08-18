@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import CustomSelect from './CustomSelect';
 
 export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchScheduled, onDispatchUpdated, dispatchToEdit, initialData }) {
   const [formData, setFormData] = useState({
@@ -18,13 +19,21 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
   useEffect(() => {
     if (isOpen) {
       if (dispatchToEdit) {
+        const normalizeStatus = (s) => {
+          if (!s) return 'Scheduled';
+          const match = ['Scheduled', 'Loading', 'Out For Delivery', 'Delivered'].find(
+            (opt) => opt.toLowerCase() === s.toLowerCase()
+          );
+          return match || s;
+        };
+
         setFormData({
           dispatchNo: dispatchToEdit.dispatchNo || '',
           customer: dispatchToEdit.customer || '',
           vehicleNo: dispatchToEdit.vehicleNo || '',
           driver: dispatchToEdit.driver || '',
           date: dispatchToEdit.date || '',
-          status: dispatchToEdit.status || 'Scheduled',
+          status: normalizeStatus(dispatchToEdit.status),
         });
       } else {
         api.get('/dispatches').then(res => {
@@ -37,7 +46,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
             nextNum = Math.max(...nums) + 1;
           }
           const nextDispatchNo = `${prefix}${String(nextNum).padStart(3, '0')}`;
-          
+
           setFormData({
             dispatchNo: nextDispatchNo,
             customer: initialData ? initialData.customer || '' : '',
@@ -88,7 +97,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const upperValue = typeof value === 'string' && name !== 'date' ? value.toUpperCase() : value;
+    const upperValue = typeof value === 'string' && !['date', 'status'].includes(name) ? value.toUpperCase() : value;
     setFormData((prev) => ({ ...prev, [name]: upperValue }));
   };
 
@@ -101,7 +110,7 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
         ...(dispatchToEdit || {}),
         ...formData,
       };
-      
+
       if (!dispatchToEdit) {
         payload.createdAt = new Date().toISOString();
       }
@@ -136,10 +145,10 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
             <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
-          
+
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -211,21 +220,22 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select
+                <CustomSelect
                   name="status"
                   value={formData.status}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
-                >
-                  <option value="Scheduled">Scheduled</option>
-                  <option value="Loading">Loading</option>
-                  <option value="Out For Delivery">Out For Delivery</option>
-                  <option value="Delivered">Delivered</option>
-                </select>
+                  options={[
+                    { value: 'Scheduled', label: 'Scheduled' },
+                    { value: 'Loading', label: 'Loading' },
+                    { value: 'Out For Delivery', label: 'Out For Delivery' },
+                    { value: 'Delivered', label: 'Delivered' }
+                  ]}
+                  required
+                />
               </div>
             </div>
           </div>
-          
+
           <div className="mt-8 flex justify-end space-x-3">
             <button
               type="button"

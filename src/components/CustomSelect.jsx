@@ -63,6 +63,8 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
     }
   }); // Runs on every render to sync position dynamically
 
+  const openTimeRef = useRef(0);
+
   useEffect(() => {
     const handleScrollOrResize = (e) => {
       if (!isOpen) return;
@@ -70,8 +72,20 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       if (e.target && e.target.closest && e.target.closest('.custom-select-portal-element')) {
         return;
       }
+      
+      // On resize (like mobile keyboard opening), don't close, just let it reposition
+      if (e.type === 'resize') {
+        return;
+      }
+
+      // Ignore scroll events immediately after opening (often caused by keyboard auto-scroll)
+      if (e.type === 'scroll' && Date.now() - openTimeRef.current < 500) {
+        return;
+      }
+
       setIsOpen(false);
     };
+    
     if (isOpen) {
       window.addEventListener('scroll', handleScrollOrResize, true);
       window.addEventListener('resize', handleScrollOrResize);
@@ -89,16 +103,22 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
           }`}
         onClick={() => {
           if (!disabled) {
+            if (!isOpen) {
+              setSearchTerm('');
+              openTimeRef.current = Date.now();
+            }
             setIsOpen(!isOpen);
-            if (!isOpen) setSearchTerm('');
           }
         }}
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
+            if (!isOpen) {
+              setSearchTerm('');
+              openTimeRef.current = Date.now();
+            }
             setIsOpen(!isOpen);
-            if (!isOpen) setSearchTerm('');
           }
         }}
       >

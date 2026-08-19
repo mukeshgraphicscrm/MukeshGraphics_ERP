@@ -80,7 +80,7 @@ export default function Topbar({ onMenuClick }) {
 
           {/* Profile */}
           <div className="flex items-center space-x-3 border-l border-gray-200 pl-4 md:pl-6">
-            <div className="text-right hidden sm:block">
+            <div className="text-right">
               <div className="text-sm font-medium text-gray-900 leading-none">{name}</div>
               <div className="text-xs text-gray-500 mt-1">{designation}</div>
             </div>

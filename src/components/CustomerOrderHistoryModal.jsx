@@ -26,7 +26,7 @@ export default function CustomerOrderHistoryModal({ isOpen, onClose, customer, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-3xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
           <div>
             <h2 className="text-lg font-bold text-gray-900">Order History</h2>

@@ -29,8 +29,8 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-md overflow-hidden transform transition-all">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-md transform transition-all flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-bold text-gray-900 flex items-center text-red-600">
             <AlertTriangle className="w-5 h-5 mr-2" />
             {title || 'Confirm Delete'}
@@ -40,7 +40,7 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
           </button>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto custom-scrollbar">
           <p className="text-gray-600 text-sm">
             {message || 'Are you sure you want to delete this item? This action cannot be undone.'}
           </p>

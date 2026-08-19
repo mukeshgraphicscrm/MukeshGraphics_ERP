@@ -40,7 +40,7 @@ export default function LostReasonModal({ isOpen, onClose, lead, onConfirm }) {
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-red-50 shrink-0">
           <h2 className="text-lg font-bold text-red-700">Mark Lead as Lost</h2>
           <button onClick={onClose} className="text-red-400 hover:text-red-600 transition-colors">

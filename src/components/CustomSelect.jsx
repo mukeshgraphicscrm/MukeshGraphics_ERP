@@ -29,17 +29,32 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
   useLayoutEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      const top = placement === 'bottom' ? rect.bottom + 4 : 'auto';
-      const bottom = placement === 'top' ? window.innerHeight - rect.top + 4 : 'auto';
       
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      let actualPlacement = placement;
+      if (placement === 'bottom' && spaceBelow < 240 && spaceAbove > spaceBelow) {
+        actualPlacement = 'top';
+      } else if (placement === 'top' && spaceAbove < 240 && spaceBelow > spaceAbove) {
+        actualPlacement = 'bottom';
+      }
+
+      const top = actualPlacement === 'bottom' ? rect.bottom + 4 : 'auto';
+      const bottom = actualPlacement === 'top' ? window.innerHeight - rect.top + 4 : 'auto';
+      
+      const maxAvailableSpace = actualPlacement === 'bottom' ? spaceBelow - 16 : spaceAbove - 16;
+      const finalMaxHeight = Math.min(240, Math.max(100, maxAvailableSpace));
+
       setDropdownStyle(prev => {
-        if (prev.top !== top || prev.left !== rect.left || prev.width !== rect.width) {
+        if (prev.top !== top || prev.bottom !== bottom || prev.left !== rect.left || prev.width !== rect.width || prev.maxHeight !== finalMaxHeight) {
           return {
             position: 'fixed',
             top,
             bottom,
             left: rect.left,
             width: rect.width,
+            maxHeight: finalMaxHeight,
             zIndex: 99999,
           };
         }

@@ -119,6 +119,25 @@ export function DataProvider({ children }) {
     }
   }, [currentUser, isLoaded, fetchAll]);
 
+  // Poll notifications every 10 seconds
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const fetchNotifications = async () => {
+      try {
+        const res = await api.get('/notifications');
+        const allNotifs = Array.isArray(res.data) ? res.data : [];
+        setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+      } catch (err) {
+        console.error('Failed to poll notifications:', err);
+      }
+    };
+
+    const intervalId = setInterval(fetchNotifications, 10000);
+
+    return () => clearInterval(intervalId);
+  }, [currentUser]);
+
   // Helper maps derived from arrays — Array.isArray guards prevent crashes if any state is non-array
   const customerMap = React.useMemo(() => {
     const m = {};

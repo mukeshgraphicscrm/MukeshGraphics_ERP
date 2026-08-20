@@ -280,7 +280,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         let phone = customer?.mobile || customer?.phone || '';
 
         if (phone) {
-          let message = `Hello, your order has been confirmed!\nWe will keep you updated.\n\n*Order Details:*\n*Order No:* ${res.data.orderNo}\n*Date:* ${new Date(res.data.orderDate).toLocaleDateString()}\n\n*Products:*\n`;
+          const customerName = customer?.name || 'Customer';
+          const contactPerson = customer?.contactPerson || 'Sir/Madam';
+
+          let message = `Dear ${contactPerson},\n\nThank you for choosing Mukesh Graphics! We are pleased to confirm your order for *${customerName}*.\n\n*Order Details:*\n*Order No:* ${res.data.orderNo}\n*Order Date:* ${new Date(res.data.orderDate).toLocaleDateString('en-IN')}\n\n*Products:*\n`;
           let totalAmt = 0;
           (res.data.productId || []).forEach((prodId, index) => {
             const product = products.find(p => p.id === prodId);
@@ -290,7 +293,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
             totalAmt += amount;
             message += `${index + 1}. *${productName}*\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
           });
-          message += `\n*Total Amount:* ₹${totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          message += `\n*Total Amount:* ₹${totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nWe will keep you updated on the production status. Please feel free to reach out if you have any questions.\n\nBest Regards,\n*Mukesh Graphics*`;
           
           let formattedPhone = phone.replace(/\D/g, '');
           if (formattedPhone.length === 10) {

@@ -6,13 +6,14 @@ import ScheduleDispatchModal from '../components/ScheduleDispatchModal';
 import CustomSelect from '../components/CustomSelect';
 import { useData } from '../contexts/DataContext';
 const stages = [
-  { id: 1, name: 'Printing', key: 'Printing' },
-  { id: 2, name: 'Lamination', key: 'Lamination' },
-  { id: 3, name: 'Punching', key: 'Punching' },
-  { id: 4, name: 'Striping', key: 'Striping' },
-  { id: 5, name: 'Pasting', key: 'Pasting' },
-  { id: 6, name: 'Ready To Dispatch', key: 'Ready To Dispatch' },
-  { id: 7, name: 'Dispatched', key: 'Dispatched' },
+  { id: 1, name: 'Start', key: 'Start' },
+  { id: 2, name: 'Printing', key: 'Printing' },
+  { id: 3, name: 'Lamination', key: 'Lamination' },
+  { id: 4, name: 'Punching', key: 'Punching' },
+  { id: 5, name: 'Striping', key: 'Striping' },
+  { id: 6, name: 'Pasting', key: 'Pasting' },
+  { id: 7, name: 'Ready To Dispatch', key: 'Ready To Dispatch' },
+  { id: 8, name: 'Dispatched', key: 'Dispatched' },
 ];
 
 export default function Production() {
@@ -304,6 +305,9 @@ export default function Production() {
             setDispatchInitialData({ customer: updatedJob.customerName });
             setIsScheduleDispatchOpen(true);
           }
+        }}
+        onJobDeleted={(deletedJobId) => {
+          setJobs(prev => prev.filter(j => j.id !== deletedJobId));
         }}
         jobs={jobs}
         jobToEdit={editingJob}

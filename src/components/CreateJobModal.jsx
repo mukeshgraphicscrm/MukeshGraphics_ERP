@@ -5,8 +5,10 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 const stageOptions = [
+  { value: 'Start', label: 'Start' },
   { value: 'Printing', label: 'Printing' },
   { value: 'Lamination', label: 'Lamination' },
   { value: 'Punching', label: 'Punching' },
@@ -22,7 +24,7 @@ const statusOptions = [
   { value: 'Delayed', label: 'Delayed' },
 ];
 
-export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdated, jobs = [], jobToEdit }) {
+export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdated, onJobDeleted, jobs = [], jobToEdit }) {
   const { currentUser } = useAuth();
   const { customers, products } = useData();
   const [formData, setFormData] = useState({
@@ -30,7 +32,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     productName: '',
     customerName: '',
     units: '',
-    stage: 'Printing',
+    stage: 'Start',
     status: 'On Schedule',
     progress: '0',
     deadline: '',
@@ -43,6 +45,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
   const [showWhatsappMenu, setShowWhatsappMenu] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const whatsappMenuRef = useRef(null);
 
   useEffect(() => {
@@ -94,7 +97,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           productName: jobToEdit.productName || '',
           customerName: jobToEdit.customerName || '',
           units: jobToEdit.units || '',
-          stage: jobToEdit.stage || 'Printing',
+          stage: jobToEdit.stage || 'Start',
           status: jobToEdit.status || 'On Schedule',
           progress: jobToEdit.progress || '0',
           deadline: jobToEdit.deadline ? new Date(jobToEdit.deadline).toISOString().split('T')[0] : '',
@@ -125,7 +128,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           productName: '',
           customerName: '',
           units: '',
-          stage: 'Printing',
+          stage: 'Start',
           status: 'On Schedule',
           progress: '0',
           deadline: new Date().toISOString().split('T')[0],
@@ -150,6 +153,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
     if (name === 'stage') {
       const stageProgressMap = {
+        'Start': 0,
         'Printing': 20,
         'Lamination': 40,
         'Punching': 55,
@@ -212,6 +216,22 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     }
   };
 
+  const handleDelete = async () => {
+    if (!jobToEdit) return;
+    setLoading(true);
+    try {
+      await api.delete(`/productionJobs/${jobToEdit.id}`);
+      if (onJobDeleted) onJobDeleted(jobToEdit.id);
+      toast.success('Job deleted successfully!');
+      setIsDeleteModalOpen(false);
+      onClose();
+    } catch (err) {
+      console.error('Error deleting job:', err);
+      toast.error('Failed to delete job.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const customerOptions = customers ? customers.map(cust => ({
@@ -435,25 +455,47 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap justify-end gap-3 border-t border-gray-100 pt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Create Job')}
-            </button>
+          <div className="mt-8 flex flex-wrap justify-between items-center border-t border-gray-100 pt-5">
+            <div>
+              {jobToEdit && currentUser?.profile?.designation !== 'Employee' && (
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors"
+                >
+                  Delete Job
+                </button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Create Job')}
+              </button>
+            </div>
           </div>
         </form>
       </div>
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Job"
+        message={`Are you sure you want to delete job ${jobToEdit?.jobCardNo}? This action cannot be undone.`}
+        isLoading={loading}
+      />
     </div>
   );
 }

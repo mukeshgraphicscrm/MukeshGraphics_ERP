@@ -15,7 +15,7 @@ export default function StatusBadge({ status }) {
     semantic = 'danger';
   } else if (['OUT FOR DELIVERY'].includes(statusUpper)) {
     semantic = 'purple';
-  } else if (['IN PRODUCTION', 'SENT', 'SCHEDULED', 'RUNNING', 'UNDER REVIEW', 'IN TRANSIT', 'NEW INQUIRY', 'PRINTING', 'LAMINATION', 'PUNCHING', 'STRIPING', 'PASTING', 'READY TO DISPATCH', 'QC PENDING', 'JOB PREPARATION', 'READY FOR DISPATCH'].includes(statusUpper)) {
+  } else if (['START', 'IN PRODUCTION', 'SENT', 'SCHEDULED', 'RUNNING', 'UNDER REVIEW', 'IN TRANSIT', 'NEW INQUIRY', 'PRINTING', 'LAMINATION', 'PUNCHING', 'STRIPING', 'PASTING', 'READY TO DISPATCH', 'QC PENDING', 'JOB PREPARATION', 'READY FOR DISPATCH'].includes(statusUpper)) {
     semantic = 'info';
   }
 

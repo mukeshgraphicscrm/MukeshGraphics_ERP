@@ -910,7 +910,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                   <span className="whitespace-nowrap">Delete Quotation</span>
                 </button>
               )}
-              <div className="flex gap-3 w-full sm:w-auto">
+              <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center sm:justify-end">
                 {isViewMode ? (
                   <>
                     <button

@@ -493,32 +493,30 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
             </div>
           </div>
 
-          <div className="mt-8 flex flex-wrap justify-between items-center border-t border-gray-100 pt-5">
-            <div>
-              {jobToEdit && currentUser?.profile?.designation !== 'Employee' && (
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  disabled={loading}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors"
-                >
-                  Delete Job
-                </button>
-              )}
-            </div>
-            <div className="flex gap-3">
+          <div className={`mt-8 flex flex-col-reverse sm:flex-row ${jobToEdit && currentUser?.profile?.designation !== 'Employee' ? 'sm:justify-between' : 'sm:justify-end'} items-stretch sm:items-center gap-3 border-t border-gray-100 pt-5`}>
+            {jobToEdit && currentUser?.profile?.designation !== 'Employee' && (
+              <button
+                type="button"
+                onClick={() => setIsDeleteModalOpen(true)}
+                disabled={loading}
+                className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 w-full sm:w-auto"
+              >
+                <span className="whitespace-nowrap">Delete Job</span>
+              </button>
+            )}
+            <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center sm:justify-end">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
               >
                 {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Create Job')}
               </button>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, CheckCircle, Clock } from 'lucide-react';
+import { Bell, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
@@ -20,6 +20,20 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
       console.error('Failed to mark notification as read:', error);
       // Revert optimistic update
       setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, read: false } : n));
+    }
+  };
+
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    try {
+      // Optimistic update
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      await api.delete(`/notifications/${id}`);
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      // In a real scenario we might revert or refetch, but typically optimistic is enough here
+      const { refetch } = useData();
+      if (refetch) refetch();
     }
   };
 
@@ -73,15 +87,24 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
                           {new Date(notification.createdAt).toLocaleDateString()} at {new Date(notification.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
-                      {!notification.read && (
+                      <div className="flex items-center space-x-2">
+                        {!notification.read && (
+                          <button
+                            onClick={(e) => handleMarkAsRead(e, notification)}
+                            className="text-gray-400 hover:text-brand-accent opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                            title="Mark as read"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
-                          onClick={(e) => handleMarkAsRead(e, notification)}
-                          className="text-gray-400 hover:text-brand-accent opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                          title="Mark as read"
+                          onClick={(e) => handleDelete(e, notification.id)}
+                          className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                          title="Delete notification"
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
-                      )}
+                      </div>
                     </div>
                   </div>
               ))}

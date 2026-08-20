@@ -103,7 +103,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                   <item.icon
                     className={cn(
                       "w-[22px] h-[22px] flex-shrink-0 transition-all duration-300",
-                      isChildActive ? "text-[#E8A33D] drop-shadow-[0_0_8px_rgba(240,126,25,0.5)]" : "text-[#94A3B8] group-hover:text-white"
+                      isChildActive ? "text-[#EA580C] drop-shadow-[0_0_8px_rgba(240,126,25,0.5)]" : "text-[#94A3B8] group-hover:text-white"
                     )}
                     strokeWidth={1.5}
                   />

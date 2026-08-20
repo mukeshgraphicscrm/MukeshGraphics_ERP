@@ -404,13 +404,15 @@ export default function Settings() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Sales Target Amount (₹) *</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min="1"
-                    value={goalSettings.salesTarget}
-                    onChange={(e) => setGoalSettings(prev => ({ ...prev, salesTarget: e.target.value }))}
+                    value={goalSettings.salesTarget ? Number(goalSettings.salesTarget).toLocaleString('en-IN') : ''}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      setGoalSettings(prev => ({ ...prev, salesTarget: val }));
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
-                    placeholder="e.g. 1000000"
+                    placeholder="e.g. 1,00,00,000"
                   />
                 </div>
                 <div className="pt-2">

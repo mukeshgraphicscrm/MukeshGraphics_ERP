@@ -1,6 +1,30 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../lib/api';
 import { useAuth } from './AuthContext';
+
+const playNotificationSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
+
+    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.5);
+  } catch (e) {
+    console.error('Audio playback failed', e);
+  }
+};
 
 const DataContext = createContext(null);
 
@@ -127,7 +151,17 @@ export function DataProvider({ children }) {
       try {
         const res = await api.get('/notifications');
         const allNotifs = Array.isArray(res.data) ? res.data : [];
-        setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+        const userNotifs = allNotifs.filter(n => n.employee === currentUser?.profile?.name);
+        
+        setNotifications(prev => {
+          const newUnread = userNotifs.filter(n => !n.read);
+          const oldUnread = prev.filter(n => !n.read);
+          
+          if (newUnread.length > oldUnread.length) {
+            playNotificationSound();
+          }
+          return userNotifs;
+        });
       } catch (err) {
         console.error('Failed to poll notifications:', err);
       }

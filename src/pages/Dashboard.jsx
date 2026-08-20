@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, TrendingUp, Activity } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -11,7 +11,7 @@ import { cn } from '../lib/utils';
 import { useData } from '../contexts/DataContext';
 
 export default function Dashboard() {
-  const { dashboardData: data } = useData();
+  const { dashboardData: data, settings, orders } = useData();
 
   if (!data) return (
     <div className="space-y-6 pb-12 animate-pulse">
@@ -50,6 +50,47 @@ export default function Dashboard() {
 
   const { kpi, charts } = data;
 
+  const goalsBoard = useMemo(() => {
+    const goalSettings = settings?.find(s => s.type === 'goals');
+    const targetYear = goalSettings?.year ? parseInt(goalSettings.year, 10) : new Date().getFullYear();
+    const salesTarget = goalSettings?.salesTarget ? parseFloat(goalSettings.salesTarget) : 0;
+
+    const achieved = (orders || [])
+      .filter(o => {
+        if (!o.createdAt && !o.date) return false;
+        const d = new Date(o.createdAt || o.date);
+        return d.getFullYear() === targetYear;
+      })
+      .reduce((sum, o) => {
+        const amt = typeof o.amount === 'string' ? parseFloat(o.amount.replace(/[^0-9.-]+/g, '')) : parseFloat(o.amount || 0);
+        return sum + (isNaN(amt) ? 0 : amt);
+      }, 0);
+
+    const today = new Date();
+    const endOfYear = new Date(targetYear, 11, 31);
+    let daysLeft = 0;
+    
+    if (today.getFullYear() < targetYear) {
+        // If target year is in the future
+        const startOfYear = new Date(targetYear, 0, 1);
+        daysLeft = Math.ceil((endOfYear - startOfYear) / (1000 * 60 * 60 * 24));
+    } else if (today.getFullYear() === targetYear) {
+        daysLeft = Math.ceil((endOfYear - today) / (1000 * 60 * 60 * 24)); 
+    }
+
+    const amountLeft = Math.max(0, salesTarget - achieved);
+    const perDayRequired = daysLeft > 0 ? (amountLeft / daysLeft) : 0;
+
+    return {
+      targetYear,
+      salesTarget,
+      achieved,
+      daysLeft,
+      perDayRequired,
+      progress: salesTarget > 0 ? Math.min(100, Math.round((achieved / salesTarget) * 100)) : 0
+    };
+  }, [settings, orders]);
+
   return (
     <div className="space-y-6 pb-12">
       <div>
@@ -57,17 +98,75 @@ export default function Dashboard() {
         <p className="text-gray-500 mt-1">Welcome back, Mukesh — here's how the plant is running today.</p>
       </div>
 
-      {/* KPI Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <KpiCard title="Total Orders" value={kpi.totalOrders.value} subtitle={kpi.totalOrders.subtitle} icon={ShoppingCart} color="info" />
-        <KpiCard title="Running Jobs" value={kpi.runningJobs.value} subtitle={kpi.runningJobs.subtitle} icon={Factory} color="sky" />
-        <KpiCard title="Completed (Month)" value={kpi.completedMonth.value} subtitle={kpi.completedMonth.subtitle} icon={CheckCircle} color="success" />
-        <KpiCard title="Pending Dispatches" value={kpi.pendingDispatches.value} subtitle={kpi.pendingDispatches.subtitle} icon={Truck} color="warning" />
+      {/* KPI & Goals Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        <div className="xl:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <KpiCard title="Total Orders" value={kpi.totalOrders.value} subtitle={kpi.totalOrders.subtitle} icon={ShoppingCart} color="info" />
+          <KpiCard title="Running Jobs" value={kpi.runningJobs.value} subtitle={kpi.runningJobs.subtitle} icon={Factory} color="sky" />
+          <KpiCard title="Completed (Month)" value={kpi.completedMonth.value} subtitle={kpi.completedMonth.subtitle} icon={CheckCircle} color="success" />
+          <KpiCard title="Pending Dispatches" value={kpi.pendingDispatches.value} subtitle={kpi.pendingDispatches.subtitle} icon={Truck} color="warning" />
+          
+          <KpiCard title="Pending Payments" value={kpi.pendingPayments.value} subtitle={kpi.pendingPayments.subtitle} icon={Wallet} color="danger" />
+          <KpiCard title="Monthly Revenue" value={kpi.monthlyRevenue.value} subtitle={kpi.monthlyRevenue.subtitle} icon={IndianRupee} color="warning" />
+          <KpiCard title="Monthly Profit" value={kpi.monthlyProfit.value} subtitle={kpi.monthlyProfit.subtitle} icon={TrendingUp} color="success" />
+          <KpiCard title="Active Customers" value={kpi.activeCustomers.value} subtitle={kpi.activeCustomers.subtitle} icon={Activity} color="indigo" />
+        </div>
 
-        <KpiCard title="Pending Payments" value={kpi.pendingPayments.value} subtitle={kpi.pendingPayments.subtitle} icon={Wallet} color="danger" />
-        <KpiCard title="Monthly Revenue" value={kpi.monthlyRevenue.value} subtitle={kpi.monthlyRevenue.subtitle} icon={IndianRupee} color="warning" />
-        <KpiCard title="Monthly Profit" value={kpi.monthlyProfit.value} subtitle={kpi.monthlyProfit.subtitle} icon={TrendingUp} color="success" />
-        <KpiCard title="Active Customers" value={kpi.activeCustomers.value} subtitle={kpi.activeCustomers.subtitle} icon={Activity} color="indigo" />
+        {/* Goals Board Module */}
+        <div className="xl:col-span-1 bg-gradient-to-br from-[#1b2f63] to-[#12224d] rounded-xl shadow-lg border border-[#1b2f63] p-6 text-white flex flex-col relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <Target className="w-24 h-24" />
+          </div>
+          
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-center space-x-2 mb-6">
+              <div className="p-2 bg-white/10 rounded-lg">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold tracking-tight">{goalsBoard.targetYear} Goals</h2>
+            </div>
+
+            <div className="space-y-5 flex-1">
+              <div>
+                <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider mb-1">Sales Target</p>
+                <p className="text-3xl font-bold">₹{goalsBoard.salesTarget.toLocaleString('en-IN')}</p>
+              </div>
+
+              <div>
+                <div className="flex justify-between items-end mb-1">
+                  <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider">Achieved</p>
+                  <span className="text-xs font-bold text-green-400">{goalsBoard.progress}%</span>
+                </div>
+                <p className="text-2xl font-bold text-green-400">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
+                
+                {/* Progress Bar */}
+                <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
+                  <div 
+                    className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out" 
+                    style={{ width: `${goalsBoard.progress}%` }}
+                  ></div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10 mt-auto">
+                <div>
+                  <div className="flex items-center space-x-1.5 text-brand-accent/80 mb-1">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    <p className="text-[11px] font-semibold uppercase tracking-wider">Days Left</p>
+                  </div>
+                  <p className="text-lg font-bold">{goalsBoard.daysLeft}</p>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-1.5 text-brand-accent/80 mb-1">
+                    <TrendingUpIcon className="w-3.5 h-3.5" />
+                    <p className="text-[11px] font-semibold uppercase tracking-wider">Per Day</p>
+                  </div>
+                  <p className="text-lg font-bold">₹{Math.ceil(goalsBoard.perDayRequired).toLocaleString('en-IN')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row 1 */}

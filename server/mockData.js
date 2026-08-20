@@ -13,7 +13,8 @@ const mockData = {
   purchaseOrders: [],
   grn: [],
   dispatches: [],
-  invoices: []
+  invoices: [],
+  settings: []
 };
 
 module.exports = mockData;

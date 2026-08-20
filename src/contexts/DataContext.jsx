@@ -27,6 +27,7 @@ export function DataProvider({ children }) {
   const [artworks, setArtworks] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
+  const [settings, setSettings] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -34,7 +35,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -52,6 +53,7 @@ export function DataProvider({ children }) {
         api.get('/artworks'),
         api.get('/notifications'),
         api.get('/dashboard/kpi'),
+        api.get('/settings'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -82,6 +84,7 @@ export function DataProvider({ children }) {
       }
 
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
+      if (settingsRes.status === 'fulfilled') setSettings(Array.isArray(settingsRes.value.data) ? settingsRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -112,6 +115,7 @@ export function DataProvider({ children }) {
       setArtworks([]);
       setNotifications([]);
       setDashboardData(null);
+      setSettings([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -166,6 +170,7 @@ export function DataProvider({ children }) {
     artworks, setArtworks,
     notifications, setNotifications,
     dashboardData, setDashboardData,
+    settings, setSettings,
     // helper maps
     customerMap,
     productMap,

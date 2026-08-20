@@ -7,9 +7,10 @@ router.get('/kpi', async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not initialized' });
   
   try {
-    const [ordersSnapshot, customersSnapshot] = await Promise.all([
+    const [ordersSnapshot, customersSnapshot, jobsSnapshot] = await Promise.all([
       db.collection('orders').get(),
-      db.collection('customers').get()
+      db.collection('customers').get(),
+      db.collection('productionJobs').get()
     ]);
 
     const totalOrdersCount = ordersSnapshot.size;
@@ -20,6 +21,19 @@ router.get('/kpi', async (req, res) => {
     let pendingCount = 0;
     let delayedCount = 0;
     let totalRevenue = 0;
+
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      return {
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+        name: d.toLocaleString('default', { month: 'short' }),
+        value: 0
+      };
+    });
+
+    const activities = [];
 
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
@@ -36,10 +50,29 @@ router.get('/kpi', async (req, res) => {
       }
 
       const amount = order.amount || 0;
+      let numericAmount = 0;
       if (typeof amount === 'number') {
-        totalRevenue += amount;
+        numericAmount = amount;
       } else if (typeof amount === 'string') {
-        totalRevenue += parseFloat(amount.replace(/[^0-9.-]+/g, "")) || 0;
+        numericAmount = parseFloat(amount.replace(/[^0-9.-]+/g, "")) || 0;
+      }
+      totalRevenue += numericAmount;
+
+      const orderDate = order.createdAt ? new Date(order.createdAt) : (order.date ? new Date(order.date) : null);
+      if (orderDate) {
+        const m = orderDate.getMonth();
+        const y = orderDate.getFullYear();
+        const monthObj = last6Months.find(lm => lm.monthIndex === m && lm.year === y);
+        if (monthObj) {
+          monthObj.value += (numericAmount / 100000); // in lakhs
+        }
+        
+        activities.push({
+          id: `order_${doc.id}`,
+          text: `New order created for ${order.customerName || 'customer'}`,
+          time: orderDate,
+          type: 'order'
+        });
       }
     });
 
@@ -54,8 +87,53 @@ router.get('/kpi', async (req, res) => {
       }
     });
 
+    // Process Jobs for stages and activities
+    const stageCounts = {
+      'Printing': 0, 'Lamination': 0, 'Punching': 0, 'Striping': 0,
+      'Pasting': 0, 'Ready To Dispatch': 0, 'Dispatched': 0, 'Start': 0
+    };
+
+    jobsSnapshot.forEach(doc => {
+      const job = doc.data();
+      if (job.stage && stageCounts[job.stage] !== undefined) {
+        stageCounts[job.stage]++;
+      } else if (job.stage) {
+        stageCounts[job.stage] = 1;
+      }
+
+      const jobDate = job.createdAt ? new Date(job.createdAt) : null;
+      if (jobDate) {
+        activities.push({
+          id: `job_${doc.id}`,
+          text: `Production job ${job.jobCardNo || ''} started`,
+          time: jobDate,
+          type: 'job'
+        });
+      }
+    });
+
     const revenueLakhs = (totalRevenue / 100000).toFixed(2);
     const profitLakhs = (totalRevenue * 0.15 / 100000).toFixed(2); // Estimated 15% profit margin
+
+    // Sort activities by time desc and get top 5
+    activities.sort((a, b) => b.time - a.time);
+    const recentActivities = activities.slice(0, 5).map(a => {
+      const diffMs = new Date() - a.time;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+      
+      let timeStr = 'Just now';
+      if (diffDays > 0) timeStr = `${diffDays}d ago`;
+      else if (diffHours > 0) timeStr = `${diffHours}h ago`;
+      else if (diffMins > 0) timeStr = `${diffMins}m ago`;
+
+      return { id: a.id, text: a.text, time: timeStr };
+    });
+
+    if (recentActivities.length === 0) {
+      recentActivities.push({ id: 1, text: 'No recent activity.', time: '' });
+    }
 
     const kpi = {
       totalOrders: { value: totalOrdersCount, subtitle: 'Total orders placed' },
@@ -69,14 +147,7 @@ router.get('/kpi', async (req, res) => {
     };
 
     const charts = {
-      revenueLine: [
-        { name: 'Jan', value: 0 },
-        { name: 'Feb', value: 0 },
-        { name: 'Mar', value: 0 },
-        { name: 'Apr', value: 0 },
-        { name: 'May', value: 0 },
-        { name: 'Jun', value: parseFloat(revenueLakhs) || 0 },
-      ],
+      revenueLine: last6Months.map(lm => ({ name: lm.name, value: parseFloat(lm.value.toFixed(2)) })),
       orderStatus: [
         { name: 'Completed', value: completedCount, color: '#16A34A' },
         { name: 'Running', value: runningCount, color: '#2563EB' },
@@ -84,17 +155,16 @@ router.get('/kpi', async (req, res) => {
         { name: 'Delayed', value: delayedCount, color: '#DC2626' },
       ],
       productionStages: [
-        { name: 'Printing', value: runningCount > 0 ? 1 : 0 },
-        { name: 'Lamination', value: 0 },
-        { name: 'Punching', value: 0 },
-        { name: 'Striping', value: 0 },
-        { name: 'Pasting', value: 0 },
-        { name: 'Ready To Dispatch', value: 0 },
-        { name: 'Dispatched', value: completedCount > 0 ? 1 : 0 },
-      ],
-      recentActivities: [
-        { id: 1, text: 'Dashboard statistics updated.', time: 'Just now' }
-      ]
+        { name: 'Start', value: stageCounts['Start'] || 0 },
+        { name: 'Printing', value: stageCounts['Printing'] || 0 },
+        { name: 'Lamination', value: stageCounts['Lamination'] || 0 },
+        { name: 'Punching', value: stageCounts['Punching'] || 0 },
+        { name: 'Striping', value: stageCounts['Striping'] || 0 },
+        { name: 'Pasting', value: stageCounts['Pasting'] || 0 },
+        { name: 'Ready To Dispatch', value: stageCounts['Ready To Dispatch'] || 0 },
+        { name: 'Dispatched', value: stageCounts['Dispatched'] || 0 },
+      ].filter(s => s.value > 0 || ['Printing', 'Lamination', 'Punching'].includes(s.name)),
+      recentActivities
     };
 
     res.json({ kpi, charts });

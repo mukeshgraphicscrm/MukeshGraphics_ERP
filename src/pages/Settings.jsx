@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit, Key } from 'lucide-react';
+import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit, Key, Target } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import CustomSelect from '../components/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
+import { useData } from '../contexts/DataContext';
 
 export default function Settings() {
   const { currentUser, changePassword } = useAuth();
+  const { settings, setSettings } = useData();
   
   // Protect the route
   if (currentUser?.profile?.designation === 'Employee') {
@@ -25,6 +27,12 @@ export default function Settings() {
   const [adminPasswordLoading, setAdminPasswordLoading] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [userToEdit, setUserToEdit] = useState(null);
+  const [goalSettings, setGoalSettings] = useState({
+    year: new Date().getFullYear().toString(),
+    salesTarget: ''
+  });
+  const [goalLoading, setGoalLoading] = useState(false);
+  
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -60,7 +68,18 @@ export default function Settings() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+    
+    // Load existing goal settings
+    if (settings && settings.length > 0) {
+      const goals = settings.find(s => s.type === 'goals');
+      if (goals) {
+        setGoalSettings({
+          year: goals.year || new Date().getFullYear().toString(),
+          salesTarget: goals.salesTarget || ''
+        });
+      }
+    }
+  }, [settings]);
 
   const fetchUsers = async () => {
     try {
@@ -134,6 +153,31 @@ export default function Settings() {
       setLoading(false);
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
+    }
+  };
+
+  const handleSaveGoals = async (e) => {
+    e.preventDefault();
+    setGoalLoading(true);
+    try {
+      const existingGoals = settings.find(s => s.type === 'goals');
+      const payload = { type: 'goals', ...goalSettings };
+      let res;
+      
+      if (existingGoals && existingGoals.id) {
+        res = await api.put(`/settings/${existingGoals.id}`, payload);
+        setSettings(prev => prev.map(s => s.id === res.data.id ? res.data : s));
+      } else {
+        res = await api.post('/settings', payload);
+        setSettings(prev => [...prev, res.data]);
+      }
+      
+      toast.success('Goals updated successfully');
+    } catch (err) {
+      console.error('Error saving goals:', err);
+      toast.error('Failed to save goals');
+    } finally {
+      setGoalLoading(false);
     }
   };
 
@@ -330,6 +374,53 @@ export default function Settings() {
                   >
                     <Save className="w-4 h-4" />
                     <span>{adminPasswordLoading ? 'Updating...' : 'Update Password'}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Goals Settings Form */}
+          {(!currentUser?.profile || currentUser?.profile?.designation === 'Administrator') && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2 bg-gray-50/50">
+                <Target className="w-5 h-5 text-[#1b2f63]" />
+                <h3 className="font-bold text-gray-900">Goals & Targets</h3>
+              </div>
+              <form onSubmit={handleSaveGoals} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Target Year *</label>
+                  <input
+                    type="number"
+                    required
+                    min="2020"
+                    max="2100"
+                    value={goalSettings.year}
+                    onChange={(e) => setGoalSettings(prev => ({ ...prev, year: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
+                    placeholder="e.g. 2026"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sales Target Amount (₹) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={goalSettings.salesTarget}
+                    onChange={(e) => setGoalSettings(prev => ({ ...prev, salesTarget: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
+                    placeholder="e.g. 1000000"
+                  />
+                </div>
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={goalLoading}
+                    className="w-full flex justify-center items-center space-x-2 bg-[#1b2f63] text-white px-4 py-2.5 rounded-lg hover:bg-[#12224d] transition-colors disabled:opacity-50"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>{goalLoading ? 'Saving...' : 'Save Goals'}</span>
                   </button>
                 </div>
               </form>

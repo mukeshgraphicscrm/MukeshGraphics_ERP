@@ -129,7 +129,7 @@ export default function Dashboard() {
             <div className="space-y-5 flex-1">
               <div>
                 <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider mb-1">Sales Target</p>
-                <p className="text-3xl font-bold">₹{goalsBoard.salesTarget.toLocaleString('en-IN')}</p>
+                <p className="text-2xl xl:text-xl 2xl:text-3xl font-bold tracking-tight break-all">₹{goalsBoard.salesTarget.toLocaleString('en-IN')}</p>
               </div>
 
               <div>
@@ -137,7 +137,7 @@ export default function Dashboard() {
                   <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider">Achieved</p>
                   <span className="text-xs font-bold text-green-400">{goalsBoard.progress}%</span>
                 </div>
-                <p className="text-2xl font-bold text-green-400">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
+                <p className="text-xl xl:text-lg 2xl:text-2xl font-bold text-green-400 tracking-tight break-all">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
                 
                 {/* Progress Bar */}
                 <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
@@ -148,20 +148,20 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/10 mt-auto">
-                <div>
+              <div className="flex justify-between items-start pt-4 border-t border-white/10 mt-auto gap-2">
+                <div className="shrink-0">
                   <div className="flex items-center space-x-1.5 text-brand-accent/80 mb-1">
                     <CalendarDays className="w-3.5 h-3.5" />
                     <p className="text-[11px] font-semibold uppercase tracking-wider">Days Left</p>
                   </div>
-                  <p className="text-lg font-bold">{goalsBoard.daysLeft}</p>
+                  <p className="text-base xl:text-sm 2xl:text-lg font-bold">{goalsBoard.daysLeft}</p>
                 </div>
-                <div>
-                  <div className="flex items-center space-x-1.5 text-brand-accent/80 mb-1">
+                <div className="text-right min-w-0">
+                  <div className="flex items-center justify-end space-x-1.5 text-brand-accent/80 mb-1">
                     <TrendingUpIcon className="w-3.5 h-3.5" />
                     <p className="text-[11px] font-semibold uppercase tracking-wider">Per Day</p>
                   </div>
-                  <p className="text-lg font-bold">₹{Math.ceil(goalsBoard.perDayRequired).toLocaleString('en-IN')}</p>
+                  <p className="text-base xl:text-sm 2xl:text-lg font-bold tracking-tight break-all">₹{Math.ceil(goalsBoard.perDayRequired).toLocaleString('en-IN')}</p>
                 </div>
               </div>
             </div>

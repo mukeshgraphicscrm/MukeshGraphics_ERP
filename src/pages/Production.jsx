@@ -185,7 +185,11 @@ export default function Production() {
             </div>
           </div>
           <div className="flex flex-col space-y-4">
-            {filteredJobs.slice().sort((a, b) => (a.jobCardNo || '').localeCompare(b.jobCardNo || '')).map((job) => {
+            {filteredJobs.slice().sort((a, b) => {
+              const dateA = a.deadline ? new Date(a.deadline) : new Date(8640000000000000);
+              const dateB = b.deadline ? new Date(b.deadline) : new Date(8640000000000000);
+              return dateA - dateB;
+            }).map((job) => {
               const currentStageIndex = stages.findIndex(s => s.key === job.stage);
               const getInitials = (name) => {
                 if (!name) return 'NA';

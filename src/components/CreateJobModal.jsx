@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, MessageCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
@@ -42,6 +42,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [users, setUsers] = useState([]);
+  const [showWhatsappMenu, setShowWhatsappMenu] = useState(false);
+  const whatsappMenuRef = useRef(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -49,7 +51,14 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         onClose();
       }
     };
+    const handleClickOutside = (event) => {
+      if (whatsappMenuRef.current && !whatsappMenuRef.current.contains(event.target)) {
+        setShowWhatsappMenu(false);
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
 
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -58,6 +67,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
       if (isOpen) {
         document.body.style.overflow = 'unset';
         document.documentElement.style.overflow = 'unset';
@@ -226,14 +236,68 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     });
   }
 
+  const handleSendWhatsapp = (stage) => {
+    if (!formData.customerName) {
+      toast.error('Please select a customer first.');
+      return;
+    }
+
+    const customer = customers?.find(c => c.name === formData.customerName);
+    if (!customer || !customer.mobile) {
+      toast.error('Customer mobile number not found.');
+      return;
+    }
+
+    const mobile = customer.mobile.startsWith('91') ? customer.mobile : `91${customer.mobile}`;
+    const message = `Hello ${formData.customerName},\n\nYour job (Job No: ${formData.jobCardNo}) for ${formData.productName} is currently at the *${stage}* stage.\n\nRegards,\nMukesh Graphics`;
+    const url = `https://wa.me/${mobile}?text=${encodeURIComponent(message)}`;
+    
+    window.open(url, '_blank');
+    setShowWhatsappMenu(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">{jobToEdit ? 'Edit Job' : 'Create Job'}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <X className="w-5 h-5" />
-          </button>
+          
+          <div className="flex items-center gap-3">
+            <div className="relative" ref={whatsappMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowWhatsappMenu(!showWhatsappMenu)}
+                className="flex items-center justify-center p-2 text-green-600 bg-green-50 rounded-full hover:bg-green-100 transition-colors"
+                title="Send WhatsApp Update"
+              >
+                <MessageCircle className="w-5 h-5" />
+              </button>
+              
+              {showWhatsappMenu && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-50 overflow-hidden">
+                  <div className="py-1">
+                    <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wider">
+                      Send Update For
+                    </div>
+                    {stageOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => handleSendWhatsapp(option.value)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 flex-1 overflow-y-auto custom-scrollbar">

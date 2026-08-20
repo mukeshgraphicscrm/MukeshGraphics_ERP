@@ -3,7 +3,9 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  updatePassword
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { Loader2 } from 'lucide-react';
@@ -28,8 +30,10 @@ export function AuthProvider({ children }) {
     return signOut(auth);
   }
 
-  function changePassword(newPassword) {
+  async function changePassword(currentPassword, newPassword) {
     if (!auth.currentUser) throw new Error("No authenticated user");
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPassword);
+    await reauthenticateWithCredential(auth.currentUser, credential);
     return updatePassword(auth.currentUser, newPassword);
   }
 

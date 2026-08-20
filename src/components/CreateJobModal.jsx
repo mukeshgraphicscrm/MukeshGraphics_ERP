@@ -200,10 +200,48 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
       if (jobToEdit) {
         const res = await api.put(`/productionJobs/${jobToEdit.id}`, payload);
         if (onJobUpdated) onJobUpdated(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== jobToEdit.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'Job Re-assigned',
+              message: `Job ${formData.jobCardNo} for ${formData.productName} has been re-assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+
         toast.success('Job updated successfully!');
       } else {
         const res = await api.post('/productionJobs', payload);
         if (onJobAdded) onJobAdded(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'New Job Assigned',
+              message: `A new job ${formData.jobCardNo} for ${formData.productName} has been assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+
         toast.success('Job created successfully!');
       }
       onClose();

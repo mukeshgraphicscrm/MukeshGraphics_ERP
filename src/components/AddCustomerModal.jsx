@@ -107,6 +107,25 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
         const payload = { ...formData };
         const res = await api.put(`/customers/${customerToEdit.id}`, payload);
         if (onCustomerUpdated) onCustomerUpdated(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== customerToEdit.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'Customer Re-assigned',
+              message: `Customer ${formData.name} has been re-assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+        
         toast.success('Customer updated successfully!');
       } else {
         const payload = {
@@ -117,6 +136,25 @@ export default function AddCustomerModal({ isOpen, onClose, onCustomerAdded, onC
         };
         const res = await api.post('/customers', payload);
         if (onCustomerAdded) onCustomerAdded(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'New Customer Assigned',
+              message: `A new customer ${formData.name} has been assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+        
         toast.success('Customer added successfully!');
       }
       onClose();

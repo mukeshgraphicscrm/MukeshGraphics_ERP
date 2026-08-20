@@ -178,10 +178,48 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
       if (productToEdit) {
         const res = await api.put(`/products/${productToEdit.id}`, payload);
         if (onProductUpdated) onProductUpdated(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== productToEdit.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'Product Re-assigned',
+              message: `Product ${formData.name} has been re-assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+        
         toast.success('Product updated successfully!');
       } else {
         const res = await api.post('/products', payload);
         if (onProductAdded) onProductAdded(res.data);
+        
+        const userDesignation = currentUser?.profile?.designation || 'Administrator';
+        const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        
+        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'New Product Assigned',
+              message: `A new product ${formData.name} has been assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
+        
         toast.success('Product added successfully!');
       }
 

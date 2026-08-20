@@ -52,6 +52,106 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     onClose();
   };
 
+  const handleOpenWhatsappFromView = async () => {
+    let phone = '';
+    if (activeTab === 'Customer Quotation') {
+      const customer = customers.find(c => c.id === formData.customerId);
+      phone = customer?.mobile || customer?.phone || '';
+    } else {
+      const lead = leads.find(l => l.id === formData.leadId);
+      phone = lead?.mobile || lead?.phone || '';
+    }
+
+    if (!phone) {
+      toast.error('Customer/Lead phone number not found.');
+      return;
+    }
+
+    const custMap = {};
+    customers.forEach(c => custMap[c.id] = c);
+    const prodMap = {};
+    products.forEach(p => prodMap[p.id] = p);
+
+    try {
+      await generateQuotationPDF(quotationToEdit, custMap, prodMap);
+    } catch (pdfErr) {
+      console.error('Error generating PDF:', pdfErr);
+      toast.error('Failed to generate PDF.');
+    }
+
+    let message = `Hello, here are the details for your quotation:\n\n*Quotation No:* ${formData.quotationNo}\n*Date:* ${new Date(formData.date).toLocaleDateString('en-IN')}\n*Company:* ${formData.companyName}\n\n*Items:*\n`;
+    let totalAmount = 0;
+    (formData.items || []).forEach((item, index) => {
+      const productName = activeTab === 'Lead Quotation' ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
+      const qty = Number((item.qty || '0').toString().replace(/,/g, ''));
+      const price = Number((item.price || '0').toString().replace(/,/g, ''));
+      const amount = (qty * price);
+      totalAmount += amount;
+      message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Price: ₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+    });
+    message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+
+    let formattedPhone = phone.replace(/\D/g, '');
+    if (formattedPhone.length === 10) {
+      formattedPhone = '91' + formattedPhone;
+    } else if (formattedPhone.startsWith('0')) {
+       formattedPhone = '91' + formattedPhone.substring(1);
+    }
+    
+    setWhatsappInfo({ phone: formattedPhone, message });
+    setShowWhatsappPrompt(true);
+  };
+
+  const handleSendWhatsappHistory = async (q) => {
+    let phone = '';
+    if (q.quotationType === 'Customer Quotation' || (!q.quotationType && q.customerId)) {
+      const customer = customers.find(c => c.id === q.customerId);
+      phone = customer?.mobile || customer?.phone || '';
+    } else {
+      const lead = leads.find(l => l.id === q.leadId);
+      phone = lead?.mobile || lead?.phone || '';
+    }
+
+    if (!phone) {
+      toast.error('Customer/Lead phone number not found.');
+      return;
+    }
+
+    const custMap = {};
+    customers.forEach(c => custMap[c.id] = c);
+    const prodMap = {};
+    products.forEach(p => prodMap[p.id] = p);
+
+    try {
+      await generateQuotationPDF(q, custMap, prodMap);
+    } catch (pdfErr) {
+      console.error('Error generating PDF:', pdfErr);
+      toast.error('Failed to generate PDF.');
+    }
+
+    let message = `Hello, here are the details for your quotation:\n\n*Quotation No:* ${q.quotationNo}\n*Date:* ${new Date(q.date).toLocaleDateString('en-IN')}\n*Company:* ${q.companyName}\n\n*Items:*\n`;
+    let totalAmount = 0;
+    (q.items || []).forEach((item, index) => {
+      const productName = (q.quotationType === 'Lead Quotation' || (!q.quotationType && q.leadId)) ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
+      const qty = Number((item.qty || '0').toString().replace(/,/g, ''));
+      const price = Number((item.price || '0').toString().replace(/,/g, ''));
+      const amount = (qty * price);
+      totalAmount += amount;
+      message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Price: ₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+    });
+    message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+
+    let formattedPhone = phone.replace(/\D/g, '');
+    if (formattedPhone.length === 10) {
+      formattedPhone = '91' + formattedPhone;
+    } else if (formattedPhone.startsWith('0')) {
+       formattedPhone = '91' + formattedPhone.substring(1);
+    }
+    
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const formatIndianNumber = (numStr) => {
     if (!numStr) return '';
     const numericOnly = numStr.toString().replace(/[^0-9.]/g, '');
@@ -209,7 +309,8 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
             date: lastQuotation.date,
             specs: lastItemDetails.specs,
             qty: lastItemDetails.qty,
-            price: lastItemDetails.price
+            price: lastItemDetails.price,
+            fullQuotation: lastQuotation
           });
         }
       }
@@ -630,7 +731,19 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
                       <div key={idx} className="text-sm text-gray-700 bg-white p-3 rounded-md border border-[#E8A33D]/20 shadow-sm">
                         <div className="font-bold text-gray-900 mb-2 flex justify-between items-center">
                           <span>{productName}</span>
-                          <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{history.quotationNo}</span>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSendWhatsappHistory(history.fullQuotation)}
+                              className="p-1 text-gray-400 hover:text-[#25D366] hover:bg-[#25D366]/10 rounded-md transition-colors"
+                              title="Send Quotation via WhatsApp"
+                            >
+                              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                              </svg>
+                            </button>
+                            <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">{history.quotationNo}</span>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                           <div><span className="text-gray-500 block text-xs">Date</span> <span className="font-medium">{new Date(history.date).toLocaleDateString()}</span></div>
@@ -762,6 +875,16 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
               <div className="flex gap-3 w-full sm:w-auto">
                 {isViewMode ? (
                   <>
+                    <button
+                      type="button"
+                      onClick={handleOpenWhatsappFromView}
+                      className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#25D366] rounded-md hover:bg-[#20b858] transition-colors whitespace-nowrap"
+                    >
+                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      </svg>
+                      WhatsApp
+                    </button>
                     <button
                       type="button"
                       onClick={onClose}

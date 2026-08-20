@@ -267,14 +267,47 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         quantity: totalQuantity,
         amount: totalAmount,
       };
+      
+      const userDesignation = currentUser?.profile?.designation || 'Administrator';
+      const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
+      const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+
       if (orderToEdit) {
         const res = await api.put(`/orders/${orderToEdit.id}`, payload);
         if (onOrderUpdated) onOrderUpdated(res.data);
         toast.success('Order updated successfully!');
+
+        if (isAdminOrManager && formData.employee && formData.employee !== orderToEdit.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'Order Re-assigned',
+              message: `Order ${res.data.orderNo} has been re-assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
       } else {
         const res = await api.post('/orders', payload);
         if (onOrderAdded) onOrderAdded(res.data);
         toast.success('Order created successfully!');
+
+        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+          try {
+            await api.post('/notifications', {
+              title: 'New Order Assigned',
+              message: `Order ${res.data.orderNo} has been assigned to you.`,
+              employee: formData.employee,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
 
         // WhatsApp Check
         const customer = customers.find(c => c.id === formData.customerId);

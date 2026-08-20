@@ -5,22 +5,39 @@ import { useAuth } from './AuthContext';
 const playNotificationSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
+    
+    // First Beep
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    
+    osc1.type = 'triangle'; 
+    osc1.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
+    
+    gain1.gain.setValueAtTime(0, audioCtx.currentTime);
+    gain1.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05);
+    gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    
+    osc1.start(audioCtx.currentTime);
+    osc1.stop(audioCtx.currentTime + 0.15);
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+    // Second Beep
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    
+    osc2.type = 'triangle';
+    osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.15); // E6
+    
+    gain2.gain.setValueAtTime(0, audioCtx.currentTime + 0.15);
+    gain2.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.2);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+    
+    osc2.start(audioCtx.currentTime + 0.15);
+    osc2.stop(audioCtx.currentTime + 0.4);
 
-    oscillator.type = 'sine';
-    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.1);
-
-    gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-    gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-    oscillator.start(audioCtx.currentTime);
-    oscillator.stop(audioCtx.currentTime + 0.5);
   } catch (e) {
     console.error('Audio playback failed', e);
   }

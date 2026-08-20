@@ -41,7 +41,7 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 z-40"
         onClick={onClose}
       />
@@ -54,7 +54,7 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
             </span>
           )}
         </div>
-        
+
         <div className="max-h-[235px] overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="p-6 text-center text-gray-500">
@@ -66,8 +66,8 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
               {notifications
                 .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                 .map(notification => (
-                  <div 
-                    key={notification.id} 
+                  <div
+                    key={notification.id}
                     className={`p-4 hover:bg-gray-50 transition-colors relative group cursor-pointer ${!notification.read ? 'bg-blue-50/30' : ''}`}
                     onClick={(e) => handleMarkAsRead(e, notification)}
                   >
@@ -107,7 +107,7 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
                       </div>
                     </div>
                   </div>
-              ))}
+                ))}
             </div>
           )}
         </div>

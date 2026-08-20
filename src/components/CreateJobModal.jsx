@@ -77,6 +77,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   useEffect(() => {
     if (isOpen) {
+      setShowWhatsappMenu(false);
       const fetchUsers = async () => {
         try {
           const res = await api.get('/users');

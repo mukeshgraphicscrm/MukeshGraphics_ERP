@@ -134,8 +134,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                         className={({ isActive }) => cn(
                           "flex items-center pl-[52px] pr-4 py-[10px] mx-4 rounded-xl transition-all duration-300 gap-3 group max-w-[calc(100%-32px)]",
                           isActive
-                            ? "bg-gradient-to-r from-[#F07E19]/15 to-transparent text-[#E8A33D] shadow-[inset_2px_0_0_0_#F07E19]"
-                            : "text-[#94A3B8] hover:bg-white/5 hover:text-white"
+                            ? "bg-gradient-to-r from-[#F07E19]/20 to-[#F07E19]/5 border border-[#F07E19]/30 shadow-[inset_3px_0_0_0_#F07E19]"
+                            : "text-[#94A3B8] hover:bg-white/5 hover:text-white border border-transparent"
                         )}
                       >
                         {({ isActive }) => (
@@ -144,12 +144,17 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                               <subItem.icon
                                 className={cn(
                                   "w-[18px] h-[18px] flex-shrink-0 transition-all duration-300",
-                                  isActive ? "text-[#E8A33D]" : "text-[#64748B] group-hover:text-white"
+                                  isActive ? "text-[#EA580C] drop-shadow-[0_0_8px_rgba(240,126,25,0.5)]" : "text-[#64748B] group-hover:text-white"
                                 )}
                                 strokeWidth={1.5}
                               />
                             )}
-                            <span className="font-medium text-[13px]">{subItem.name}</span>
+                            <span className={cn(
+                              "font-medium text-[13px] transition-colors",
+                              isActive ? "text-white" : ""
+                            )}>
+                              {subItem.name}
+                            </span>
                           </>
                         )}
                       </NavLink>

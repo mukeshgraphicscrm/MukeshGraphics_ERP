@@ -17,7 +17,7 @@ const columnsConfig = [
 
 export default function Leads() {
   const { currentUser } = useAuth();
-  const { leads, setLeads } = useData();
+  const { leads, setLeads, isLoaded } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -109,7 +109,20 @@ export default function Leads() {
 
       {/* Vertical Accordion List */}
       <div className="flex-1 overflow-y-auto pb-4 px-1 space-y-4">
-        {columnsConfig.map(col => {
+        {(!isLoaded) ? (
+          [...Array(5)].map((_, idx) => (
+            <div key={`loading-stage-${idx}`} className="bg-white rounded-lg border border-gray-200 shadow-sm animate-pulse">
+              <div className="p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3 flex-1">
+                  <div className="w-3 h-3 rounded-full bg-gray-200"></div>
+                  <div className="h-5 bg-gray-200 rounded w-32"></div>
+                  <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
+                </div>
+                <div className="w-5 h-5 bg-gray-200 rounded"></div>
+              </div>
+            </div>
+          ))
+        ) : columnsConfig.map(col => {
           const filteredLeads = leads.filter(lead => {
             if (showToggle && viewMode === 'my' && lead.employee !== currentUser?.profile?.name) return false;
             if (!searchTerm) return true;

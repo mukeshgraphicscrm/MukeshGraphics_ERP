@@ -6,38 +6,28 @@ const playNotificationSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     
-    // First Beep
-    const osc1 = audioCtx.createOscillator();
-    const gain1 = audioCtx.createGain();
-    osc1.connect(gain1);
-    gain1.connect(audioCtx.destination);
+    const osc = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
     
-    osc1.type = 'triangle'; 
-    osc1.frequency.setValueAtTime(987.77, audioCtx.currentTime); // B5
+    osc.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
     
-    gain1.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain1.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.05);
-    gain1.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+    // Bubble (bloop) sound
+    osc.type = 'sine';
+    const now = audioCtx.currentTime;
+    const duration = 0.15;
     
-    osc1.start(audioCtx.currentTime);
-    osc1.stop(audioCtx.currentTime + 0.15);
-
-    // Second Beep
-    const osc2 = audioCtx.createOscillator();
-    const gain2 = audioCtx.createGain();
-    osc2.connect(gain2);
-    gain2.connect(audioCtx.destination);
+    // Pitch bend upwards for a bubble effect
+    osc.frequency.setValueAtTime(250, now);
+    osc.frequency.exponentialRampToValueAtTime(800, now + duration);
     
-    osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(1318.51, audioCtx.currentTime + 0.15); // E6
+    // Quick volume envelope
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.8, now + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
-    gain2.gain.setValueAtTime(0, audioCtx.currentTime + 0.15);
-    gain2.gain.linearRampToValueAtTime(1.0, audioCtx.currentTime + 0.2);
-    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-    
-    osc2.start(audioCtx.currentTime + 0.15);
-    osc2.stop(audioCtx.currentTime + 0.4);
-
+    osc.start(now);
+    osc.stop(now + duration);
   } catch (e) {
     console.error('Audio playback failed', e);
   }

@@ -27,6 +27,7 @@ export default function Production() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('default');
 
   const handleEditJob = (job) => {
     setEditingJob(job);
@@ -183,13 +184,38 @@ export default function Production() {
                   onChange={(e) => setStatusFilter(e.target.value)}
                 />
               </div>
+              <div className="w-[180px]">
+                <CustomSelect
+                  name="sortBy"
+                  options={[
+                    { label: 'Select Option', value: 'default' },
+                    { label: 'Deadline (Earliest)', value: 'deadline_asc' },
+                    { label: 'Deadline (Latest)', value: 'deadline_desc' },
+                    { label: 'Job No (Newest)', value: 'number_desc' },
+                    { label: 'Job No (Oldest)', value: 'number_asc' },
+                    { label: 'Progress (High-Low)', value: 'progress_desc' },
+                    { label: 'Progress (Low-High)', value: 'progress_asc' }
+                  ]}
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                />
+              </div>
             </div>
           </div>
           <div className="flex flex-col space-y-4">
             {filteredJobs.slice().sort((a, b) => {
+              if (sortBy.startsWith('number')) {
+                const numA = parseInt(String(a.jobCardNo).replace(/\D/g, '')) || 0;
+                const numB = parseInt(String(b.jobCardNo).replace(/\D/g, '')) || 0;
+                return sortBy === 'number_desc' ? numB - numA : numA - numB;
+              }
+              if (sortBy.startsWith('progress')) {
+                return sortBy === 'progress_desc' ? Number(b.progress) - Number(a.progress) : Number(a.progress) - Number(b.progress);
+              }
+              // Default to deadline (deadline_asc or 'default')
               const dateA = a.deadline ? new Date(a.deadline) : new Date(8640000000000000);
               const dateB = b.deadline ? new Date(b.deadline) : new Date(8640000000000000);
-              return dateA - dateB;
+              return sortBy === 'deadline_desc' ? dateB - dateA : dateA - dateB;
             }).map((job) => {
               const currentStageIndex = stages.findIndex(s => s.key === job.stage);
               const getInitials = (name) => {

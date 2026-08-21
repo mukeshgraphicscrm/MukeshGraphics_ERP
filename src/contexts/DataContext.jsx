@@ -23,7 +23,7 @@ const playNotificationSound = () => {
     
     // Quick volume envelope
     gainNode.gain.setValueAtTime(0, now);
-    gainNode.gain.linearRampToValueAtTime(0.8, now + 0.02);
+    gainNode.gain.linearRampToValueAtTime(4.0, now + 0.02); // Increased peak volume
     gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
     
     osc.start(now);

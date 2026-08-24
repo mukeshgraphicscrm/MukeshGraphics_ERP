@@ -221,40 +221,41 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // Draw bank details on the left side of the totals table
   const bankDetailsY = yPos; // yPos here is the startY of the totals table
   
-  doc.setFontSize(10);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-  doc.text("Bank Details", margin, bankDetailsY + 5);
+  doc.text("Bank Details:", margin, bankDetailsY + 12);
   
-  doc.setFontSize(9);
+  doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
   
   const labelX = margin;
-  const colonX = margin + 17;
-  const valueX = margin + 20;
-  let currentY = bankDetailsY + 13;
+  const colonX = margin + 20;
+  const valueX = margin + 23;
+  let currentY = bankDetailsY + 26;
+  const lineGap = 9;
   
   doc.setFont("helvetica", "bold");
   doc.text("Bank", labelX, currentY);
   doc.text(":", colonX, currentY);
   doc.text("KOTAK MAHINDRA BANK", valueX, currentY);
   
-  currentY += 4.5;
+  currentY += 5; // Smaller gap for branch
   doc.setFont("helvetica", "normal");
   doc.text("LOKHAND BAZAR BRANCH", valueX, currentY);
   
-  currentY += 6;
+  currentY += lineGap;
   doc.setFont("helvetica", "bold");
   doc.text("A/c. No.", labelX, currentY);
   doc.text(":", colonX, currentY);
   doc.text("9426272081", valueX, currentY);
   
-  currentY += 6;
+  currentY += lineGap;
   doc.text("IFSC Code", labelX, currentY);
   doc.text(":", colonX, currentY);
   doc.text("KKBK0003018", valueX, currentY);
 
-  currentY += 6;
+  currentY += lineGap;
   doc.text("E-mail", labelX, currentY);
   doc.text(":", colonX, currentY);
   doc.setFont("helvetica", "normal");

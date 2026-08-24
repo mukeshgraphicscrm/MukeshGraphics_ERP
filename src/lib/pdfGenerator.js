@@ -44,11 +44,11 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   doc.setTextColor(...primaryColor); // Use premium blue for title
   doc.setFont("helvetica", "bold");
   doc.setFontSize(26);
-  
+
   if (logoBase64) {
     doc.addImage(logoBase64, 'PNG', margin, 6, 38, 28);
   }
-  
+
   // Center title
   doc.text("ESTIMATE", pageWidth / 2, 26, { align: 'center' });
 
@@ -69,7 +69,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   doc.text(`Date: ${dateStr}`, pageWidth - margin, 27, { align: 'right' });
 
   // --- COMPANY & CUSTOMER INFO TABLE ---
-  
+
   const custName = customers[quote.customerId]?.name || quote.customerId || 'Customer';
   const custCity = customers[quote.customerId]?.city || '';
   const custGst = customers[quote.customerId]?.gstNumber || '';
@@ -207,9 +207,9 @@ export const generateQuotationPDF = async (quote, customers, products) => {
       if (data.row.index === 5 || data.row.index === 7) {
         data.cell.styles.fontStyle = 'bold';
         if (data.row.index === 7) {
-            data.cell.styles.textColor = [220, 38, 38]; // Red color for final amount
+          data.cell.styles.textColor = [220, 38, 38]; // Red color for final amount
         } else {
-            data.cell.styles.textColor = primaryColor;
+          data.cell.styles.textColor = primaryColor;
         }
       }
     }

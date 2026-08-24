@@ -215,7 +215,52 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     }
   });
 
-  yPos = doc.lastAutoTable.finalY;
+  const totalsFinalY = doc.lastAutoTable.finalY;
+
+  // --- BANK DETAILS SECTION ---
+  // Draw bank details on the left side of the totals table
+  const bankDetailsY = yPos; // yPos here is the startY of the totals table
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text("Bank Details", margin, bankDetailsY + 5);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(0, 0, 0);
+  
+  const labelX = margin;
+  const colonX = margin + 17;
+  const valueX = margin + 20;
+  let currentY = bankDetailsY + 13;
+  
+  doc.setFont("helvetica", "bold");
+  doc.text("Bank", labelX, currentY);
+  doc.text(":", colonX, currentY);
+  doc.text("KOTAK MAHINDRA BANK", valueX, currentY);
+  
+  currentY += 4.5;
+  doc.setFont("helvetica", "normal");
+  doc.text("LOKHAND BAZAR BRANCH", valueX, currentY);
+  
+  currentY += 6;
+  doc.setFont("helvetica", "bold");
+  doc.text("A/c. No.", labelX, currentY);
+  doc.text(":", colonX, currentY);
+  doc.text("9426272081", valueX, currentY);
+  
+  currentY += 6;
+  doc.text("IFSC Code", labelX, currentY);
+  doc.text(":", colonX, currentY);
+  doc.text("KKBK0003018", valueX, currentY);
+
+  currentY += 6;
+  doc.text("E-mail", labelX, currentY);
+  doc.text(":", colonX, currentY);
+  doc.setFont("helvetica", "normal");
+  doc.text("mukeshgraphics@gmail.com", valueX, currentY);
+
+  yPos = totalsFinalY;
 
   // --- FOOTER NOTE ---
   const pageBottom = pageHeight - 30;

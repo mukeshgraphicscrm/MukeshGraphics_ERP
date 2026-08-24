@@ -255,19 +255,19 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   
   doc.setFillColor(...brandLight);
   doc.setDrawColor(...borderLight);
-  doc.roundedRect(margin, yPos, bankCardW, 39, 2, 2, 'FD');
+  doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD');
 
   doc.setTextColor(...brandDark);
   doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
-  doc.text("PAYMENT / BANK DETAILS", margin + 4, yPos + 8);
+  doc.text("PAYMENT / BANK DETAILS", margin + 4, yPos + 9);
   
   doc.setDrawColor(...brandAccent);
   doc.setLineWidth(1);
-  doc.line(margin + 4, yPos + 11, margin + 26, yPos + 11);
+  doc.line(margin + 4, yPos + 12, margin + 26, yPos + 12);
 
   doc.setFontSize(11);
-  let bY = yPos + 17.5;
+  let bY = yPos + 21;
   const lX = margin + 4;
   const vX = margin + 28;
 
@@ -279,7 +279,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     doc.setTextColor(...textPrimary);
     doc.setFont("helvetica", isBold ? "bold" : "normal");
     doc.text(value, vX, bY);
-    bY += 6.5;
+    bY += 7.5;
   };
 
   drawBankRow("Bank:", "KOTAK MAHINDRA BANK", true);

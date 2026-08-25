@@ -20,13 +20,13 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   };
 
   const doc = new jsPDF();
-  const logoBase64 = await loadImage('/logo.png');
+  const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [33, 37, 41];        // Dark slate / almost black for minimalist look
-  const brandAccent = [108, 117, 125];   // Muted grey instead of bright orange
-  const brandLight = [255, 255, 255];    // White backgrounds instead of grey
-  const textPrimary = [33, 37, 41];      // Dark Grey for text
+  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
+  const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
+  const brandLight = [255, 255, 255];    // White
+  const textPrimary = [33, 37, 41];      // Dark Grey for normal text
   const textSecondary = [108, 117, 125]; // Muted Grey
   const borderLight = [222, 226, 230];   // Soft grey borders
 
@@ -40,46 +40,54 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // ==========================================
   // 1. TOP HEADER STRIP & LOGO
   // ==========================================
-  // Draw a minimal top strip
+  // Draw a thick dark blue top strip
   doc.setFillColor(...brandDark);
-  doc.rect(0, 0, pageW, 3, 'F');
+  doc.rect(0, 0, pageW, 10, 'F');
+  
+  // Draw an orange strip just below it
+  doc.setFillColor(...brandAccent);
+  doc.rect(0, 10, pageW, 3, 'F');
 
   const hm = margin - 7; // Reduced margin for header section
 
   // Logo
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', hm, 12, 42, 31, '', 'FAST');
+    // Use square dimensions since it's just the logo icon now
+    doc.addImage(logoBase64, 'PNG', hm, 20, 28, 28, '', 'FAST');
   }
 
   // Company Name next to logo
   const centerX = pageW / 2;
 
+  // As per instructions, adjust text placement.
+  // The user requested to not have the name under the logo. 
+  // Our code puts it in the center. We will keep the center text 
+  // but style it nicely with the brand dark blue.
   doc.setTextColor(...brandDark);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("MUKESH GRAPHICS", centerX, 23, { align: 'center' });
+  doc.text("MUKESH GRAPHICS", centerX, 31, { align: 'center' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
-  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 30, { align: 'center' });
-  
+  doc.setFontSize(10);
+  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 37, { align: 'center' });
+
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 36, { align: 'center' });
-  doc.text("GST: 24ANVPB6301P1ZP", centerX, 41, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 42, { align: 'center' });
+  doc.text("GST: 24ANVPB6301P1ZP", centerX, 47, { align: 'center' });
 
   // Quote / Estimate Tag
   const tagW = 35;
   const tagH = 8;
   const tagX = pageW - hm - tagW;
-  const tagY = 15;
-  
-  doc.setDrawColor(...brandDark);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'S');
+  const tagY = 23;
 
-  doc.setTextColor(...brandDark);
+  doc.setFillColor(...brandDark);
+  doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'F');
+
+  doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   // Centered in the rect
@@ -92,22 +100,22 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text(`Estimate No:`, pageW - hm - 30, 31, { align: 'right' });
+  doc.text(`Estimate No:`, pageW - hm - 25, 39, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${quote.quotationNo || 'N/A'}`, pageW - hm, 31, { align: 'right' });
+  doc.text(`${quote.quotationNo || 'N/A'}`, pageW - hm, 39, { align: 'right' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
-  doc.text(`Date:`, pageW - hm - 30, 36, { align: 'right' });
+  doc.text(`Date:`, pageW - hm - 25, 44, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${dateStr}`, pageW - hm, 36, { align: 'right' });
+  doc.text(`${dateStr}`, pageW - hm, 44, { align: 'right' });
 
   // Add a very subtle horizontal separator
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.line(hm, 52, pageW - hm, 52);
+  doc.line(hm, 54, pageW - hm, 54);
 
   // ==========================================
   // 2. FROM / TO SECTION (Cards)
@@ -117,52 +125,66 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   const custGst = customers[quote.customerId]?.gstNumber || '';
   const custMobile = customers[quote.customerId]?.mobile || '';
 
-  const startY = 58;
+  const startY = 60;
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)
+  doc.setFillColor(252, 253, 255); // Very light tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'S');
+  doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'FD');
+
+  // Thick dark blue left border for From card with rounded left corners
+  doc.setFillColor(...brandDark);
+  doc.roundedRect(margin, startY, 4, 35, 2, 2, 'F');
+  doc.rect(margin + 2, startY, 2, 35, 'F');
 
   // "Billed To" Card Background (Right)
-  doc.roundedRect(margin + cardW + 12, startY, cardW, 35, 2, 2, 'S');
+  doc.setFillColor(252, 253, 255); // Very light tint
+  doc.setDrawColor(...borderLight);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin + cardW + 12, startY, cardW, 35, 2, 2, 'FD');
+
+  // Thick orange left border for Billed To card with rounded left corners
+  doc.setFillColor(...brandAccent);
+  doc.roundedRect(margin + cardW + 12, startY, 4, 35, 2, 2, 'F');
+  doc.rect(margin + cardW + 14, startY, 2, 35, 'F');
 
   // Card Titles
   doc.setTextColor(...textSecondary);
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("FROM", margin + 8, startY + 6);
-  doc.text("BILLED TO", margin + cardW + 20, startY + 6);
+  doc.text("FROM", margin + 10, startY + 7);
+  doc.text("BILLED TO", margin + cardW + 22, startY + 7);
 
   // Card Content - From (Left)
   doc.setTextColor(...brandDark);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text("MUKESH GRAPHICS", margin + 8, startY + 13);
+  doc.text("MUKESH GRAPHICS", margin + 10, startY + 14);
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "normal");
-  doc.text("Bhavnagar, Gujarat", margin + 8, startY + 19);
-  doc.text("GST: 24ANVPB6301P1ZP", margin + 8, startY + 25);
-  doc.text("MO: 9512007008 (Amanbhai)", margin + 8, startY + 31);
+  doc.text("Bhavnagar, Gujarat", margin + 10, startY + 20);
+  doc.text("GST: 24ANVPB6301P1ZP", margin + 10, startY + 25);
+  doc.text("MO: 9512007008 (Amanbhai)", margin + 10, startY + 30);
 
   // Card Content - To (Right)
   doc.setTextColor(...brandDark);
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(custName.toUpperCase(), margin + cardW + 20, startY + 13);
+  doc.text(custName.toUpperCase(), margin + cardW + 22, startY + 14);
 
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "normal");
-  let toY = startY + 19;
-  if (custCity) { doc.text(custCity.toUpperCase(), margin + cardW + 20, toY); toY += 6; }
-  if (custGst) { doc.text(`GST: ${custGst.toUpperCase()}`, margin + cardW + 20, toY); toY += 6; }
-  if (custMobile) { doc.text(`MO: ${custMobile}`, margin + cardW + 20, toY); }
+  let toY = startY + 20;
+  if (custCity) { doc.text(custCity.toUpperCase(), margin + cardW + 22, toY); toY += 5; }
+  if (custGst) { doc.text(`GST: ${custGst.toUpperCase()}`, margin + cardW + 22, toY); toY += 5; }
+  if (custMobile) { doc.text(`MO: ${custMobile}`, margin + cardW + 22, toY); }
 
-  let yPos = startY + 45;
+  let yPos = startY + 42;
 
   // ==========================================
   // 3. ITEMS TABLE
@@ -195,32 +217,32 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     startY: yPos,
     head: [['#', 'ITEM DESCRIPTION', 'QTY', 'RATE', 'AMOUNT']],
     body: tableData,
-    theme: 'grid', // Use grid to have vertical lines, then style them
+    theme: 'grid', 
     headStyles: {
-      fillColor: [248, 249, 250],
-      textColor: textPrimary,
+      fillColor: brandDark, // Dark Blue header
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
-      cellPadding: 5,
+      cellPadding: { top: 4, bottom: 4, left: 2, right: 2 }, // Reduced padding to prevent wrapping
       halign: 'center',
-      lineColor: borderLight,
-      lineWidth: 0.2,
+      lineColor: brandDark,
+      lineWidth: 0.1,
     },
     bodyStyles: {
       textColor: textPrimary,
       fontSize: 9.5,
-      cellPadding: { top: 6, bottom: 6, left: 4, right: 4 },
+      cellPadding: { top: 5, bottom: 5, left: 2, right: 2 },
       lineColor: borderLight,
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 12 },
+      0: { halign: 'center', cellWidth: 8 }, // Reduced width for # column
       1: { cellWidth: 'auto', halign: 'left' },
       2: { halign: 'center', cellWidth: 25 },
       3: { halign: 'center', cellWidth: 35 },
       4: { halign: 'center', cellWidth: 40 },
     },
     alternateRowStyles: {
-      fillColor: [255, 255, 255], // pure white
+      fillColor: [255, 255, 255], 
     },
     didDrawPage: (data) => {
       yPos = data.cursor.y;
@@ -246,41 +268,47 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   ];
 
   // Draw Bank Details on the left side first
-  const bankCardW = 110;
-  
+  const bankCardW = 92;
+
+  // Highlighting Bank Details box with a light background and prominent text
+  doc.setFillColor(248, 250, 252); // Very light blue/grey tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'S');
+  doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD'); // Fill and draw border
 
-  doc.setTextColor(...textPrimary);
+  doc.setTextColor(...brandDark);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("PAYMENT / BANK DETAILS", margin + 4, yPos + 9);
-  
+
+  // Add a small divider line under title
+  doc.setDrawColor(226, 232, 240);
+  doc.line(margin + 4, yPos + 12, margin + bankCardW - 4, yPos + 12);
+
   doc.setFontSize(10);
-  let bY = yPos + 18;
+  let bY = yPos + 19;
   const lX = margin + 4;
-  const vX = margin + 28;
+  const vX = margin + 20;
 
   const drawBankRow = (label, value, isBold = false) => {
     doc.setTextColor(...textSecondary);
     doc.setFont("helvetica", "normal");
     doc.text(label, lX, bY);
-    
-    doc.setTextColor(...textPrimary);
-    doc.setFont("helvetica", isBold ? "bold" : "normal");
+
+    doc.setTextColor(...brandDark); // Use dark blue for values to highlight them
+    doc.setFont("helvetica", isBold ? "bold" : "bold"); // Making all bank details bold for highlighting
     doc.text(value, vX, bY);
     bY += 8;
   };
 
   drawBankRow("Bank:", "KOTAK MAHINDRA BANK", true);
-  drawBankRow("Branch:", "LOKHAND BAZAR");
+  drawBankRow("Branch:", "LOKHAND BAZAR", true);
   drawBankRow("A/c No:", "9426272081", true);
-  drawBankRow("IFSC:", "KKBK0003018");
+  drawBankRow("IFSC:", "KKBK0003018", true);
 
   // Draw Totals Table on the right
   autoTable(doc, {
-    startY: yPos - 1.5, // slightly offset to align with the bank box nicely
+    startY: yPos - 1.5,
     body: totalsData,
     theme: 'plain',
     styles: {
@@ -290,22 +318,22 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     },
     columnStyles: {
       0: { halign: 'right', fontStyle: 'bold', cellWidth: 35, textColor: textSecondary },
-      1: { halign: 'right', cellWidth: 32 },
+      1: { halign: 'right', cellWidth: 35 },
     },
-    margin: { left: pageW - margin - 67, right: margin },
+    margin: { left: pageW - margin - 70, right: margin },
     didParseCell: function (data) {
       if (data.row.index === 6) { // Net Payable
         data.cell.styles.fontStyle = 'bold';
-        data.cell.styles.textColor = textPrimary;
+        data.cell.styles.textColor = brandDark; // Highlight final amount in blue
         data.cell.styles.fontSize = 11;
-        data.cell.styles.fillColor = [248, 249, 250]; // slight grey tint
+        data.cell.styles.fillColor = [240, 244, 255]; // slight blue tint
       }
     },
     didDrawCell: (data) => {
       // Add lines for Totals
       doc.setDrawColor(...borderLight);
       doc.setLineWidth(0.3);
-      if (data.section === 'body') {
+      if (data.section === 'body' && data.row.index !== 6) {
         doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
       }
     }
@@ -322,40 +350,42 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     noteY = margin;
   }
 
-  doc.setDrawColor(...borderLight);
+  doc.setFillColor(255, 250, 245); // Very light orange tint for note
+  doc.setDrawColor(253, 216, 181); // Soft orange border to match the screenshot
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, noteY, pageW - margin * 2, 24, 2, 2, 'S');
+  doc.roundedRect(margin, noteY, pageW - margin * 2, 22, 2, 2, 'FD');
+
+  // Thick orange left border for Note with rounded left corners
+  doc.setFillColor(...brandAccent);
+  doc.roundedRect(margin, noteY, 4, 22, 2, 2, 'F');
+  doc.rect(margin + 2, noteY, 2, 22, 'F');
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...textPrimary);
-  doc.text("NOTE:", margin + 4, noteY + 7.5);
+  doc.setTextColor(...brandAccent); // Orange text for NOTE:
+  doc.text("NOTE:", margin + 8, noteY + 7.5);
 
   doc.setFontSize(10.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(...textSecondary);
+  doc.setTextColor(...textPrimary);
   const noteStr = "This is an estimated bill. An original invoice will be generated upon order completion and delivery of the shipment.";
-  const splitNote = doc.splitTextToSize(noteStr, pageW - margin * 2 - 8);
-  doc.text(splitNote, margin + 4, noteY + 14);
+  const splitNote = doc.splitTextToSize(noteStr, pageW - margin * 2 - 12);
+  doc.text(splitNote, margin + 8, noteY + 13.5);
 
   // ==========================================
   // 5. FOOTER
   // ==========================================
-  const footerY = pageH - 15;
+  const footerY = pageH - 12;
 
-  doc.setFillColor(248, 249, 250);
-  doc.rect(0, footerY, pageW, 15, 'F');
-  
-  doc.setDrawColor(...borderLight);
-  doc.setLineWidth(0.5);
-  doc.line(0, footerY, pageW, footerY);
+  doc.setFillColor(...brandDark); // Dark Blue footer
+  doc.rect(0, footerY, pageW, 12, 'F');
 
-  doc.setTextColor(...textSecondary);
-  doc.setFontSize(11);
+  doc.setTextColor(255, 255, 255); // White text
+  doc.setFontSize(10.5);
   doc.setFont("helvetica", "normal");
-  doc.text("Thank you for your business!", margin, footerY + 9.5);
-  doc.text("Generated by Mukesh Graphics ERP", pageW / 2, footerY + 9.5, { align: 'center' });
-  doc.text("mukeshgraphics@gmail.com", pageW - margin, footerY + 9.5, { align: 'right' });
+  doc.text("Thank you for your business!", margin, footerY + 8.5);
+  doc.text("Generated by Mukesh Graphics ERP", pageW / 2, footerY + 8.5, { align: 'center' });
+  doc.text("mukeshgraphics@gmail.com", pageW - margin, footerY + 8.5, { align: 'right' });
 
   // Save the PDF
   const safeName = (quote.quotationNo || 'Quotation').replace(/[^a-zA-Z0-9-]/g, '_');

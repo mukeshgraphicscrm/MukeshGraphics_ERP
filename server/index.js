@@ -25,7 +25,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
   console.warn('Firebase Admin not initialized: Missing FIREBASE_PROJECT_ID environment variable.');
 }
 
-const { syncContactFormLeads } = require('./leadAutomation');
+const { listenContactFormLeads } = require('./leadAutomation');
 
 const app = express();
 
@@ -99,15 +99,7 @@ collections.forEach(collection => {
 
 const PORT = process.env.PORT || 5000;
 
-syncContactFormLeads().catch((error) => {
-  console.error('Initial contact form sync failed:', error);
-});
-
-setInterval(() => {
-  syncContactFormLeads().catch((error) => {
-    console.error('Scheduled contact form sync failed:', error);
-  });
-}, 15000);
+listenContactFormLeads();
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

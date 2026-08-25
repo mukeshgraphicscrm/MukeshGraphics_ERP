@@ -45,58 +45,58 @@ const buildLeadPayloadFromContactForm = (data = {}) => {
   };
 };
 
-const syncContactFormLeads = async () => {
+const listenContactFormLeads = () => {
   if (!db) return;
-
-  const seen = new Set();
 
   for (const collectionName of CONTACT_FORM_COLLECTIONS) {
     try {
-      const snapshot = await db.collection(collectionName).get();
+      db.collection(collectionName).onSnapshot(async (snapshot) => {
+        for (const doc of snapshot.docs) {
+          const data = doc.data() || {};
+          const alreadyMarked = Boolean(data.autoLeadCreated || data.leadId);
 
-      for (const doc of snapshot.docs) {
-        const key = `${collectionName}:${doc.id}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
+          if (alreadyMarked) continue;
 
-        const data = doc.data() || {};
-        const alreadyMarked = Boolean(data.autoLeadCreated || data.leadId);
+          const leadPayload = buildLeadPayloadFromContactForm(data);
 
-        if (alreadyMarked) continue;
+          try {
+            const existingLeadSnapshot = await db.collection('leads')
+              .where('company', '==', leadPayload.company)
+              .where('contactPerson', '==', leadPayload.contactPerson)
+              .limit(1)
+              .get();
 
-        const leadPayload = buildLeadPayloadFromContactForm(data);
+            if (!existingLeadSnapshot.empty) {
+              const existingLeadDoc = existingLeadSnapshot.docs[0];
+              await doc.ref.update({
+                autoLeadCreated: true,
+                leadId: existingLeadDoc.id,
+                leadSource: 'Website',
+                stage: 'New Inquiry',
+              });
+              continue;
+            }
 
-        const existingLeadSnapshot = await db.collection('leads')
-          .where('company', '==', leadPayload.company)
-          .where('contactPerson', '==', leadPayload.contactPerson)
-          .limit(1)
-          .get();
+            const leadRef = await db.collection('leads').add({
+              ...leadPayload,
+              createdAt: new Date().toISOString(),
+            });
 
-        if (!existingLeadSnapshot.empty) {
-          const existingLeadDoc = existingLeadSnapshot.docs[0];
-          await doc.ref.update({
-            autoLeadCreated: true,
-            leadId: existingLeadDoc.id,
-            leadSource: 'Website',
-            stage: 'New Inquiry',
-          });
-          continue;
+            await doc.ref.update({
+              autoLeadCreated: true,
+              leadId: leadRef.id,
+              leadSource: 'Website',
+              stage: 'New Inquiry',
+            });
+          } catch (err) {
+            console.error('Error processing contact form lead:', err);
+          }
         }
-
-        const leadRef = await db.collection('leads').add({
-          ...leadPayload,
-          createdAt: new Date().toISOString(),
-        });
-
-        await doc.ref.update({
-          autoLeadCreated: true,
-          leadId: leadRef.id,
-          leadSource: 'Website',
-          stage: 'New Inquiry',
-        });
-      }
+      }, (error) => {
+        console.error(`Error listening to contact form collection: ${collectionName}`, error);
+      });
     } catch (error) {
-      console.error(`Error syncing contact form collection: ${collectionName}`, error);
+      console.error(`Error setting up listener for contact form collection: ${collectionName}`, error);
     }
   }
 };
@@ -105,5 +105,5 @@ module.exports = {
   CONTACT_FORM_COLLECTIONS,
   isContactFormCollection,
   buildLeadPayloadFromContactForm,
-  syncContactFormLeads,
+  listenContactFormLeads,
 };

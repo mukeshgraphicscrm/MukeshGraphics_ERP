@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import api from '../lib/api';
 import { useAuth } from './AuthContext';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 const playNotificationSound = () => {
   try {
@@ -82,7 +84,7 @@ export function DataProvider({ children }) {
         api.get('/grn'),
         api.get('/suppliers'),
         api.get('/artworks'),
-        api.get('/notifications'),
+        api.get('/notifications', { params: { employee: currentUser?.profile?.name } }),
         api.get('/dashboard/kpi'),
         api.get('/settings'),
       ]);
@@ -104,13 +106,13 @@ export function DataProvider({ children }) {
       
       if (notifRes.status === 'fulfilled') {
         const allNotifs = Array.isArray(notifRes.value.data) ? notifRes.value.data : [];
-        setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+        setNotifications(allNotifs);
       } else {
         // Find notification response in Promise.allSettled array (index 14)
         try {
-          const res = await api.get('/notifications');
+          const res = await api.get('/notifications', { params: { employee: currentUser?.profile?.name } });
           const allNotifs = Array.isArray(res.data) ? res.data : [];
-          setNotifications(allNotifs.filter(n => n.employee === currentUser?.profile?.name));
+          setNotifications(allNotifs);
         } catch(e) {}
       }
 
@@ -150,33 +152,31 @@ export function DataProvider({ children }) {
     }
   }, [currentUser, isLoaded, fetchAll]);
 
-  // Poll notifications every 10 seconds
+  // Listen to notifications in real-time
   useEffect(() => {
-    if (!currentUser) return;
-    
-    const fetchNotifications = async () => {
-      try {
-        const res = await api.get('/notifications');
-        const allNotifs = Array.isArray(res.data) ? res.data : [];
-        const userNotifs = allNotifs.filter(n => n.employee === currentUser?.profile?.name);
+    if (!currentUser || !currentUser.profile?.name) return;
+
+    const q = query(
+      collection(db, 'notifications'),
+      where('employee', '==', currentUser.profile.name)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allNotifs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      setNotifications(prev => {
+        const newUnread = allNotifs.filter(n => !n.read);
+        const oldUnread = prev.filter(n => !n.read);
         
-        setNotifications(prev => {
-          const newUnread = userNotifs.filter(n => !n.read);
-          const oldUnread = prev.filter(n => !n.read);
-          
-          if (newUnread.length > oldUnread.length) {
-            playNotificationSound();
-          }
-          return userNotifs;
-        });
-      } catch (err) {
-        console.error('Failed to poll notifications:', err);
-      }
-    };
+        if (newUnread.length > oldUnread.length) {
+          playNotificationSound();
+        }
+        return allNotifs;
+      });
+    }, (error) => {
+      console.error('Firestore notification listener error:', error);
+    });
 
-    const intervalId = setInterval(fetchNotifications, 10000);
-
-    return () => clearInterval(intervalId);
+    return () => unsubscribe();
   }, [currentUser]);
 
   // Helper maps derived from arrays — Array.isArray guards prevent crashes if any state is non-array

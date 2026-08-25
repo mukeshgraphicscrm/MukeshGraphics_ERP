@@ -41,7 +41,7 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
 
   return (
     <>
-      <div 
+      <div
         className="fixed inset-0 z-40"
         onClick={onClose}
       />

@@ -14,7 +14,23 @@ const createCrudRouter = (collectionName) => {
       return res.json(mockData[collectionName] || []);
     }
     try {
-      const snapshot = await db.collection(collectionName).orderBy('createdAt', 'desc').get();
+      let queryRef = db.collection(collectionName);
+      
+      let hasFilters = false;
+      for (const [key, value] of Object.entries(req.query)) {
+        if (key !== 'sort' && key !== 'order' && key !== 'limit') {
+          queryRef = queryRef.where(key, '==', value);
+          hasFilters = true;
+        }
+      }
+
+      // If we use where() on one field and orderBy() on a different field, 
+      // Firestore requires a composite index. To avoid errors, skip orderBy if filtering.
+      if (!hasFilters) {
+        queryRef = queryRef.orderBy('createdAt', 'desc');
+      }
+
+      const snapshot = await queryRef.get();
       const items = [];
       snapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() });

@@ -28,6 +28,7 @@ export default function Production() {
   const [toDate, setToDate] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [sortBy, setSortBy] = useState('default');
+  const [selectedStage, setSelectedStage] = useState(null);
 
   const handleEditJob = (job) => {
     setEditingJob(job);
@@ -60,9 +61,18 @@ export default function Production() {
 
   const activeProcessedJobs = processedJobs.filter(j => j.stage !== 'Dispatched');
 
-  const filteredJobs = activeProcessedJobs.filter(job => {
+  const filteredJobs = processedJobs.filter(job => {
     let match = true;
+    
+    // Hide 'Dispatched' jobs by default unless explicitly selected
+    if (!selectedStage && job.stage === 'Dispatched') {
+      match = false;
+    }
+    
     if (statusFilter !== 'All' && job.displayStatus !== statusFilter) {
+      match = false;
+    }
+    if (selectedStage && job.stage !== selectedStage) {
       match = false;
     }
     if (fromDate) {
@@ -134,12 +144,36 @@ export default function Production() {
 
         {/* Production Pipeline Tiles */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 overflow-x-auto">
-          <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-3">Production Pipeline</h3>
-          <div className="flex space-x-3 min-w-max">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Production Pipeline</h3>
+            {selectedStage && (
+              <button 
+                onClick={() => setSelectedStage(null)}
+                className="text-xs font-semibold text-brand-accent hover:text-brand-primary"
+              >
+                Clear Filter
+              </button>
+            )}
+          </div>
+          <div className="flex space-x-3 min-w-max pb-2">
+            <div 
+              onClick={() => setSelectedStage(null)}
+              className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${!selectedStage ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+            >
+              <div className="relative z-10">
+                <p className="font-medium text-gray-900 text-[13px] leading-tight">View All</p>
+                <p className="text-lg font-bold text-brand-accent mt-1">{activeProcessedJobs.length}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Total active</p>
+              </div>
+            </div>
             {stages.map((stage) => {
               const count = processedJobs.filter(j => j.stage === stage.key).length;
               return (
-                <div key={stage.id} className="flex-1 min-w-[120px] bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 relative overflow-hidden">
+                <div 
+                  key={stage.id} 
+                  onClick={() => setSelectedStage(stage.key)}
+                  className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${selectedStage === stage.key ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                >
                   <div className="relative z-10">
                     <p className="font-medium text-gray-900 text-[13px] leading-tight">{stage.name}</p>
                     <p className="text-lg font-bold text-brand-accent mt-1">{count}</p>
@@ -154,7 +188,19 @@ export default function Production() {
         {/* Active Job Cards List */}
         <div>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-3 sm:space-y-0">
-            <h3 className="text-lg font-bold text-gray-900">Active Job Cards</h3>
+            <div className="flex items-center gap-3">
+              <h3 className="text-lg font-bold text-gray-900">
+                Active Job Cards {selectedStage && <span className="text-brand-accent font-medium text-base">- {selectedStage}</span>}
+              </h3>
+              {selectedStage && (
+                 <button 
+                   onClick={() => setSelectedStage(null)} 
+                   className="text-xs font-bold text-brand-accent bg-brand-accent/10 px-2 py-1 rounded hover:bg-brand-accent/20 transition-colors"
+                 >
+                   View All
+                 </button>
+              )}
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center space-x-2">
                 <input
@@ -259,9 +305,20 @@ export default function Production() {
                     <h4 className="text-xl font-bold text-gray-900">
                       {job.customerName || 'Customer Name'} - {job.productName}
                     </h4>
-                    <p className="text-sm text-gray-500 mt-1">
-                      Printing Copies - {job.units ? job.units.toLocaleString('en-IN') : 0} · due {job.deadline ? new Date(job.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <p className="text-sm text-gray-500">
+                        Printing Copies - {job.units ? job.units.toLocaleString('en-IN') : 0} · due {job.deadline ? new Date(job.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'N/A'}
+                      </p>
+                      {job.employee && (
+                        <>
+                          <span className="text-gray-300">|</span>
+                          <div className="flex items-center text-xs font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                            <User className="w-3.5 h-3.5 mr-1.5" />
+                            {job.employee}
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   {/* Progress Tracker */}
@@ -269,12 +326,12 @@ export default function Production() {
                     {/* Segmented Pipeline */}
                     <div className="flex space-x-1 mb-1 pr-14 items-end">
                       {stages.map((stageItem, index) => {
-                        const isCurrent = index === currentStageIndex;
+                        const stageQty = job.stageQuantities?.[stageItem.key] || (index === currentStageIndex ? job.sheetQuantity : null);
                         return (
                           <div key={`qty-${stageItem.id}`} className="flex-1 text-center h-4">
-                            {isCurrent && job.sheetQuantity && (
+                            {stageQty && (
                               <div className="text-[10px] text-gray-800 font-bold leading-none">
-                                {job.sheetQuantity} Sht
+                                {stageQty} Sht
                               </div>
                             )}
                           </div>

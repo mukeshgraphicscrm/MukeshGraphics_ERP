@@ -37,6 +37,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     progress: '0',
     deadline: '',
     sheetQuantity: '',
+    stageQuantities: {},
     notes: '',
     employee: currentUser?.profile?.name || '',
   });
@@ -101,7 +102,8 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           status: jobToEdit.status || 'On Schedule',
           progress: jobToEdit.progress || '0',
           deadline: jobToEdit.deadline ? new Date(jobToEdit.deadline).toISOString().split('T')[0] : '',
-          sheetQuantity: jobToEdit.sheetQuantity || '',
+          sheetQuantity: jobToEdit.stageQuantities?.[jobToEdit.stage || 'Start'] || jobToEdit.sheetQuantity || '',
+          stageQuantities: jobToEdit.stageQuantities || (jobToEdit.sheetQuantity ? { [jobToEdit.stage || 'Start']: Number(jobToEdit.sheetQuantity) } : {}),
           notes: jobToEdit.notes || '',
           employee: jobToEdit.employee || currentUser?.profile?.name || '',
         });
@@ -133,6 +135,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           progress: '0',
           deadline: new Date().toISOString().split('T')[0],
           sheetQuantity: '',
+          stageQuantities: {},
           notes: '',
           employee: currentUser?.profile?.name || '',
         });
@@ -169,9 +172,19 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
           ...prev,
           [name]: updatedValue,
           progress: calculatedProgress.toString(),
+          sheetQuantity: prev.stageQuantities?.[updatedValue] || '',
           ...(isEmployeeEditing && { employee: autoEmployee })
         };
       });
+    } else if (name === 'sheetQuantity') {
+      setFormData((prev) => ({
+        ...prev,
+        sheetQuantity: value,
+        stageQuantities: {
+          ...(prev.stageQuantities || {}),
+          [prev.stage]: value ? Number(value) : null
+        }
+      }));
     } else {
       setFormData((prev) => {
         const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
@@ -196,6 +209,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         units: Number(formData.units),
         progress: Number(formData.progress),
         sheetQuantity: formData.sheetQuantity ? Number(formData.sheetQuantity) : null,
+        stageQuantities: formData.stageQuantities || {},
       };
       if (jobToEdit) {
         const res = await api.put(`/productionJobs/${jobToEdit.id}`, payload);

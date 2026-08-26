@@ -434,6 +434,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 min="0"
                 value={formData.sheetQuantity || ''}
                 onChange={handleChange}
+                onWheel={(e) => e.target.blur()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="e.g. 500"
               />
@@ -449,6 +450,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 min="1"
                 value={formData.units}
                 onChange={handleChange}
+                onWheel={(e) => e.target.blur()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="e.g. 10000"
               />
@@ -464,6 +466,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 max="100"
                 value={formData.progress}
                 onChange={handleChange}
+                onWheel={(e) => e.target.blur()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>

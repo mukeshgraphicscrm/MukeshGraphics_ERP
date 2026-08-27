@@ -159,12 +159,12 @@ export default function JobInquiry() {
                 </div>
                 {job.salary && (
                   <div className="flex items-center text-sm text-gray-600 gap-2">
-                    <span className="w-4 h-4 text-gray-400 flex items-center justify-center font-bold text-xs">₹</span> {job.salary}
+                    <span className="w-4 h-4 text-gray-400 flex items-center justify-center text-base">₹</span> {job.salary}
                   </div>
                 )}
               </div>
 
-              <p className="text-sm text-gray-600 line-clamp-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <p className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
                 {job.description}
               </p>
             </div>

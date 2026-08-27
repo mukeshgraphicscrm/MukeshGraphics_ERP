@@ -81,12 +81,7 @@ export default function ViewApplicationsModal({ isOpen, onClose, job }) {
                         value={app.status || 'Pending'}
                         onChange={(e) => handleStatusChange(app.id, e.target.value)}
                         disabled={updatingId === app.id}
-                        className={`text-sm rounded-full px-3 py-1 font-medium border cursor-pointer ${
-                          app.status === 'Reviewed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                          app.status === 'On Hold' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
-                          app.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
-                          'bg-gray-50 text-gray-700 border-gray-200'
-                        } focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                        className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors text-sm text-gray-700 bg-white cursor-pointer"
                       >
                         <option value="Pending">Pending</option>
                         <option value="Reviewed">Reviewed</option>

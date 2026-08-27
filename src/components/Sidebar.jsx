@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, GitBranch, FileText,
   ShoppingCart, Package, Factory,
   Boxes, Truck, ShoppingBag, IndianRupee, ChevronLeft,
-  Settings, Layers, ChevronDown, ClipboardList
+  Settings, Layers, ChevronDown, ClipboardList, Briefcase
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -28,6 +28,7 @@ const navItems = [
     ]
   },
   { name: 'Settings', path: '/settings', icon: Settings },
+  { name: 'Job Inquiry', path: '/job-inquiry', icon: Briefcase },
 ];
 
 import { useAuth } from '../contexts/AuthContext';

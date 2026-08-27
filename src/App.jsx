@@ -22,6 +22,7 @@ import Dispatch from './pages/Dispatch';
 import Accounts from './pages/Accounts';
 import Jobcard from './pages/Jobcard';
 import Settings from './pages/Settings';
+import JobInquiry from './pages/JobInquiry';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
                 <Route path="purchase" element={<Purchase />} />
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="job-inquiry" element={<JobInquiry />} />
               </Route>
             </Route>
           </Routes>

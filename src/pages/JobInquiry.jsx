@@ -4,6 +4,8 @@ import AddJobModal from '../components/AddJobModal';
 import EditJobModal from '../components/EditJobModal';
 import { useData } from '../contexts/DataContext';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function JobInquiry() {
   const { jobPosted: jobs, setJobPosted: setJobs, isLoaded } = useData();
@@ -11,6 +13,9 @@ export default function JobInquiry() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredJobs = jobs.filter(job => 
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -22,8 +27,10 @@ export default function JobInquiry() {
       const res = await api.post('/job_posted', { ...newJob, postedDate: new Date().toISOString().split('T')[0] });
       setJobs([res.data, ...jobs]);
       setIsAddModalOpen(false);
+      toast.success('Job posting created successfully!');
     } catch (error) {
       console.error('Failed to add job', error);
+      toast.error('Failed to create job posting');
     }
   };
 
@@ -32,19 +39,32 @@ export default function JobInquiry() {
       const res = await api.put(`/job_posted/${updatedJob.id}`, updatedJob);
       setJobs(jobs.map(job => job.id === updatedJob.id ? res.data : job));
       setIsEditModalOpen(false);
+      toast.success('Job posting updated successfully!');
     } catch (error) {
       console.error('Failed to update job', error);
+      toast.error('Failed to update job posting');
     }
   };
 
-  const handleDeleteJob = async (id) => {
-    if (window.confirm('Are you sure you want to delete this job posting?')) {
-      try {
-        await api.delete(`/job_posted/${id}`);
-        setJobs(jobs.filter(job => job.id !== id));
-      } catch (error) {
-        console.error('Failed to delete job', error);
-      }
+  const handleDeleteClick = (id) => {
+    setJobToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!jobToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/job_posted/${jobToDelete}`);
+      setJobs(jobs.filter(job => job.id !== jobToDelete));
+      toast.success('Job posting deleted successfully!');
+      setIsDeleteModalOpen(false);
+      setJobToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete job', error);
+      toast.error('Failed to delete job posting');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -87,7 +107,7 @@ export default function JobInquiry() {
       </div>
 
       {/* Jobs Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {!isLoaded ? (
           <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 animate-pulse">
             Loading job postings...
@@ -118,7 +138,7 @@ export default function JobInquiry() {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button 
-                    onClick={() => handleDeleteJob(job.id)}
+                    onClick={() => handleDeleteClick(job.id)}
                     className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded"
                     title="Delete"
                   >
@@ -168,6 +188,15 @@ export default function JobInquiry() {
           onUpdate={handleUpdateJob}
         />
       )}
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Job Posting"
+        message="Are you sure you want to delete this job posting? This action cannot be undone and it will be permanently removed from the system."
+        isLoading={isDeleting}
+      />
     </>
   );
 }

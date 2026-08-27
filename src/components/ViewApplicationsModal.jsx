@@ -1,17 +1,33 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Users, MapPin, Building, Calendar, Phone, Mail, FileText } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 
 export default function ViewApplicationsModal({ isOpen, onClose, job }) {
   const { applicationsReceived } = useData();
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !job) return null;
 
   const jobApplications = applicationsReceived.filter(app => app.jobId === job.id);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative">
+    <div 
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl relative"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sticky top-0 bg-white border-b border-gray-100 p-6 flex justify-between items-center z-10">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Applications for {job.title}</h2>

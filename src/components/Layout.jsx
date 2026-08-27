@@ -40,7 +40,7 @@ export default function Layout() {
 
         {/* Main Content Area */}
         <main className="flex-1 p-4 md:p-6 w-full max-w-full overflow-hidden">
-          <div className="max-w-7xl mx-auto">
+          <div className="w-full mx-auto">
             <Outlet />
           </div>
         </main>

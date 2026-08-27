@@ -3,6 +3,7 @@ import { X, Users, MapPin, Building, Calendar, Phone, Mail, FileText } from 'luc
 import { useData } from '../contexts/DataContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import CustomSelect from './CustomSelect';
 
 export default function ViewApplicationsModal({ isOpen, onClose, job }) {
   const { applicationsReceived, refetch } = useData();
@@ -77,17 +78,20 @@ export default function ViewApplicationsModal({ isOpen, onClose, job }) {
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                     <div className="flex items-center gap-4">
                       <h3 className="text-lg font-bold text-gray-900">{app.fullName}</h3>
-                      <select
-                        value={app.status || 'Pending'}
-                        onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                        disabled={updatingId === app.id}
-                        className="px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors text-sm text-gray-700 bg-white cursor-pointer"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="Reviewed">Reviewed</option>
-                        <option value="On Hold">On Hold</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
+                      <div className="w-36">
+                        <CustomSelect
+                          name="status"
+                          value={['Pending', 'Reviewed', 'On Hold', 'Rejected'].includes(app.status) ? app.status : 'Pending'}
+                          onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                          disabled={updatingId === app.id}
+                          options={[
+                            { value: 'Pending', label: 'Pending' },
+                            { value: 'Reviewed', label: 'Reviewed' },
+                            { value: 'On Hold', label: 'On Hold' },
+                            { value: 'Rejected', label: 'Rejected' },
+                          ]}
+                        />
+                      </div>
                     </div>
                     <span className="text-sm text-gray-500 flex items-center gap-1">
                       <Calendar className="w-4 h-4" /> 

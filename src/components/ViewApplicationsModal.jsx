@@ -1,9 +1,26 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Users, MapPin, Building, Calendar, Phone, Mail, FileText } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 export default function ViewApplicationsModal({ isOpen, onClose, job }) {
-  const { applicationsReceived } = useData();
+  const { applicationsReceived, refetch } = useData();
+  const [updatingId, setUpdatingId] = useState(null);
+
+  const handleStatusChange = async (appId, newStatus) => {
+    try {
+      setUpdatingId(appId);
+      await api.put(`/application_received/${appId}`, { status: newStatus });
+      await refetch();
+      toast.success('Status updated');
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast.error('Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -58,7 +75,25 @@ export default function ViewApplicationsModal({ isOpen, onClose, job }) {
               {jobApplications.map((app) => (
                 <div key={app.id} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-                    <h3 className="text-lg font-bold text-gray-900">{app.fullName}</h3>
+                    <div className="flex items-center gap-4">
+                      <h3 className="text-lg font-bold text-gray-900">{app.fullName}</h3>
+                      <select
+                        value={app.status || 'Pending'}
+                        onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                        disabled={updatingId === app.id}
+                        className={`text-sm rounded-full px-3 py-1 font-medium border cursor-pointer ${
+                          app.status === 'Reviewed' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                          app.status === 'On Hold' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                          app.status === 'Rejected' ? 'bg-red-50 text-red-700 border-red-200' :
+                          'bg-gray-50 text-gray-700 border-gray-200'
+                        } focus:outline-none focus:ring-2 focus:ring-brand-500`}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Reviewed">Reviewed</option>
+                        <option value="On Hold">On Hold</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
+                    </div>
                     <span className="text-sm text-gray-500 flex items-center gap-1">
                       <Calendar className="w-4 h-4" /> 
                       {new Date(app.appliedAt || app.createdAt).toLocaleString()}

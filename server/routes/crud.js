@@ -27,7 +27,8 @@ const createCrudRouter = (collectionName) => {
       // If we use where() on one field and orderBy() on a different field, 
       // Firestore requires a composite index. To avoid errors, skip orderBy if filtering.
       if (!hasFilters) {
-        queryRef = queryRef.orderBy('createdAt', 'desc');
+        const sortField = collectionName === 'application_received' ? 'appliedAt' : 'createdAt';
+        queryRef = queryRef.orderBy(sortField, 'desc');
       }
 
       const snapshot = await queryRef.get();

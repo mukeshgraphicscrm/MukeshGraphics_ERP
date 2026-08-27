@@ -17,7 +17,9 @@ export default function ViewApplicationsModal({ isOpen, onClose, job }) {
 
   if (!isOpen || !job) return null;
 
-  const jobApplications = applicationsReceived.filter(app => app.jobId === job.id);
+  const jobApplications = applicationsReceived.filter(app => 
+    app.jobId === job.id || app.jobTitle === job.title
+  );
 
   return (
     <div 

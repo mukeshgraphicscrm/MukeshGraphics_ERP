@@ -61,6 +61,7 @@ export function DataProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [dashboardData, setDashboardData] = useState(null);
   const [settings, setSettings] = useState([]);
+  const [jobPosted, setJobPosted] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -68,7 +69,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -87,6 +88,7 @@ export function DataProvider({ children }) {
         api.get('/notifications', { params: { employee: currentUser?.profile?.name } }),
         api.get('/dashboard/kpi'),
         api.get('/settings'),
+        api.get('/job_posted'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -118,6 +120,7 @@ export function DataProvider({ children }) {
 
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
       if (settingsRes.status === 'fulfilled') setSettings(Array.isArray(settingsRes.value.data) ? settingsRes.value.data : []);
+      if (jobPostedRes.status === 'fulfilled') setJobPosted(Array.isArray(jobPostedRes.value.data) ? jobPostedRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -149,6 +152,7 @@ export function DataProvider({ children }) {
       setNotifications([]);
       setDashboardData(null);
       setSettings([]);
+      setJobPosted([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -231,6 +235,7 @@ export function DataProvider({ children }) {
     notifications, setNotifications,
     dashboardData, setDashboardData,
     settings, setSettings,
+    jobPosted, setJobPosted,
     // helper maps
     customerMap,
     productMap,

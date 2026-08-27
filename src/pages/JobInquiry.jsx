@@ -2,37 +2,11 @@ import React, { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, Briefcase, MapPin, Building, Calendar } from 'lucide-react';
 import AddJobModal from '../components/AddJobModal';
 import EditJobModal from '../components/EditJobModal';
-
-// Mock data for initial state
-const initialJobs = [
-  {
-    id: '1',
-    title: 'Senior Press Operator',
-    department: 'Production',
-    location: 'Mumbai Facility',
-    type: 'Full-time',
-    experience: '5+ Years',
-    salary: '₹4,00,000 - ₹6,00,000',
-    status: 'Active',
-    description: 'We are looking for an experienced Press Operator to manage our advanced printing machinery...',
-    postedDate: '2026-08-15',
-  },
-  {
-    id: '2',
-    title: 'Sales Executive',
-    department: 'Sales',
-    location: 'Remote / Field',
-    type: 'Full-time',
-    experience: '2-4 Years',
-    salary: '₹3,00,000 - ₹5,00,000 + Commission',
-    status: 'Active',
-    description: 'Looking for a driven sales professional with B2B experience in printing and packaging solutions.',
-    postedDate: '2026-08-20',
-  },
-];
+import { useData } from '../contexts/DataContext';
+import api from '../lib/api';
 
 export default function JobInquiry() {
-  const [jobs, setJobs] = useState(initialJobs);
+  const { jobPosted: jobs, setJobPosted: setJobs, isLoaded } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
@@ -43,20 +17,34 @@ export default function JobInquiry() {
     job.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAddJob = (newJob) => {
-    const jobWithId = { ...newJob, id: Date.now().toString(), postedDate: new Date().toISOString().split('T')[0] };
-    setJobs([jobWithId, ...jobs]);
-    setIsAddModalOpen(false);
+  const handleAddJob = async (newJob) => {
+    try {
+      const res = await api.post('/job_posted', { ...newJob, postedDate: new Date().toISOString().split('T')[0] });
+      setJobs([res.data, ...jobs]);
+      setIsAddModalOpen(false);
+    } catch (error) {
+      console.error('Failed to add job', error);
+    }
   };
 
-  const handleUpdateJob = (updatedJob) => {
-    setJobs(jobs.map(job => job.id === updatedJob.id ? updatedJob : job));
-    setIsEditModalOpen(false);
+  const handleUpdateJob = async (updatedJob) => {
+    try {
+      const res = await api.put(`/job_posted/${updatedJob.id}`, updatedJob);
+      setJobs(jobs.map(job => job.id === updatedJob.id ? res.data : job));
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error('Failed to update job', error);
+    }
   };
 
-  const handleDeleteJob = (id) => {
+  const handleDeleteJob = async (id) => {
     if (window.confirm('Are you sure you want to delete this job posting?')) {
-      setJobs(jobs.filter(job => job.id !== id));
+      try {
+        await api.delete(`/job_posted/${id}`);
+        setJobs(jobs.filter(job => job.id !== id));
+      } catch (error) {
+        console.error('Failed to delete job', error);
+      }
     }
   };
 
@@ -70,8 +58,9 @@ export default function JobInquiry() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <>
+      <div className="space-y-6">
+        {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Job Inquiry Management</h2>
@@ -99,7 +88,11 @@ export default function JobInquiry() {
 
       {/* Jobs Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredJobs.length === 0 ? (
+        {!isLoaded ? (
+          <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200 animate-pulse">
+            Loading job postings...
+          </div>
+        ) : filteredJobs.length === 0 ? (
           <div className="col-span-full py-12 text-center text-gray-500 bg-white rounded-xl border border-gray-200">
             No job postings found.
           </div>
@@ -158,7 +151,9 @@ export default function JobInquiry() {
           ))
         )}
       </div>
+      </div>
 
+      
       <AddJobModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
@@ -173,6 +168,6 @@ export default function JobInquiry() {
           onUpdate={handleUpdateJob}
         />
       )}
-    </div>
+    </>
   );
 }

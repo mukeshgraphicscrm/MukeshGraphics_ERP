@@ -95,7 +95,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                     toggleSubmenu(item.name);
                   }}
                   className={cn(
-                    "flex items-center w-full px-4 py-[12px] mx-4 rounded-xl transition-all duration-300 gap-4 group cursor-pointer max-w-[calc(100%-32px)]",
+                    "flex items-center py-[12px] rounded-xl transition-all duration-300 group cursor-pointer",
+                    collapsed ? "justify-center mx-3 w-[calc(100%-24px)]" : "px-4 mx-4 gap-4 w-[calc(100%-32px)]",
                     isChildActive && !isOpen
                       ? "bg-gradient-to-r from-[#F07E19]/20 to-[#F07E19]/5 border border-[#F07E19]/30 shadow-[inset_3px_0_0_0_#F07E19]"
                       : "hover:bg-white/5 border border-transparent"
@@ -172,7 +173,8 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
               to={item.path}
               onClick={handleLinkClick}
               className={({ isActive }) => cn(
-                "flex items-center px-4 py-[12px] mx-4 rounded-xl transition-all duration-300 gap-4 group max-w-[calc(100%-32px)]",
+                "flex items-center py-[12px] rounded-xl transition-all duration-300 group",
+                collapsed ? "justify-center mx-3 w-[calc(100%-24px)]" : "px-4 mx-4 gap-4 w-[calc(100%-32px)]",
                 isActive
                   ? "bg-gradient-to-r from-[#F07E19]/20 to-[#F07E19]/5 border border-[#F07E19]/30 shadow-[inset_3px_0_0_0_#F07E19]"
                   : "hover:bg-white/5 border border-transparent"

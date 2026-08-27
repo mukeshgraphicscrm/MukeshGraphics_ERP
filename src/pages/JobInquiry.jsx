@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Search, Edit2, Trash2, Briefcase, MapPin, Building, Calendar } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Briefcase, MapPin, Building, Calendar, Users } from 'lucide-react';
 import AddJobModal from '../components/AddJobModal';
 import EditJobModal from '../components/EditJobModal';
+import ViewApplicationsModal from '../components/ViewApplicationsModal';
 import { useData } from '../contexts/DataContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -16,6 +17,8 @@ export default function JobInquiry() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isViewApplicationsModalOpen, setIsViewApplicationsModalOpen] = useState(false);
+  const [viewingJobApplications, setViewingJobApplications] = useState(null);
 
   const filteredJobs = jobs.filter(job => 
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -131,6 +134,13 @@ export default function JobInquiry() {
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
+                    onClick={() => { setViewingJobApplications(job); setIsViewApplicationsModalOpen(true); }}
+                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                    title="View Applications"
+                  >
+                    <Users className="w-4 h-4" />
+                  </button>
+                  <button 
                     onClick={() => { setEditingJob(job); setIsEditModalOpen(true); }}
                     className="p-1.5 text-gray-500 hover:text-brand-accent hover:bg-brand-50 rounded"
                     title="Edit"
@@ -196,6 +206,12 @@ export default function JobInquiry() {
         title="Delete Job Posting"
         message="Are you sure you want to delete this job posting? This action cannot be undone and it will be permanently removed from the system."
         isLoading={isDeleting}
+      />
+
+      <ViewApplicationsModal
+        isOpen={isViewApplicationsModalOpen}
+        onClose={() => { setIsViewApplicationsModalOpen(false); setViewingJobApplications(null); }}
+        job={viewingJobApplications}
       />
     </>
   );

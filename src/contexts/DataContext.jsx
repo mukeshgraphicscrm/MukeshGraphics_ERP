@@ -62,6 +62,7 @@ export function DataProvider({ children }) {
   const [dashboardData, setDashboardData] = useState(null);
   const [settings, setSettings] = useState([]);
   const [jobPosted, setJobPosted] = useState([]);
+  const [applicationsReceived, setApplicationsReceived] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -69,7 +70,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -89,6 +90,7 @@ export function DataProvider({ children }) {
         api.get('/dashboard/kpi'),
         api.get('/settings'),
         api.get('/job_posted'),
+        api.get('/application_received'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -121,6 +123,7 @@ export function DataProvider({ children }) {
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
       if (settingsRes.status === 'fulfilled') setSettings(Array.isArray(settingsRes.value.data) ? settingsRes.value.data : []);
       if (jobPostedRes.status === 'fulfilled') setJobPosted(Array.isArray(jobPostedRes.value.data) ? jobPostedRes.value.data : []);
+      if (appRes.status === 'fulfilled') setApplicationsReceived(Array.isArray(appRes.value.data) ? appRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -153,6 +156,7 @@ export function DataProvider({ children }) {
       setDashboardData(null);
       setSettings([]);
       setJobPosted([]);
+      setApplicationsReceived([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -236,6 +240,7 @@ export function DataProvider({ children }) {
     dashboardData, setDashboardData,
     settings, setSettings,
     jobPosted, setJobPosted,
+    applicationsReceived, setApplicationsReceived,
     // helper maps
     customerMap,
     productMap,

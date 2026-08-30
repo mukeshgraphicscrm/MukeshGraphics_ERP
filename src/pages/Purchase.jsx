@@ -16,7 +16,7 @@ export default function Purchase() {
 
 
   const poColumns = [
-    { header: 'PO #', accessor: row => row.poNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.poNo}</span> },
+    { header: 'PO', accessor: row => row.poNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.poNo}</span> },
     { header: 'SUPPLIER', accessor: row => suppliers[row.supplierId]?.name || row.supplierId, render: row => <span className="text-[13px] text-gray-700">{suppliers[row.supplierId]?.name || row.supplierId}</span> },
     { header: 'MATERIAL', accessor: row => row.material, render: row => <span className="text-[13px] text-gray-700">{row.material}</span> },
     { header: 'QUANTITY', accessor: row => row.quantity.toLocaleString('en-IN'), render: row => <span className="text-[13px] text-gray-500">{row.quantity.toLocaleString('en-IN')}</span> },
@@ -25,7 +25,7 @@ export default function Purchase() {
   ];
 
   const grnColumns = [
-    { header: 'GRN #', accessor: row => row.grnNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.grnNo}</span> },
+    { header: 'GRN', accessor: row => row.grnNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.grnNo}</span> },
     { header: 'AGAINST PO', accessor: row => row.poId, render: row => <span className="text-[13px] text-gray-700">{row.poId}</span> },
     { header: 'SUPPLIER', accessor: row => suppliers[row.supplierId]?.name || row.supplierId, render: row => <span className="text-[13px] text-gray-700">{suppliers[row.supplierId]?.name || row.supplierId}</span> },
     { header: 'MATERIAL', accessor: row => row.material, render: row => <span className="text-[13px] text-gray-700">{row.material}</span> },
@@ -71,8 +71,8 @@ export default function Purchase() {
           <div className="flex flex-wrap gap-3">
             {Object.values(suppliers).length > 0 ? (
               Object.values(suppliers).map(supplier => (
-                <span 
-                  key={supplier.id} 
+                <span
+                  key={supplier.id}
                   onClick={() => {
                     setSupplierToEdit(supplier);
                     setIsAddSupplierModalOpen(true);

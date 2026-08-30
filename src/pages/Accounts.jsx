@@ -29,25 +29,27 @@ export default function Accounts() {
     .reduce((sum, i) => sum + i.amount + i.gst, 0);
 
   const columns = [
-    { header: 'INVOICE #', accessor: row => row.invoiceNo, render: row => <span className="font-bold text-[13px] text-[#1b2f63]">{row.invoiceNo}</span> },
+    { header: 'INVOICE', accessor: row => row.invoiceNo, render: row => <span className="font-bold text-[13px] text-[#1b2f63]">{row.invoiceNo}</span> },
     { header: 'CUSTOMER', accessor: row => customers[row.customerId]?.name || 'DELETED CUSTOMER', render: row => <span className="font-medium text-[13px] text-gray-900">{customers[row.customerId]?.name || 'DELETED CUSTOMER'}</span> },
     { header: 'AMOUNT', accessor: row => `₹${row.amount.toLocaleString('en-IN')}`, render: row => <span className="font-bold text-[13px] text-gray-900">₹{row.amount.toLocaleString('en-IN')}</span> },
     { header: 'GST', accessor: row => `₹${row.gst.toLocaleString('en-IN')}`, render: row => <span className="text-[13px] text-gray-500">₹{row.gst.toLocaleString('en-IN')}</span> },
     { header: 'DUE', accessor: row => new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), render: row => <span className="text-[13px] text-gray-500">{new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
-    { header: 'ACTIONS', accessor: row => row.id, render: row => (
-      <AccountActions 
-        row={row}
-        onEdit={(r) => {
-          setInvoiceToEdit(r);
-          setIsModalOpen(true);
-        }}
-        onView={(r) => {
-          setInvoiceToEdit(r);
-          setIsModalOpen(true);
-        }}
-      />
-    )},
+    {
+      header: 'ACTIONS', accessor: row => row.id, render: row => (
+        <AccountActions
+          row={row}
+          onEdit={(r) => {
+            setInvoiceToEdit(r);
+            setIsModalOpen(true);
+          }}
+          onView={(r) => {
+            setInvoiceToEdit(r);
+            setIsModalOpen(true);
+          }}
+        />
+      )
+    },
   ];
 
   // Calculate customer ledger (group by customer, sum outstanding)
@@ -79,7 +81,7 @@ export default function Accounts() {
           <h2 className="text-2xl font-bold text-gray-900">Accounts & Payments</h2>
           <p className="text-sm text-gray-500 mt-1">Invoices, GST, collections and customer ledgers.</p>
         </div>
-        <button 
+        <button
           onClick={() => {
             setInvoiceToEdit(null);
             setIsModalOpen(true);
@@ -148,7 +150,7 @@ export default function Accounts() {
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm h-[500px] flex flex-col">
             <h3 className="text-[15px] font-bold text-gray-900">Customer Ledger</h3>
             <p className="text-[12px] text-gray-500 mb-6">Outstanding balances by customer</p>
-            
+
             <div className="space-y-5 overflow-y-auto pr-2 flex-grow">
               {ledgerEntries.length > 0 ? ledgerEntries.map(entry => (
                 <div key={entry.customerId} className="flex justify-between items-start">
@@ -203,7 +205,7 @@ const AccountActions = ({ row, onEdit, onView }) => {
         setIsOpen(false);
       }
     };
-    
+
     const handleScroll = () => {
       if (isOpen) setIsOpen(false);
     };
@@ -228,7 +230,7 @@ const AccountActions = ({ row, onEdit, onView }) => {
 
   return (
     <div onClick={e => e.stopPropagation()}>
-      <button 
+      <button
         ref={buttonRef}
         onClick={toggleMenu}
         className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
@@ -238,7 +240,7 @@ const AccountActions = ({ row, onEdit, onView }) => {
       </button>
 
       {isOpen && (
-        <div 
+        <div
           ref={menuRef}
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
           className="w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1"

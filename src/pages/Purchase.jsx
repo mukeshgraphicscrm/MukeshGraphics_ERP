@@ -8,7 +8,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Purchase() {
-  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, isLoaded } = useData();
+  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, isLoaded } = useData();
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
@@ -119,7 +119,7 @@ export default function Purchase() {
         isOpen={isAddSupplierModalOpen}
         onClose={() => setIsAddSupplierModalOpen(false)}
         onSupplierAdded={(newSupplier) => {
-          setSuppliers(prev => ({ ...prev, [newSupplier.id]: newSupplier }));
+          setSuppliers(prev => [...prev, newSupplier]);
         }}
       />
     </>

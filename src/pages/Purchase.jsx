@@ -21,6 +21,7 @@ export default function Purchase() {
 
   const poColumns = [
     { header: 'PO', accessor: row => row.poNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.poNo}</span> },
+    { header: 'DATE', accessor: row => row.createdAt, render: row => <span className="text-[13px] text-gray-500">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN') : '-'}</span> },
     { header: 'SUPPLIER', accessor: row => suppliers[row.supplierId]?.name || row.supplierId, render: row => <span className="text-[13px] text-gray-700">{suppliers[row.supplierId]?.name || row.supplierId}</span> },
     { header: 'MATERIAL', accessor: row => row.material, render: row => <span className="text-[13px] text-gray-700">{row.material}</span> },
     { header: 'QUANTITY', accessor: row => row.quantity.toLocaleString('en-IN'), render: row => <span className="text-[13px] text-gray-500">{row.quantity.toLocaleString('en-IN')}</span> },

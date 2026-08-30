@@ -54,7 +54,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       } else {
         const currentYear = new Date().getFullYear();
         const prefix = `PO-${currentYear}-`;
-        
+
         let nextNum = 1;
         if (pos && pos.length > 0) {
           const currentPos = pos.filter(p => p.poNo && p.poNo.startsWith(prefix));
@@ -102,7 +102,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         const res = await api.put(`/purchaseOrders/${poToEdit.id}`, payload);
         if (onPoUpdated) onPoUpdated(res.data);
         toast.success('Purchase order updated successfully!');
-        
+
         if (payload.status === 'Received' && poToEdit.status !== 'Received') {
           try {
             const grnPayload = {
@@ -123,7 +123,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         const res = await api.post('/purchaseOrders', payload);
         if (onPoCreated) onPoCreated(res.data);
         toast.success('Purchase order created successfully!');
-        
+
         if (payload.status === 'Received') {
           try {
             const grnPayload = {
@@ -178,7 +178,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">PO # *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">PO *</label>
               <input
                 type="text"
                 name="poNo"

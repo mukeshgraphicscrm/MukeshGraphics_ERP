@@ -57,7 +57,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value.toUpperCase() }));
   };
 
   const handleSubmit = async (e) => {

@@ -391,3 +391,328 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   const safeName = (quote.quotationNo || 'Quotation').replace(/[^a-zA-Z0-9-]/g, '_');
   doc.save(`${safeName}.pdf`);
 };
+
+export const generatePurchaseOrderPDF = async (po, suppliers) => {
+  const loadImage = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  };
+
+  const doc = new jsPDF();
+  const logoBase64 = await loadImage('/Title_Logo.png');
+
+  // --- Brand Colors ---
+  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
+  const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
+  const brandLight = [255, 255, 255];    // White
+  const textPrimary = [33, 37, 41];      // Dark Grey for normal text
+  const textSecondary = [108, 117, 125]; // Muted Grey
+  const borderLight = [222, 226, 230];   // Soft grey borders
+
+  // Helper
+  const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margin = 15;
+
+  // ==========================================
+  // 1. TOP HEADER STRIP & LOGO
+  // ==========================================
+  doc.setFillColor(...brandDark);
+  doc.rect(0, 0, pageW, 10, 'F');
+  
+  doc.setFillColor(...brandAccent);
+  doc.rect(0, 10, pageW, 3, 'F');
+
+  const hm = margin - 7; 
+
+  if (logoBase64) {
+    doc.addImage(logoBase64, 'PNG', hm, 20, 28, 28, '', 'FAST');
+  }
+
+  const centerX = pageW / 2;
+
+  doc.setTextColor(...brandDark);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text("MUKESH GRAPHICS", centerX, 31, { align: 'center' });
+
+  doc.setTextColor(...textSecondary);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 37, { align: 'center' });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 42, { align: 'center' });
+  doc.text("GST: 24ANVPB6301P1ZP", centerX, 47, { align: 'center' });
+
+  // Quote / Estimate Tag
+  const tagW = 45;
+  const tagH = 8;
+  const tagX = pageW - hm - tagW;
+  const tagY = 23;
+
+  doc.setFillColor(...brandDark);
+  doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text("PURCHASE ORDER", tagX + tagW / 2, tagY + 5.5, { align: 'center' });
+
+  // Date and No
+  const dateObj = po.createdAt ? new Date(po.createdAt) : new Date();
+  const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  doc.setTextColor(...textSecondary);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8.5);
+  doc.text(`PO No:`, pageW - hm - 25, 39, { align: 'right' });
+  doc.setTextColor(...textPrimary);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${po.poNo || 'N/A'}`, pageW - hm, 39, { align: 'right' });
+
+  doc.setTextColor(...textSecondary);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Date:`, pageW - hm - 25, 44, { align: 'right' });
+  doc.setTextColor(...textPrimary);
+  doc.setFont("helvetica", "bold");
+  doc.text(`${dateStr}`, pageW - hm, 44, { align: 'right' });
+
+  doc.setDrawColor(...borderLight);
+  doc.setLineWidth(0.5);
+  doc.line(hm, 54, pageW - hm, 54);
+
+  // ==========================================
+  // 2. FROM / TO SECTION (Cards)
+  // ==========================================
+  const supplierName = suppliers[po.supplierId]?.name || po.supplierId || 'Supplier';
+  const supplierCity = suppliers[po.supplierId]?.city || '';
+  const supplierGst = suppliers[po.supplierId]?.gstNumber || '';
+  const supplierMobile = suppliers[po.supplierId]?.mobile || '';
+
+  const startY = 60;
+  const cardW = (pageW - margin * 2 - 12) / 2;
+
+  // "From" Card Background (Left)
+  doc.setFillColor(252, 253, 255); 
+  doc.setDrawColor(...borderLight);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'FD');
+
+  doc.setFillColor(...brandDark);
+  doc.roundedRect(margin, startY, 4, 35, 2, 2, 'F');
+  doc.rect(margin + 2, startY, 2, 35, 'F');
+
+  // "Billed To" Card Background (Right) -> For PO, it should be ORDER TO (Supplier)
+  doc.setFillColor(252, 253, 255);
+  doc.setDrawColor(...borderLight);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin + cardW + 12, startY, cardW, 35, 2, 2, 'FD');
+
+  doc.setFillColor(...brandAccent);
+  doc.roundedRect(margin + cardW + 12, startY, 4, 35, 2, 2, 'F');
+  doc.rect(margin + cardW + 14, startY, 2, 35, 'F');
+
+  // Card Titles
+  doc.setTextColor(...textSecondary);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.text("BILLED TO", margin + 10, startY + 7); 
+  doc.text("ORDER TO", margin + cardW + 22, startY + 7);
+
+  // Card Content - From (Left) - Billed to Mukesh Graphics
+  doc.setTextColor(...brandDark);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("MUKESH GRAPHICS", margin + 10, startY + 14);
+
+  doc.setFontSize(9);
+  doc.setTextColor(...textPrimary);
+  doc.setFont("helvetica", "normal");
+  doc.text("Bhavnagar, Gujarat", margin + 10, startY + 20);
+  doc.text("GST: 24ANVPB6301P1ZP", margin + 10, startY + 25);
+  doc.text("MO: 9512007008 (Amanbhai)", margin + 10, startY + 30);
+
+  // Card Content - To (Right) - Supplier
+  doc.setTextColor(...brandDark);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text(supplierName.toUpperCase(), margin + cardW + 22, startY + 14);
+
+  doc.setFontSize(9);
+  doc.setTextColor(...textPrimary);
+  doc.setFont("helvetica", "normal");
+  let toY = startY + 20;
+  if (supplierCity) { doc.text(supplierCity.toUpperCase(), margin + cardW + 22, toY); toY += 5; }
+  if (supplierGst) { doc.text(`GST: ${supplierGst.toUpperCase()}`, margin + cardW + 22, toY); toY += 5; }
+  if (supplierMobile) { doc.text(`MO: ${supplierMobile}`, margin + cardW + 22, toY); }
+
+  let yPos = startY + 42;
+
+  // ==========================================
+  // 3. ITEMS TABLE
+  // ==========================================
+  const q = Number(po.quantity) || 0;
+  const p = Number(po.rate) || 0;
+  const amount = q * p;
+  const subtotal = amount;
+
+  const tableData = [
+    [
+      1,
+      po.material || 'Unknown Material',
+      q.toLocaleString('en-IN'),
+      formatMoney(p),
+      formatMoney(amount)
+    ]
+  ];
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['#', 'MATERIAL DESCRIPTION', 'QTY', 'RATE', 'AMOUNT']],
+    body: tableData,
+    theme: 'grid', 
+    headStyles: {
+      fillColor: brandDark, 
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      fontSize: 9,
+      cellPadding: { top: 4, bottom: 4, left: 2, right: 2 },
+      halign: 'center',
+      lineColor: brandDark,
+      lineWidth: 0.1,
+    },
+    bodyStyles: {
+      textColor: textPrimary,
+      fontSize: 9.5,
+      cellPadding: { top: 5, bottom: 5, left: 2, right: 2 },
+      lineColor: borderLight,
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 8 }, 
+      1: { cellWidth: 'auto', halign: 'left' },
+      2: { halign: 'center', cellWidth: 25 },
+      3: { halign: 'center', cellWidth: 35 },
+      4: { halign: 'center', cellWidth: 40 },
+    },
+    alternateRowStyles: {
+      fillColor: [255, 255, 255], 
+    },
+    didDrawPage: (data) => {
+      yPos = data.cursor.y;
+    }
+  });
+
+  yPos = doc.lastAutoTable.finalY + 12;
+
+  // ==========================================
+  // 4. TOTALS 
+  // ==========================================
+  // Assuming 18% GST for PO as well based on Quotation, but typically PO might have varied taxes.
+  // Actually, PO in the screenshot only had AMOUNT. Let's just output Sub Total, GST, Net Payable.
+  const gstAmount = subtotal * 0.18; 
+  const finalTotal = subtotal + gstAmount;
+
+  const totalsData = [
+    ['Sub Total', formatMoney(subtotal)],
+    ['GST (18%)', formatMoney(gstAmount)],
+    ['Net Payable', formatMoney(finalTotal)],
+  ];
+
+  // Draw Totals Table on the right
+  autoTable(doc, {
+    startY: yPos - 1.5,
+    body: totalsData,
+    theme: 'plain',
+    styles: {
+      fontSize: 9.5,
+      textColor: textPrimary,
+      cellPadding: { top: 3.5, bottom: 3.5, left: 2, right: 2 },
+    },
+    columnStyles: {
+      0: { halign: 'right', fontStyle: 'bold', cellWidth: 35, textColor: textSecondary },
+      1: { halign: 'right', cellWidth: 35 },
+    },
+    margin: { left: pageW - margin - 70, right: margin },
+    didParseCell: function (data) {
+      if (data.row.index === 2) { // Net Payable
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.textColor = brandDark;
+        data.cell.styles.fontSize = 11;
+        data.cell.styles.fillColor = [240, 244, 255]; 
+      }
+    },
+    didDrawCell: (data) => {
+      doc.setDrawColor(...borderLight);
+      doc.setLineWidth(0.3);
+      if (data.section === 'body' && data.row.index !== 2) {
+        doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+      }
+    }
+  });
+
+  const totalsFinalY = doc.lastAutoTable.finalY;
+
+  // Notes area
+  let noteY = totalsFinalY + 12;
+
+  if (noteY + 25 > pageH - 15) {
+    doc.addPage();
+    noteY = margin;
+  }
+
+  doc.setFillColor(255, 250, 245); 
+  doc.setDrawColor(253, 216, 181);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(margin, noteY, pageW - margin * 2, 22, 2, 2, 'FD');
+
+  doc.setFillColor(...brandAccent);
+  doc.roundedRect(margin, noteY, 4, 22, 2, 2, 'F');
+  doc.rect(margin + 2, noteY, 2, 22, 'F');
+
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...brandAccent); 
+  doc.text("NOTE:", margin + 8, noteY + 7.5);
+
+  doc.setFontSize(10.5);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...textPrimary);
+  const noteStr = "This is a purchase order. Please process the items and provide an invoice upon delivery.";
+  const splitNote = doc.splitTextToSize(noteStr, pageW - margin * 2 - 12);
+  doc.text(splitNote, margin + 8, noteY + 13.5);
+
+  // ==========================================
+  // 5. FOOTER
+  // ==========================================
+  const footerY = pageH - 12;
+
+  doc.setFillColor(...brandDark);
+  doc.rect(0, footerY, pageW, 12, 'F');
+
+  doc.setTextColor(255, 255, 255); 
+  doc.setFontSize(10.5);
+  doc.setFont("helvetica", "normal");
+  doc.text("Thank you for your business!", margin, footerY + 8.5);
+  doc.text("Generated by Mukesh Graphics ERP", pageW / 2, footerY + 8.5, { align: 'center' });
+  doc.text("mukeshgraphics@gmail.com", pageW - margin, footerY + 8.5, { align: 'right' });
+
+  // Save the PDF
+  const safeName = (po.poNo || 'PO').replace(/[^a-zA-Z0-9-]/g, '_');
+  doc.save(`${safeName}.pdf`);
+};

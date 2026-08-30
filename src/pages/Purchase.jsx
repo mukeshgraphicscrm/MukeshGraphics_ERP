@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, FileDown } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
@@ -7,6 +7,8 @@ import AddSupplierModal from '../components/AddSupplierModal';
 import AddMaterialModal from '../components/AddMaterialModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
+import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
+import toast from 'react-hot-toast';
 
 export default function Purchase() {
   const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, inventory, setInventory, isLoaded } = useData();
@@ -24,7 +26,31 @@ export default function Purchase() {
     { header: 'QUANTITY', accessor: row => row.quantity.toLocaleString('en-IN'), render: row => <span className="text-[13px] text-gray-500">{row.quantity.toLocaleString('en-IN')}</span> },
     { header: 'AMOUNT', accessor: row => `₹${row.amount.toLocaleString('en-IN')}`, render: row => <span className="font-medium text-[13px] text-gray-900">₹{row.amount.toLocaleString('en-IN')}</span> },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
+    {
+      header: 'DOCUMENT',
+      accessor: 'document',
+      render: row => (
+        <button 
+          onClick={(e) => { e.stopPropagation(); generatePDF(row); }}
+          className="p-1.5 bg-brand-primary/10 text-brand-primary rounded-md hover:bg-brand-primary/20 transition-colors"
+          title="Generate PO Document"
+        >
+          <FileDown className="w-4 h-4" />
+        </button>
+      )
+    },
   ];
+
+  const generatePDF = async (po) => {
+    const toastId = toast.loading('Generating PDF...');
+    try {
+      await generatePurchaseOrderPDF(po, suppliers);
+      toast.success('PO document generated!', { id: toastId });
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      toast.error('Failed to generate PDF.', { id: toastId });
+    }
+  };
 
   const grnColumns = [
     { header: 'GRN', accessor: row => row.grnNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.grnNo}</span> },

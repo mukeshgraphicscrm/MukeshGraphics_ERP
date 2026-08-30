@@ -12,6 +12,7 @@ export default function Purchase() {
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
+  const [supplierToEdit, setSupplierToEdit] = useState(null);
 
 
   const poColumns = [
@@ -58,7 +59,10 @@ export default function Purchase() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-bold text-gray-900">Approved Suppliers</h3>
             <button
-              onClick={() => setIsAddSupplierModalOpen(true)}
+              onClick={() => {
+                setSupplierToEdit(null);
+                setIsAddSupplierModalOpen(true);
+              }}
               className="btn-add"
             >
               <Plus className="w-4 h-4 mr-1" /> <span>Add Supplier</span>
@@ -67,7 +71,14 @@ export default function Purchase() {
           <div className="flex flex-wrap gap-3">
             {Object.values(suppliers).length > 0 ? (
               Object.values(suppliers).map(supplier => (
-                <span key={supplier.id} className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm hover:bg-gray-50 cursor-pointer transition-colors">
+                <span 
+                  key={supplier.id} 
+                  onClick={() => {
+                    setSupplierToEdit(supplier);
+                    setIsAddSupplierModalOpen(true);
+                  }}
+                  className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm hover:bg-gray-50 cursor-pointer transition-colors"
+                >
                   {supplier.name}
                 </span>
               ))
@@ -117,9 +128,19 @@ export default function Purchase() {
       />
       <AddSupplierModal
         isOpen={isAddSupplierModalOpen}
-        onClose={() => setIsAddSupplierModalOpen(false)}
+        onClose={() => {
+          setIsAddSupplierModalOpen(false);
+          setSupplierToEdit(null);
+        }}
+        supplierToEdit={supplierToEdit}
         onSupplierAdded={(newSupplier) => {
           setSuppliers(prev => [...prev, newSupplier]);
+        }}
+        onSupplierUpdated={(updatedSupplier) => {
+          setSuppliers(prev => prev.map(s => s.id === updatedSupplier.id ? updatedSupplier : s));
+        }}
+        onSupplierDeleted={(deletedId) => {
+          setSuppliers(prev => prev.filter(s => s.id !== deletedId));
         }}
       />
     </>

@@ -3,7 +3,7 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 
-export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
+export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, supplierToEdit, onSupplierUpdated, onSupplierDeleted }) {
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -13,6 +13,20 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (supplierToEdit) {
+      setFormData({
+        name: supplierToEdit.name || '',
+        contactPerson: supplierToEdit.contactPerson || '',
+        mobile: supplierToEdit.mobile || '',
+        city: supplierToEdit.city || '',
+        gstNumber: supplierToEdit.gstNumber || '',
+      });
+    } else {
+      setFormData({ name: '', contactPerson: '', mobile: '', city: '', gstNumber: '' });
+    }
+  }, [supplierToEdit, isOpen]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -49,19 +63,43 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
     setLoading(true);
     setError(null);
     try {
-      const payload = {
-        ...formData,
-        createdAt: new Date().toISOString(),
-      };
-      const res = await api.post('/suppliers', payload);
-      onSupplierAdded(res.data);
-      setFormData({ name: '', contactPerson: '', mobile: '', city: '', gstNumber: '' });
-      toast.success('Supplier added successfully!');
+      if (supplierToEdit) {
+        const payload = { ...supplierToEdit, ...formData };
+        const res = await api.put(`/suppliers/${supplierToEdit.id}`, payload);
+        if (onSupplierUpdated) onSupplierUpdated(res.data);
+        toast.success('Supplier updated successfully!');
+      } else {
+        const payload = {
+          ...formData,
+          createdAt: new Date().toISOString(),
+        };
+        const res = await api.post('/suppliers', payload);
+        if (onSupplierAdded) onSupplierAdded(res.data);
+        toast.success('Supplier added successfully!');
+      }
       onClose();
     } catch (err) {
-      console.error('Error adding supplier:', err);
-      setError('Failed to add supplier. Please try again.');
-      toast.error('Failed to add supplier.');
+      console.error('Error saving supplier:', err);
+      setError(`Failed to ${supplierToEdit ? 'update' : 'add'} supplier. Please try again.`);
+      toast.error(`Failed to ${supplierToEdit ? 'update' : 'add'} supplier.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this supplier?')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/suppliers/${supplierToEdit.id}`);
+      if (onSupplierDeleted) onSupplierDeleted(supplierToEdit.id);
+      toast.success('Supplier deleted successfully!');
+      onClose();
+    } catch (err) {
+      console.error('Error deleting supplier:', err);
+      setError('Failed to delete supplier. Please try again.');
+      toast.error('Failed to delete supplier.');
     } finally {
       setLoading(false);
     }
@@ -71,7 +109,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">Add New Supplier</h2>
+          <h2 className="text-lg font-bold text-gray-900">{supplierToEdit ? 'Edit Supplier' : 'Add New Supplier'}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-5 h-5" />
           </button>
@@ -152,22 +190,34 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded }) {
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end space-x-3">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] rounded-md hover:bg-[#112046] transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Adding...' : 'Add Supplier'}
-            </button>
+          <div className="mt-8 flex justify-between space-x-3">
+            {supplierToEdit ? (
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+              >
+                Delete
+              </button>
+            ) : <div />}
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] rounded-md hover:bg-[#112046] transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : (supplierToEdit ? 'Update Supplier' : 'Add Supplier')}
+              </button>
+            </div>
           </div>
         </form>
       </div>

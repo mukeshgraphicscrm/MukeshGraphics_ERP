@@ -4,12 +4,13 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 
-export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onGrnCreated, suppliers, poToEdit, pos = [] }) {
+export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, poToEdit, pos = [] }) {
   const [formData, setFormData] = useState({
     poNo: '',
     supplierId: '',
     material: '',
     quantity: '',
+    rate: '',
     amount: '',
     status: 'Ordered',
   });
@@ -48,6 +49,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           supplierId: poToEdit.supplierId || '',
           material: poToEdit.material || '',
           quantity: poToEdit.quantity || '',
+          rate: poToEdit.rate || '',
           amount: poToEdit.amount || '',
           status: poToEdit.status || 'Ordered',
         });
@@ -73,6 +75,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           supplierId: Object.keys(suppliers).length > 0 ? Object.values(suppliers)[0].id : '',
           material: '',
           quantity: '',
+          rate: '',
           amount: '',
           status: 'Ordered',
         });
@@ -84,7 +87,19 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'quantity' || name === 'rate') {
+        const q = parseFloat(updated.quantity) || 0;
+        const r = parseFloat(updated.rate) || 0;
+        if (updated.quantity && updated.rate) {
+          updated.amount = q * r;
+        } else if (name === 'quantity' || name === 'rate') {
+          updated.amount = '';
+        }
+      }
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -95,6 +110,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       const payload = {
         ...formData,
         quantity: Number(formData.quantity),
+        rate: Number(formData.rate),
         amount: Number(formData.amount),
       };
 
@@ -147,6 +163,26 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       console.error('Error saving PO:', err);
       setError('Failed to save purchase order. Please try again.');
       toast.error('Failed to save purchase order.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this purchase order?')) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      await api.delete(`/purchaseOrders/${poToEdit.id}`);
+      if (onPoDeleted) onPoDeleted(poToEdit.id);
+      toast.success('Purchase order deleted successfully!');
+      onClose();
+    } catch (err) {
+      console.error('Error deleting PO:', err);
+      setError('Failed to delete purchase order. Please try again.');
+      toast.error('Failed to delete purchase order.');
     } finally {
       setLoading(false);
     }
@@ -235,6 +271,21 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Rate (₹) *</label>
+              <input
+                type="number"
+                name="rate"
+                required
+                min="0"
+                step="0.01"
+                value={formData.rate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                placeholder="e.g. 42.50"
+              />
+            </div>
+
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
               <input
                 type="number"
@@ -261,22 +312,36 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
             </div>
           </div>
 
-          <div className="mt-8 flex justify-end space-x-3 border-t border-gray-100 pt-5">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || supplierOptions.length === 0}
-              className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Saving...' : (poToEdit ? 'Save Changes' : 'Create PO')}
-            </button>
+          <div className="mt-8 flex justify-between items-center border-t border-gray-100 pt-5">
+            <div>
+              {poToEdit && (
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors"
+                >
+                  Delete
+                </button>
+              )}
+            </div>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || supplierOptions.length === 0}
+                className="px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : (poToEdit ? 'Save Changes' : 'Create PO')}
+              </button>
+            </div>
           </div>
         </form>
       </div>

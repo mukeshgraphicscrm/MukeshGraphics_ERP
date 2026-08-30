@@ -123,6 +123,7 @@ export default function Purchase() {
         pos={poData}
         onPoCreated={(newPo) => setPoData(prev => [...prev, newPo])}
         onPoUpdated={(updatedPo) => setPoData(prev => prev.map(po => po.id === updatedPo.id ? updatedPo : po))}
+        onPoDeleted={(deletedId) => setPoData(prev => prev.filter(po => po.id !== deletedId))}
         onGrnCreated={(newGrn) => setGrnData(prev => [newGrn, ...prev])}
         poToEdit={poToEdit}
       />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import DeleteConfirmModal from './DeleteConfirmModal';
 
 export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, supplierToEdit, onSupplierUpdated, onSupplierDeleted }) {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   useEffect(() => {
     if (supplierToEdit) {
@@ -88,13 +90,13 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this supplier?')) return;
     setLoading(true);
     setError(null);
     try {
       await api.delete(`/suppliers/${supplierToEdit.id}`);
       if (onSupplierDeleted) onSupplierDeleted(supplierToEdit.id);
       toast.success('Supplier deleted successfully!');
+      setIsDeleteModalOpen(false);
       onClose();
     } catch (err) {
       console.error('Error deleting supplier:', err);
@@ -106,7 +108,8 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">{supplierToEdit ? 'Edit Supplier' : 'Add New Supplier'}</h2>
@@ -194,7 +197,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
             {supplierToEdit ? (
               <button
                 type="button"
-                onClick={handleDelete}
+                onClick={() => setIsDeleteModalOpen(true)}
                 disabled={loading}
                 className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
               >
@@ -222,5 +225,17 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
         </form>
       </div>
     </div>
+    
+    {supplierToEdit && (
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Supplier"
+        message="Are you sure you want to delete this supplier? This action cannot be undone and it will be permanently removed from the system."
+        isDeleting={loading}
+      />
+    )}
+    </>
   );
 }

@@ -4,13 +4,15 @@ import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
 import AddSupplierModal from '../components/AddSupplierModal';
+import AddMaterialModal from '../components/AddMaterialModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Purchase() {
-  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, isLoaded } = useData();
+  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, inventory, setInventory, isLoaded } = useData();
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
+  const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
   const [supplierToEdit, setSupplierToEdit] = useState(null);
 
@@ -43,15 +45,23 @@ export default function Purchase() {
             <h2 className="text-2xl font-bold text-gray-900">Purchase & GRN</h2>
             <p className="text-sm text-gray-500 mt-1">Manage suppliers, purchase orders and goods receipts.</p>
           </div>
-          <button
-            onClick={() => {
-              setPoToEdit(null);
-              setIsAddPOModalOpen(true);
-            }}
-            className="btn-add"
-          >
-            <Plus className="w-4 h-4 mr-1" /> <span>New Purchase Order</span>
-          </button>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setIsAddMaterialModalOpen(true)}
+              className="btn-add bg-gray-700 hover:bg-gray-800"
+            >
+              <Plus className="w-4 h-4 mr-1" /> <span>Add Paper Material</span>
+            </button>
+            <button
+              onClick={() => {
+                setPoToEdit(null);
+                setIsAddPOModalOpen(true);
+              }}
+              className="btn-add"
+            >
+              <Plus className="w-4 h-4 mr-1" /> <span>New Purchase Order</span>
+            </button>
+          </div>
         </div>
 
         {/* Approved Suppliers Chips */}
@@ -120,6 +130,7 @@ export default function Purchase() {
           setPoToEdit(null);
         }}
         suppliers={suppliers}
+        inventory={inventory}
         pos={poData}
         onPoCreated={(newPo) => setPoData(prev => [...prev, newPo])}
         onPoUpdated={(updatedPo) => setPoData(prev => prev.map(po => po.id === updatedPo.id ? updatedPo : po))}
@@ -142,6 +153,13 @@ export default function Purchase() {
         }}
         onSupplierDeleted={(deletedId) => {
           setSuppliers(prev => prev.filter(s => s.id !== deletedId));
+        }}
+      />
+      <AddMaterialModal
+        isOpen={isAddMaterialModalOpen}
+        onClose={() => setIsAddMaterialModalOpen(false)}
+        onMaterialAdded={(newMaterial) => {
+          setInventory(prev => [...prev, newMaterial]);
         }}
       />
     </>

@@ -5,7 +5,7 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import DeleteConfirmModal from './DeleteConfirmModal';
 
-export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, poToEdit, pos = [] }) {
+export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, inventory = [], poToEdit, pos = [] }) {
   const [formData, setFormData] = useState({
     poNo: '',
     supplierId: '',
@@ -193,6 +193,13 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     label: s.name
   }));
 
+  const materialOptions = Array.isArray(inventory) ? inventory
+    .filter(item => item.material)
+    .map(item => ({
+      value: item.material,
+      label: item.material
+    })) : [];
+
   const statusOptions = [
     { value: 'Ordered', label: 'Ordered' },
     { value: 'In Transit', label: 'In Transit' },
@@ -246,15 +253,19 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Material Description *</label>
-              <input
-                type="text"
-                name="material"
-                required
-                value={formData.material}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. 350 GSM Duplex Board"
-              />
+              {materialOptions.length > 0 ? (
+                <CustomSelect
+                  name="material"
+                  value={formData.material}
+                  onChange={handleChange}
+                  options={materialOptions}
+                  required
+                />
+              ) : (
+                <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
+                  No materials found. Please add a material first.
+                </div>
+              )}
             </div>
 
             <div>

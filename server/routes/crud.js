@@ -131,14 +131,29 @@ const createCrudRouter = (collectionName) => {
     try {
       const data = req.body;
       delete data.id; // Prevent updating the ID
+      
+      const oldDoc = await db.collection(collectionName).doc(req.params.id).get();
+      const oldData = oldDoc.exists ? oldDoc.data() : {};
+      
       await db.collection(collectionName).doc(req.params.id).update(data);
       const updatedDoc = await db.collection(collectionName).doc(req.params.id).get();
+      const newData = updatedDoc.data();
       
-      const recordName = getRecordName(updatedDoc.data());
+      const changes = {};
+      for (const key in data) {
+        if (JSON.stringify(oldData[key]) !== JSON.stringify(data[key])) {
+          changes[key] = {
+            from: oldData[key] !== undefined ? oldData[key] : '',
+            to: data[key] !== undefined ? data[key] : ''
+          };
+        }
+      }
+      
+      const recordName = getRecordName(newData);
       const detailStr = recordName ? `Updated "${recordName}" in ${collectionName}` : `Updated a record in ${collectionName}`;
-      await addLog(collectionName, 'Update', detailStr, req, data);
+      await addLog(collectionName, 'Update', detailStr, req, Object.keys(changes).length > 0 ? changes : data);
       
-      res.json({ id: updatedDoc.id, ...updatedDoc.data() });
+      res.json({ id: updatedDoc.id, ...newData });
     } catch (error) {
       console.error(`Error updating ${collectionName}:`, error);
       res.status(500).json({ error: 'Internal server error' });

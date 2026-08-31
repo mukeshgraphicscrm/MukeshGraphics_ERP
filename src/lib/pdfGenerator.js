@@ -254,14 +254,12 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // ==========================================
   // 4. TOTALS & BANK DETAILS
   // ==========================================
-  const gstAmount = subtotal * 0.18;
-  const finalTotal = subtotal + gstAmount;
+  const finalTotal = subtotal;
 
   const totalsData = [
     ['Sub Total', formatMoney(subtotal)],
     ['Courier Charges', '-'],
     ['Transportation', '-'],
-    ['GST (18%)', formatMoney(gstAmount)],
     ['Previous Due', '-'],
     ['Advance', '-'],
     ['Net Payable', formatMoney(finalTotal)],
@@ -322,7 +320,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     },
     margin: { left: pageW - margin - 70, right: margin },
     didParseCell: function (data) {
-      if (data.row.index === 6) { // Net Payable
+      if (data.row.index === totalsData.length - 1) { // Net Payable
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.textColor = brandDark; // Highlight final amount in blue
         data.cell.styles.fontSize = 11;
@@ -333,7 +331,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
       // Add lines for Totals
       doc.setDrawColor(...borderLight);
       doc.setLineWidth(0.3);
-      if (data.section === 'body' && data.row.index !== 6) {
+      if (data.section === 'body' && data.row.index !== totalsData.length - 1) {
         doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
       }
     }

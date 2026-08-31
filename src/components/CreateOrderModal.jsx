@@ -200,6 +200,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
       // Find all orders containing this product, excluding the one currently being edited (if any)
       const matchingOrders = orders.filter(o => {
         if (orderToEdit && o.id === orderToEdit.id) return false;
+        if (o.customerId !== formData.customerId) return false;
         return o.productId === prodId || (Array.isArray(o.productId) && o.productId.includes(prodId));
       });
       

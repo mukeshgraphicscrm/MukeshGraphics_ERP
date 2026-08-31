@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, GitBranch, FileText,
   ShoppingCart, Package, Factory,
   Boxes, Truck, ShoppingBag, IndianRupee, ChevronLeft,
-  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box
+  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box, History
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -28,6 +28,7 @@ const navItems = [
     ]
   },
   { name: 'Settings', path: '/settings', icon: Settings },
+  { name: 'Logs', path: '/logs', icon: History },
   { name: 'Customize Packaging Request', path: '/customize-packaging-request', icon: Box },
   { name: 'Job Inquiry', path: '/job-inquiry', icon: Briefcase },
 ];
@@ -42,6 +43,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
   const isEmployee = currentUser?.profile?.designation === 'Employee';
   const visibleNavItems = navItems.filter(item => {
     if (item.name === 'Settings' && isEmployee) return false;
+    if (item.name === 'Logs' && isEmployee) return false;
     return true;
   });
 

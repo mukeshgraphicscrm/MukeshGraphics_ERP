@@ -22,6 +22,7 @@ import Dispatch from './pages/Dispatch';
 import Accounts from './pages/Accounts';
 import Jobcard from './pages/Jobcard';
 import Settings from './pages/Settings';
+import Logs from './pages/Logs';
 import JobInquiry from './pages/JobInquiry';
 import CustomPackagingRequest from './pages/CustomPackagingRequest';
 
@@ -48,6 +49,7 @@ function App() {
                 <Route path="purchase" element={<Purchase />} />
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="logs" element={<Logs />} />
                 <Route path="job-inquiry" element={<JobInquiry />} />
                 <Route path="customize-packaging-request" element={<CustomPackagingRequest />} />
               </Route>

@@ -3,6 +3,32 @@ const { db } = require('../firebase');
 const mockData = require('../mockData');
 const { syncContactFormLeads, isContactFormCollection } = require('../leadAutomation');
 
+const addLog = async (collectionName, action, details, req) => {
+  if (!db || collectionName === 'logs') return;
+  try {
+    const userName = req.headers['x-user-name'] || 'System';
+    const userRole = req.headers['x-user-role'] || 'Unknown';
+    
+    const logEntry = {
+      action,
+      module: collectionName,
+      details,
+      userName,
+      userRole,
+      createdAt: new Date().toISOString()
+    };
+    
+    await db.collection('logs').add(logEntry);
+  } catch (e) {
+    console.error('Failed to write log', e);
+  }
+};
+
+const getRecordName = (data) => {
+  if (!data) return '';
+  return data.name || data.title || data.companyName || data.customerName || data.productName || data.orderNumber || data.invoiceNumber || data.jobName || data.id || '';
+};
+
 // Factory function to create basic CRUD routes for a given collection
 const createCrudRouter = (collectionName) => {
   const router = express.Router();
@@ -77,6 +103,10 @@ const createCrudRouter = (collectionName) => {
         await syncContactFormLeads();
       }
 
+      const recordName = getRecordName(data);
+      const detailStr = recordName ? `Created "${recordName}" in ${collectionName}` : `Created a new record in ${collectionName}`;
+      await addLog(collectionName, 'Create', detailStr, req);
+
       res.status(201).json({ id: docRef.id, ...data });
     } catch (error) {
       console.error(`Error creating ${collectionName}:`, error);
@@ -99,6 +129,11 @@ const createCrudRouter = (collectionName) => {
       delete data.id; // Prevent updating the ID
       await db.collection(collectionName).doc(req.params.id).update(data);
       const updatedDoc = await db.collection(collectionName).doc(req.params.id).get();
+      
+      const recordName = getRecordName(updatedDoc.data());
+      const detailStr = recordName ? `Updated "${recordName}" in ${collectionName}` : `Updated a record in ${collectionName}`;
+      await addLog(collectionName, 'Update', detailStr, req);
+      
       res.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {
       console.error(`Error updating ${collectionName}:`, error);
@@ -113,7 +148,14 @@ const createCrudRouter = (collectionName) => {
       return res.json({ message: 'Deleted successfully' });
     }
     try {
+      const doc = await db.collection(collectionName).doc(req.params.id).get();
+      const recordName = doc.exists ? getRecordName(doc.data()) : '';
+      
       await db.collection(collectionName).doc(req.params.id).delete();
+      
+      const detailStr = recordName ? `Deleted "${recordName}" from ${collectionName}` : `Deleted a record from ${collectionName}`;
+      await addLog(collectionName, 'Delete', detailStr, req);
+      
       res.json({ message: 'Deleted successfully' });
     } catch (error) {
       console.error(`Error deleting ${collectionName}:`, error);

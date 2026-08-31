@@ -54,12 +54,18 @@ export function AuthProvider({ children }) {
             ...prev,
             profile: res.data
           } : null);
+          api.defaults.headers.common['x-user-name'] = res.data?.name || user.displayName || 'Unknown';
+          api.defaults.headers.common['x-user-role'] = res.data?.designation || 'Unknown';
         } catch (error) {
           console.error('Failed to fetch user profile data:', error);
+          api.defaults.headers.common['x-user-name'] = user.displayName || 'Unknown';
+          api.defaults.headers.common['x-user-role'] = 'Unknown';
         }
       } else {
         setCurrentUser(null);
         setLoading(false);
+        delete api.defaults.headers.common['x-user-name'];
+        delete api.defaults.headers.common['x-user-role'];
       }
     });
 

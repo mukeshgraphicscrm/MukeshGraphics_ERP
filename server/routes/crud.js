@@ -3,7 +3,7 @@ const { db } = require('../firebase');
 const mockData = require('../mockData');
 const { syncContactFormLeads, isContactFormCollection } = require('../leadAutomation');
 
-const addLog = async (collectionName, action, details, req) => {
+const addLog = async (collectionName, action, details, req, fullDetails = null) => {
   if (!db || collectionName === 'logs') return;
   try {
     const userName = req.headers['x-user-name'] || 'System';
@@ -17,6 +17,10 @@ const addLog = async (collectionName, action, details, req) => {
       userRole,
       createdAt: new Date().toISOString()
     };
+    
+    if (fullDetails) {
+      logEntry.fullDetails = fullDetails;
+    }
     
     await db.collection('logs').add(logEntry);
   } catch (e) {
@@ -105,7 +109,7 @@ const createCrudRouter = (collectionName) => {
 
       const recordName = getRecordName(data);
       const detailStr = recordName ? `Created "${recordName}" in ${collectionName}` : `Created a new record in ${collectionName}`;
-      await addLog(collectionName, 'Create', detailStr, req);
+      await addLog(collectionName, 'Create', detailStr, req, data);
 
       res.status(201).json({ id: docRef.id, ...data });
     } catch (error) {
@@ -132,7 +136,7 @@ const createCrudRouter = (collectionName) => {
       
       const recordName = getRecordName(updatedDoc.data());
       const detailStr = recordName ? `Updated "${recordName}" in ${collectionName}` : `Updated a record in ${collectionName}`;
-      await addLog(collectionName, 'Update', detailStr, req);
+      await addLog(collectionName, 'Update', detailStr, req, data);
       
       res.json({ id: updatedDoc.id, ...updatedDoc.data() });
     } catch (error) {
@@ -154,7 +158,7 @@ const createCrudRouter = (collectionName) => {
       await db.collection(collectionName).doc(req.params.id).delete();
       
       const detailStr = recordName ? `Deleted "${recordName}" from ${collectionName}` : `Deleted a record from ${collectionName}`;
-      await addLog(collectionName, 'Delete', detailStr, req);
+      await addLog(collectionName, 'Delete', detailStr, req, doc.exists ? doc.data() : null);
       
       res.json({ message: 'Deleted successfully' });
     } catch (error) {

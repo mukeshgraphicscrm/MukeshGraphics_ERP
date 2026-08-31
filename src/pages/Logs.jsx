@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
 import { 
@@ -6,10 +7,12 @@ import {
   Search, 
   Filter,
   ArrowUpDown,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import toast from 'react-hot-toast';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function Logs() {
   const { currentUser } = useAuth();
@@ -20,10 +23,39 @@ export default function Logs() {
   // Sort states
   const [sortField, setSortField] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
+  
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [logToDelete, setLogToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  const [viewLog, setViewLog] = useState(null);
 
   useEffect(() => {
     fetchLogs();
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && viewLog) {
+        setViewLog(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    
+    if (viewLog) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [viewLog]);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -46,15 +78,25 @@ export default function Logs() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this log?')) return;
+  const handleDeleteClick = (logId) => {
+    setLogToDelete(logId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!logToDelete) return;
+    setIsDeleting(true);
     try {
-      await api.delete(`/logs/${id}`);
-      setLogs(logs.filter(log => log.id !== id));
+      await api.delete(`/logs/${logToDelete}`);
+      setLogs(logs.filter(log => log.id !== logToDelete));
       toast.success('Log deleted successfully');
+      setIsDeleteModalOpen(false);
+      setLogToDelete(null);
     } catch (error) {
       console.error('Error deleting log:', error);
       toast.error('Failed to delete log');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -152,9 +194,6 @@ export default function Logs() {
                 <th className="px-6 py-4 text-sm font-semibold text-gray-900">
                   Details
                 </th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">
-                  Actions
-                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -181,7 +220,11 @@ export default function Logs() {
                 </tr>
               ) : (
                 filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <tr 
+                    key={log.id} 
+                    onClick={() => setViewLog(log)}
+                    className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {log.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).format(new Date(log.createdAt)) : 'N/A'}
@@ -219,15 +262,6 @@ export default function Logs() {
                     <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
                       {log.details}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleDelete(log.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                        title="Delete Log"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    </td>
                   </tr>
                 ))
               )}
@@ -235,6 +269,81 @@ export default function Logs() {
           </table>
         </div>
       </div>
+      
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setLogToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Log"
+        message="Are you sure you want to delete this log entry? This action cannot be undone."
+        isLoading={isDeleting}
+      />
+
+      {/* View Log Modal */}
+      {viewLog && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setViewLog(null); }}>
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-lg transform transition-all flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
+              <h2 className="text-lg font-bold text-gray-900">Log Details</h2>
+              <button onClick={() => setViewLog(null)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 overflow-y-auto">
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date & Time</label>
+                <div className="text-sm text-gray-900">
+                  {viewLog.createdAt ? new Intl.DateTimeFormat('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(viewLog.createdAt)) : 'N/A'}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">User</label>
+                <div className="text-sm text-gray-900">{viewLog.userName} ({viewLog.userRole})</div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Module</label>
+                <div className="text-sm text-gray-900 capitalize">{viewLog.module}</div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Action</label>
+                <span className={cn(
+                  "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset mt-1",
+                  getActionColor(viewLog.action)
+                )}>
+                  {viewLog.action}
+                </span>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Details</label>
+                <div className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  {viewLog.details}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
+              <button
+                type="button"
+                onClick={() => { setViewLog(null); handleDeleteClick(viewLog.id); }}
+                className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Log
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewLog(null)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

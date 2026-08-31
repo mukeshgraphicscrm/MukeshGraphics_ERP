@@ -809,7 +809,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [249, 115, 22];      // Orange (Replacing Dark Blue for PO)
+  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
   const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
   const brandLight = [255, 255, 255];    // White
   const textPrimary = [33, 37, 41];      // Dark Grey for normal text

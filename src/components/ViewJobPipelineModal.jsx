@@ -22,18 +22,18 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
+  const customer = Object.values(customerMap || {}).find(c => 
+    c.name.toLowerCase() === job?.customerName?.toLowerCase()
+  );
+  const customerId = customer?.id;
+
+  const product = products.find(p => 
+    p.name.toLowerCase() === job?.productName?.toLowerCase()
+  );
+  const productId = product?.id;
+
   useEffect(() => {
     if (!job || !isOpen) return;
-
-    const customer = Object.values(customerMap || {}).find(c => 
-      c.name.toLowerCase() === job.customerName?.toLowerCase()
-    );
-    const customerId = customer?.id;
-
-    const product = products.find(p => 
-      p.name.toLowerCase() === job.productName?.toLowerCase()
-    );
-    const productId = product?.id;
     
     const jobDate = job.createdAt ? new Date(job.createdAt) : new Date();
 
@@ -80,9 +80,28 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
       dispatch: matchedDispatch
     });
 
-  }, [job, isOpen, quotations, orders, customerMap, products, dispatches]);
+  }, [job, isOpen, quotations, orders, customerMap, products, dispatches, customerId, productId]);
 
   if (!isOpen || !job) return null;
+
+  const getQuotationAmount = () => {
+    if (!pipelineData.quotation) return 0;
+    if (pipelineData.quotation.items && pipelineData.quotation.items.length > 0 && productId) {
+      const item = pipelineData.quotation.items.find(i => i.productId === productId);
+      if (item) {
+        return (Number(item.qty || 0) * Number(item.price || 0));
+      }
+    }
+    return Number(pipelineData.quotation.totalAmount || (pipelineData.quotation.items?.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)) || (Number(pipelineData.quotation.price || 0) * Number(pipelineData.quotation.qty || 0)) || 0);
+  };
+
+  const getOrderUnits = () => {
+    if (!pipelineData.order) return 0;
+    if (pipelineData.order.quantities && productId && pipelineData.order.quantities[productId]) {
+      return Number(pipelineData.order.quantities[productId].toString().replace(/,/g, ''));
+    }
+    return Number(pipelineData.order.quantity || 0);
+  };
 
   const TimelineNode = ({ icon: Icon, title, status, date, isLast, details }) => {
     const isCompleted = status === 'completed';
@@ -184,7 +203,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
               date={pipelineData.quotation?.createdAt ? new Date(pipelineData.quotation.createdAt).toLocaleDateString('en-IN') : null}
               details={pipelineData.quotation ? [
                 { label: 'Quotation No:', value: pipelineData.quotation.quotationNo },
-                { label: 'Amount:', value: `₹${Number(pipelineData.quotation.totalAmount || (pipelineData.quotation.items?.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)) || (Number(pipelineData.quotation.price || 0) * Number(pipelineData.quotation.qty || 0)) || 0).toLocaleString('en-IN')}` }
+                { label: 'Amount:', value: `₹${getQuotationAmount().toLocaleString('en-IN')}` }
               ] : null}
             />
 
@@ -196,7 +215,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
               date={pipelineData.order?.orderDate ? new Date(pipelineData.order.orderDate).toLocaleDateString('en-IN') : null}
               details={pipelineData.order ? [
                 { label: 'Order No:', value: pipelineData.order.orderNo },
-                { label: 'Units:', value: Number(pipelineData.order.quantity || 0).toLocaleString('en-IN') }
+                { label: 'Units:', value: getOrderUnits().toLocaleString('en-IN') }
               ] : null}
             />
 

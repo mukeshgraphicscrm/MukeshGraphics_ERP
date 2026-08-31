@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import { useData } from '../contexts/DataContext';
 
 export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchScheduled, onDispatchUpdated, dispatchToEdit, initialData }) {
+  const { refetch } = useData();
   const [formData, setFormData] = useState({
     dispatchNo: '',
     customer: '',
@@ -123,6 +125,10 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
         const res = await api.post('/dispatches', payload);
         if (onDispatchScheduled) onDispatchScheduled(res.data);
         toast.success('Dispatch scheduled successfully!');
+      }
+
+      if (refetch) {
+        refetch();
       }
 
       setFormData({ dispatchNo: '', customer: '', vehicleNo: '', driver: '', date: '', status: 'SCHEDULED' });

@@ -72,7 +72,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes, customPackageRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes, customPackageRes, paperSizeRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -129,9 +129,7 @@ export function DataProvider({ children }) {
       if (jobPostedRes.status === 'fulfilled') setJobPosted(Array.isArray(jobPostedRes.value.data) ? jobPostedRes.value.data : []);
       if (appRes.status === 'fulfilled') setApplicationsReceived(Array.isArray(appRes.value.data) ? appRes.value.data : []);
       if (customPackageRes.status === 'fulfilled') setCustomPackages(Array.isArray(customPackageRes.value.data) ? customPackageRes.value.data : []);
-      
-      const paperSizeRes = arguments[0]?.find(r => r?.value?.config?.url === '/paperSizes') || (await Promise.allSettled([api.get('/paperSizes')]))[0];
-      if (paperSizeRes?.status === 'fulfilled') setPaperSizes(Array.isArray(paperSizeRes.value.data) ? paperSizeRes.value.data : []);
+      if (paperSizeRes.status === 'fulfilled') setPaperSizes(Array.isArray(paperSizeRes.value.data) ? paperSizeRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {

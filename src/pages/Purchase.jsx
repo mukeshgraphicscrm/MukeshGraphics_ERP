@@ -183,7 +183,7 @@ export default function Purchase() {
                   key={size.id}
                   className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm transition-colors"
                 >
-                  {size.name}
+                  {size.name} {size.unit}
                 </span>
               ))
             ) : (

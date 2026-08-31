@@ -161,7 +161,7 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
                 onChange={handleChange}
                 options={[
                   { value: '', label: 'Select Size' },
-                  ...paperSizes.map(ps => ({ value: ps.name, label: ps.name }))
+                  ...paperSizes.map(ps => ({ value: ps.name, label: `${ps.name} ${ps.unit}` }))
                 ]}
               />
             </div>

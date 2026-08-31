@@ -177,7 +177,7 @@ export default function Accounts() {
           setIsModalOpen(false);
           setInvoiceToEdit(null);
         }}
-        invoices={invoices}
+        customers={customers}
         onInvoiceCreated={(newInvoice) => {
           setInvoices(prev => [...prev, newInvoice]);
         }}

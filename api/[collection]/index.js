@@ -79,7 +79,8 @@ export default async function handler(req, res) {
         await syncContactFormLeads(db);
       }
 
-      const snapshot = await db.collection(collection).orderBy('createdAt', 'desc').get();
+      const sortField = collection === 'application_received' ? 'appliedAt' : 'createdAt';
+      const snapshot = await db.collection(collection).orderBy(sortField, 'desc').get();
       const items = [];
       snapshot.forEach(doc => {
         items.push({ id: doc.id, ...doc.data() });

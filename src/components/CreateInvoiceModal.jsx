@@ -96,7 +96,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
     const year = new Date().getFullYear();
     let nextNum = 1;
     if (invoices && invoices.length > 0) {
-      const currentYearInvs = invoices.filter(i => i.invoiceNo && i.invoiceNo.startsWith(`INV-${year}-`));
+      const currentYearInvs = invoices.filter(i => i.invoiceNo && i.invoiceNo.startsWith(`EST-${year}-`));
       if (currentYearInvs.length > 0) {
         const nums = currentYearInvs.map(i => {
           const parts = i.invoiceNo.split('-');
@@ -105,7 +105,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         nextNum = Math.max(...nums) + 1;
       }
     }
-    const nextInvoiceNo = `INV-${year}-${String(nextNum).padStart(3, '0')}`;
+    const nextInvoiceNo = `EST-${year}-${String(nextNum).padStart(3, '0')}`;
 
     setFormData({
       invoiceNo: nextInvoiceNo,
@@ -262,7 +262,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.companyName || !formData.customerId || !formData.productId || formData.productId.length === 0 || !formData.date || !formData.dueDate) {
+    if (!formData.companyName || !formData.customerId || !formData.productId || formData.productId.length === 0 || !formData.date) {
       toast.error('Please fill in all required fields.');
       return;
     }
@@ -295,6 +295,8 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
 
       const payload = {
         ...formData,
+        dueDate: formData.date, // Match due date to date since UI no longer has due date
+        status: 'Pending',
         items: processedItems,
         amount: totalAmount,
         gst: 0,
@@ -439,19 +441,6 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Due Date <span className="text-red-500">*</span></label>
-              <input
-                type="date"
-                name="dueDate"
-                value={formData.dueDate || ''}
-                onChange={handleChange}
-                required
-                disabled={isViewMode}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-              />
-            </div>
-
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
               <CustomSelect
                 name="employee"
@@ -463,21 +452,6 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
                   ...(users || []).map(user => ({ label: user.name, value: user.name }))
                 ]}
               />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                disabled={isViewMode}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
-              >
-                <option value="Pending">Pending</option>
-                <option value="Paid">Paid</option>
-                <option value="Overdue">Overdue</option>
-              </select>
             </div>
           </div>
 
@@ -519,7 +493,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
                 const productName = products.find(p => p.id === item.productId)?.name || 'Product';
                 return (
                   <div key={index} className="border-t border-gray-100 pt-4 relative group">
-                    <h3 className="text-sm font-bold text-[#1b2f63] mb-3">{productName}</h3>
+                    <h3 className="text-sm font-bold text-[#E8A33D] mb-3 uppercase">{productName}</h3>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                       <div className="md:col-span-2">

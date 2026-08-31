@@ -13,6 +13,16 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
   });
 
   useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [onClose]);
+
+  useEffect(() => {
     if (!job || !isOpen) return;
 
     const customer = Object.values(customerMap || {}).find(c => 
@@ -127,8 +137,14 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
@@ -190,9 +206,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
               status={Number(pipelineData.production?.progress) === 100 ? 'completed' : 'active'}
               date={pipelineData.production?.createdAt ? new Date(pipelineData.production.createdAt).toLocaleDateString('en-IN') : null}
               details={[
-                { label: 'Job Card No:', value: pipelineData.production.jobCardNo },
-                { label: 'Progress:', value: `${pipelineData.production.progress}%` },
-                { label: 'Current Stage:', value: pipelineData.production.stage }
+                { label: 'Job Card No:', value: pipelineData.production?.jobCardNo },
+                { label: 'Progress:', value: `${pipelineData.production?.progress}%` },
+                { label: 'Current Stage:', value: pipelineData.production?.stage }
               ]}
             />
 

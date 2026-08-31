@@ -71,7 +71,7 @@ export default function Inventory() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div 
             onClick={() => setFilterType('all')}
-            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'all' ? 'border-gray-800 ring-1 ring-gray-800' : 'border-gray-200 hover:border-gray-300'}`}
+            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'all' ? 'border-gray-300 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
           >
             <div className="flex justify-between items-center">
               <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total SKUs</h3>
@@ -84,7 +84,7 @@ export default function Inventory() {
 
           <div 
             onClick={() => setFilterType('lowStock')}
-            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'lowStock' ? 'border-gray-800 ring-1 ring-gray-800' : 'border-gray-200 hover:border-gray-300'}`}
+            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'lowStock' ? 'border-gray-300 bg-gray-50' : 'border-gray-200 hover:border-gray-300'}`}
           >
             <div className="flex justify-between items-center">
               <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Low Stock Alerts</h3>

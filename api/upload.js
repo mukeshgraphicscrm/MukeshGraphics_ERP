@@ -1,27 +1,10 @@
-import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
-import { CloudinaryStorage } from 'multer-storage-cloudinary';
 import { handleCors } from './lib/cors.js';
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
-  api_key: (process.env.CLOUDINARY_API_KEY || '').trim(),
-  api_secret: (process.env.CLOUDINARY_API_SECRET || '').trim()
-});
-
-// Configure Multer to use Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'mukesh-graphics-erp',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp']
-  }
-});
+import { getStorage } from './lib/firebase.js';
 
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for general documents
 });
 
 export default async function handler(req, res) {
@@ -33,7 +16,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    upload.single('file')(req, res, function (err) {
+    upload.single('file')(req, res, async function (err) {
       if (err) {
         console.error('Upload error:', err);
         return res.status(500).json({ error: err.message || 'Upload failed' });
@@ -43,9 +26,24 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      // Cloudinary returns the full URL in req.file.path
+      const storage = getStorage();
+      if (!storage) {
+         return res.status(500).json({ error: 'Firebase Storage is not initialized' });
+      }
+
+      const bucket = storage.bucket();
+      const fileName = `uploads/${Date.now()}_${req.file.originalname}`;
+      const file = bucket.file(fileName);
+      
+      await file.save(req.file.buffer, {
+        metadata: { contentType: req.file.mimetype }
+      });
+      
+      const encodedName = encodeURIComponent(fileName);
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media`;
+
       res.json({
-        url: req.file.path,
+        url: publicUrl,
         filename: req.file.originalname,
         size: req.file.size
       });

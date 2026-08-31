@@ -1,6 +1,7 @@
 import { initializeApp, cert, getApps, getApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getStorage as getAdminStorage } from 'firebase-admin/storage';
 
 /**
  * Robustly parse the Firebase private key from the environment variable.
@@ -39,6 +40,7 @@ const ensureInitialized = () => {
   try {
     initializeApp({
       credential: cert({ projectId, clientEmail, privateKey }),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
     });
     _initialized = true;
     console.log('Firebase Admin initialized successfully.');
@@ -75,4 +77,17 @@ const getAuthInstance = () => {
   }
 };
 
-export { getDb, getAuthInstance as getAuth };
+/**
+ * Returns the Storage instance, or null if Firebase is not configured.
+ */
+const getStorage = () => {
+  if (!ensureInitialized()) return null;
+  try {
+    return getAdminStorage(getApp());
+  } catch (e) {
+    console.error('Failed to get Storage:', e.message);
+    return null;
+  }
+};
+
+export { getDb, getAuthInstance as getAuth, getStorage };

@@ -4,6 +4,7 @@ const path = require('path');
 const multer = require('multer');
 require('dotenv').config();
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
+const { getStorage } = require('firebase-admin/storage');
 
 // Initialize Firebase Admin (Only if env vars are present)
 if (process.env.FIREBASE_PROJECT_ID) {
@@ -15,6 +16,7 @@ if (process.env.FIREBASE_PROJECT_ID) {
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
           privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
         }),
+        storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
       });
       console.log('Firebase Admin initialized successfully.');
     }
@@ -48,39 +50,34 @@ app.use('/api/dashboard', dashboardRouter);
 // Set up static folder for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-
-// Configure Cloudinary
-cloudinary.config({
-  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
-  api_key: (process.env.CLOUDINARY_API_KEY || '').trim(),
-  api_secret: (process.env.CLOUDINARY_API_SECRET || '').trim()
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit for general documents
 });
-
-// Configure Multer to use Cloudinary
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'mukesh-graphics-erp',
-    allowed_formats: ['jpg', 'png', 'jpeg', 'webp']
-  }
-});
-const upload = multer({ storage: storage });
 
 // File upload endpoint
-app.post('/api/upload', (req, res) => {
-  upload.single('file')(req, res, function (err) {
-    if (err) {
-      console.error("Upload error full detail:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
-      return res.status(500).json({ error: err.message || JSON.stringify(err) });
-    }
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    // Cloudinary returns the full URL in req.file.path
-    res.json({ url: req.file.path, filename: req.file.originalname });
-  });
+app.post('/api/upload', upload.single('file'), async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  try {
+    const bucket = getStorage().bucket();
+    const fileName = `uploads/${Date.now()}_${req.file.originalname}`;
+    const file = bucket.file(fileName);
+
+    await file.save(req.file.buffer, {
+      metadata: { contentType: req.file.mimetype }
+    });
+
+    const encodedName = encodeURIComponent(fileName);
+    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media`;
+
+    res.json({ url: publicUrl, filename: req.file.originalname, size: req.file.size });
+  } catch (err) {
+    console.error("Upload error full detail:", err);
+    res.status(500).json({ error: err.message || 'Upload failed' });
+  }
 });
 
 // Module CRUD routes

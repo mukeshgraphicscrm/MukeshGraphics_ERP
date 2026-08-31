@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "axios": "^1.18.1",
-    "cloudinary": "^1.41.3",
     "clsx": "^2.1.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -28,7 +27,6 @@
     "jspdf-autotable": "^5.0.8",
     "lucide-react": "^1.23.0",
     "multer": "^2.2.0",
-    "multer-storage-cloudinary": "^4.0.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-hot-toast": "^2.6.0",

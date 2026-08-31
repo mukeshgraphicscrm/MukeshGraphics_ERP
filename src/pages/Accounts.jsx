@@ -89,7 +89,7 @@ export default function Accounts() {
           className="btn-add"
         >
           <Plus className="w-4 h-4 mr-1" />
-          <span>Create Invoice</span>
+          <span>Final Estimate</span>
         </button>
       </div>
 

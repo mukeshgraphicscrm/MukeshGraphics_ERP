@@ -30,7 +30,7 @@ const addLog = async (collectionName, action, details, req, fullDetails = null) 
 
 const getRecordName = (data) => {
   if (!data) return '';
-  return data.name || data.title || data.companyName || data.customerName || data.productName || data.orderNumber || data.invoiceNumber || data.jobName || data.id || '';
+  return data.name || data.title || data.companyName || data.customerName || data.productName || data.orderNumber || data.invoiceNumber || data.jobName || data.material || data.id || '';
 };
 
 // Factory function to create basic CRUD routes for a given collection

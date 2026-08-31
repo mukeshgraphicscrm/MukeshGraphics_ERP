@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Search, Filter, Edit, Trash2, CheckSquare, Clock, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,7 +9,7 @@ import CustomSelect from '../components/CustomSelect';
 
 export default function Tasks() {
   const { currentUser } = useAuth();
-  const isAdmin = currentUser?.profile?.designation === 'Administrator';
+  const isAdmin = !currentUser?.profile || currentUser?.profile?.designation === 'Administrator';
 
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
@@ -315,7 +316,7 @@ export default function Tasks() {
       </div>
 
       {/* Task Modal (Admin Only) */}
-      {isModalOpen && isAdmin && (
+      {isModalOpen && isAdmin && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative z-[70]">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -416,7 +417,8 @@ export default function Tasks() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       <ConfirmDeleteModal

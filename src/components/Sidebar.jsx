@@ -199,7 +199,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                       isActive ? "text-white" : "text-[#CBD5E1] group-hover:text-white"
                     )}>
                       {item.name === 'Tasks' 
-                        ? (currentUser?.profile?.designation === 'Administrator' ? 'Assign Task' : 'Assigned Task')
+                        ? ((!currentUser?.profile || currentUser?.profile?.designation === 'Administrator') ? 'Assign Task' : 'Assigned Task')
                         : item.name}
                     </span>
                   )}

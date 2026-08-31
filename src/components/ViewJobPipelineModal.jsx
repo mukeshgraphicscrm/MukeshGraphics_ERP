@@ -66,8 +66,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
     if (dispatches && dispatches.length > 0) {
       const possibleDispatches = dispatches.filter(d => 
         d.jobCardNo === job.jobCardNo || 
-        (d.customerName === job.customerName && d.productName === job.productName)
-      ).sort((a, b) => new Date(b.dispatchDate || b.createdAt) - new Date(a.dispatchDate || a.createdAt));
+        d.customer === job.customerName ||
+        d.customerName === job.customerName
+      ).sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
       
       matchedDispatch = possibleDispatches[0];
     }
@@ -183,7 +184,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
               date={pipelineData.quotation?.createdAt ? new Date(pipelineData.quotation.createdAt).toLocaleDateString('en-IN') : null}
               details={pipelineData.quotation ? [
                 { label: 'Quotation No:', value: pipelineData.quotation.quotationNo },
-                { label: 'Amount:', value: `₹${Number(pipelineData.quotation.totalAmount || pipelineData.quotation.price * pipelineData.quotation.qty || 0).toLocaleString('en-IN')}` }
+                { label: 'Amount:', value: `₹${Number(pipelineData.quotation.totalAmount || (pipelineData.quotation.items?.reduce((sum, item) => sum + (Number(item.qty || 0) * Number(item.price || 0)), 0)) || (Number(pipelineData.quotation.price || 0) * Number(pipelineData.quotation.qty || 0)) || 0).toLocaleString('en-IN')}` }
               ] : null}
             />
 
@@ -216,12 +217,13 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
             <TimelineNode 
               icon={Truck} 
               title="Dispatched" 
-              status={pipelineData.dispatch ? 'completed' : (Number(pipelineData.production?.progress) === 100 ? 'pending' : 'pending')}
-              date={pipelineData.dispatch?.dispatchDate ? new Date(pipelineData.dispatch.dispatchDate).toLocaleDateString('en-IN') : null}
+              status={pipelineData.dispatch ? (pipelineData.dispatch.status === 'DELIVERED' ? 'completed' : 'active') : (Number(pipelineData.production?.progress) === 100 ? 'pending' : 'pending')}
+              date={pipelineData.dispatch?.date ? new Date(pipelineData.dispatch.date).toLocaleDateString('en-IN') : null}
               isLast={true}
               details={pipelineData.dispatch ? [
-                { label: 'Tracking No:', value: pipelineData.dispatch.trackingNo || 'N/A' },
-                { label: 'Transporter:', value: pipelineData.dispatch.transporter || 'N/A' }
+                { label: 'Dispatch No:', value: pipelineData.dispatch.dispatchNo || 'N/A' },
+                { label: 'Transporter:', value: pipelineData.dispatch.vehicleNo || 'N/A' },
+                { label: 'Status:', value: pipelineData.dispatch.status || 'N/A' }
               ] : null}
             />
           </div>

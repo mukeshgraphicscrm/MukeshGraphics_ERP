@@ -17,7 +17,7 @@ const stages = [
 ];
 
 export default function Production() {
-  const { productionJobs: jobs, setProductionJobs: setJobs } = useData();
+  const { productionJobs: jobs, setProductionJobs: setJobs, setDispatches } = useData();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
 
@@ -401,6 +401,9 @@ export default function Production() {
         onClose={() => {
           setIsScheduleDispatchOpen(false);
           setDispatchInitialData(null);
+        }}
+        onDispatchScheduled={(newDispatch) => {
+          if (setDispatches) setDispatches(prev => [newDispatch, ...prev]);
         }}
         initialData={dispatchInitialData}
       />

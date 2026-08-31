@@ -333,6 +333,15 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         });
         message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+        if (payload.advancePaymentAmount > 0) {
+          message += `\n*Advance Amount:* ₹${payload.advancePaymentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+          if (payload.advancePaymentDate) {
+            message += `\n*Received Date:* ${new Date(payload.advancePaymentDate).toLocaleDateString('en-IN')}`;
+          }
+          const remainingAmount = totalAmount - payload.advancePaymentAmount;
+          message += `\n*Remaining Amount:* ₹${remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
         const customer = customers.find(c => c.id === formData.customerId);
         phone = customer?.mobile || customer?.phone || '';
 

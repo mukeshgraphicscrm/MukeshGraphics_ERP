@@ -21,7 +21,9 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
     employee: currentUser?.profile?.name || '',
     amount: 0,
     gst: 0,
-    dueDate: new Date().toISOString().split('T')[0] // keep for compatibility
+    dueDate: new Date().toISOString().split('T')[0], // keep for compatibility
+    advanceDate: '',
+    advanceAmount: ''
   });
 
   const [customers, setCustomers] = useState([]);
@@ -139,7 +141,9 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
           employee: invoiceToEdit.employee || currentUser?.profile?.name || '',
           amount: invoiceToEdit.amount || 0,
           gst: invoiceToEdit.gst || 0,
-          dueDate: invoiceToEdit.dueDate || new Date().toISOString().split('T')[0]
+          dueDate: invoiceToEdit.dueDate || new Date().toISOString().split('T')[0],
+          advanceDate: invoiceToEdit.advanceDate || '',
+          advanceAmount: invoiceToEdit.advanceAmount || ''
         });
       } else {
         initFreshForm();
@@ -173,7 +177,9 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
       employee: currentUser?.profile?.name || '',
       amount: 0,
       gst: 0,
-      dueDate: new Date().toISOString().split('T')[0]
+      dueDate: new Date().toISOString().split('T')[0],
+      advanceDate: '',
+      advanceAmount: ''
     });
   };
 
@@ -257,7 +263,9 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
         ...formData,
         items: parsedItems,
         amount: totalCalculatedAmount,
-        dueDate: formData.date // Sync dueDate to date so Accounts logic holds
+        dueDate: formData.date, // Sync dueDate to date so Accounts logic holds
+        advanceAmount: formData.advanceAmount ? Number(formData.advanceAmount.toString().replace(/,/g, '')) : 0,
+        advanceDate: formData.advanceDate || null
       };
 
       if (invoiceToEdit) {
@@ -479,6 +487,46 @@ export default function CreateInvoiceModal({ isOpen, onClose, onInvoiceCreated, 
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            
+            {formData.items && formData.items.length > 0 && (
+              <div className="mt-6 pt-5 border-t border-gray-100">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Grand Total (₹)</label>
+                    <div className="text-lg font-bold text-gray-900 mt-2">
+                      ₹{formData.items.reduce((sum, item) => sum + (Number((item.qty || '0').toString().replace(/,/g, '')) * Number((item.price || '0').toString().replace(/,/g, ''))), 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Advance Date</label>
+                    <input
+                      type="date"
+                      name="advanceDate"
+                      value={formData.advanceDate || ''}
+                      onChange={handleChange}
+                      disabled={isViewMode}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors ${isViewMode ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'}`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Advance Amount (₹)</label>
+                    <input
+                      type="text"
+                      name="advanceAmount"
+                      value={isViewMode && formData.advanceAmount ? Number(formData.advanceAmount).toLocaleString('en-IN') : formData.advanceAmount}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormData(prev => ({ ...prev, advanceAmount: formatIndianNumber(val) }));
+                      }}
+                      disabled={isViewMode}
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors ${isViewMode ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'}`}
+                      placeholder="e.g. 5000"
+                    />
+                  </div>
+                </div>
               </div>
             )}
 

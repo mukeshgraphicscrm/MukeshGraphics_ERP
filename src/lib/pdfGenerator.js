@@ -43,7 +43,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // Draw a thick dark blue top strip
   doc.setFillColor(...brandDark);
   doc.rect(0, 0, pageW, 10, 'F');
-  
+
   // Draw an orange strip just below it
   doc.setFillColor(...brandAccent);
   doc.rect(0, 10, pageW, 3, 'F');
@@ -217,7 +217,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
     startY: yPos,
     head: [['#', 'ITEM DESCRIPTION', 'QTY', 'RATE', 'AMOUNT']],
     body: tableData,
-    theme: 'grid', 
+    theme: 'grid',
     headStyles: {
       fillColor: brandDark, // Dark Blue header
       textColor: [255, 255, 255],
@@ -242,7 +242,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
       4: { halign: 'center', cellWidth: 40 },
     },
     alternateRowStyles: {
-      fillColor: [255, 255, 255], 
+      fillColor: [255, 255, 255],
     },
     didDrawPage: (data) => {
       yPos = data.cursor.y;
@@ -433,11 +433,11 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // ==========================================
   doc.setFillColor(...brandDark);
   doc.rect(0, 0, pageW, 10, 'F');
-  
+
   doc.setFillColor(...brandAccent);
   doc.rect(0, 10, pageW, 3, 'F');
 
-  const hm = margin - 7; 
+  const hm = margin - 7;
 
   if (logoBase64) {
     doc.addImage(logoBase64, 'PNG', hm, 23, 22, 22, '', 'FAST');
@@ -509,7 +509,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)
-  doc.setFillColor(252, 253, 255); 
+  doc.setFillColor(252, 253, 255);
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'FD');
@@ -532,7 +532,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setTextColor(...textSecondary);
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.text("BILLED TO", margin + 10, startY + 7); 
+  doc.text("BILLED TO", margin + 10, startY + 7);
   doc.text("ORDER TO", margin + cardW + 22, startY + 7);
 
   // Card Content - From (Left) - Billed to Mukesh Graphics
@@ -586,9 +586,9 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     startY: yPos,
     head: [['#', 'MATERIAL DESCRIPTION', 'QTY', 'RATE', 'AMOUNT']],
     body: tableData,
-    theme: 'grid', 
+    theme: 'grid',
     headStyles: {
-      fillColor: brandDark, 
+      fillColor: brandDark,
       textColor: [255, 255, 255],
       fontStyle: 'bold',
       fontSize: 9,
@@ -604,14 +604,14 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
       lineColor: borderLight,
     },
     columnStyles: {
-      0: { halign: 'center', cellWidth: 8 }, 
+      0: { halign: 'center', cellWidth: 8 },
       1: { cellWidth: 'auto', halign: 'left' },
       2: { halign: 'center', cellWidth: 25 },
       3: { halign: 'center', cellWidth: 35 },
       4: { halign: 'center', cellWidth: 40 },
     },
     alternateRowStyles: {
-      fillColor: [255, 255, 255], 
+      fillColor: [255, 255, 255],
     },
     didDrawPage: (data) => {
       yPos = data.cursor.y;
@@ -625,7 +625,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // ==========================================
   // Assuming 18% GST for PO as well based on Quotation, but typically PO might have varied taxes.
   // Actually, PO in the screenshot only had AMOUNT. Let's just output Sub Total, GST, Net Payable.
-  const gstAmount = subtotal * 0.18; 
+  const gstAmount = subtotal * 0.18;
   const finalTotal = subtotal + gstAmount;
 
   const totalsData = [
@@ -676,7 +676,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     noteY = margin;
   }
 
-  doc.setFillColor(255, 250, 245); 
+  doc.setFillColor(255, 250, 245);
   doc.setDrawColor(253, 216, 181);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, noteY, pageW - margin * 2, 22, 2, 2, 'FD');
@@ -687,7 +687,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...brandAccent); 
+  doc.setTextColor(...brandAccent);
   doc.text("NOTE:", margin + 8, noteY + 7.5);
 
   doc.setFontSize(10.5);
@@ -705,7 +705,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFillColor(...brandDark);
   doc.rect(0, footerY, pageW, 12, 'F');
 
-  doc.setTextColor(255, 255, 255); 
+  doc.setTextColor(255, 255, 255);
   doc.setFontSize(10.5);
   doc.setFont("helvetica", "normal");
   doc.text("Thank you for your business!", margin, footerY + 8.5);

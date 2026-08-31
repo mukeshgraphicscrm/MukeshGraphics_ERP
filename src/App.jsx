@@ -25,6 +25,7 @@ import Settings from './pages/Settings';
 import Logs from './pages/Logs';
 import JobInquiry from './pages/JobInquiry';
 import CustomPackagingRequest from './pages/CustomPackagingRequest';
+import Tasks from './pages/Tasks';
 
 function App() {
   return (
@@ -52,6 +53,7 @@ function App() {
                 <Route path="logs" element={<Logs />} />
                 <Route path="job-inquiry" element={<JobInquiry />} />
                 <Route path="customize-packaging-request" element={<CustomPackagingRequest />} />
+                <Route path="tasks" element={<Tasks />} />
               </Route>
             </Route>
           </Routes>

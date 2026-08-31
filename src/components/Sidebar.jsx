@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, GitBranch, FileText,
   ShoppingCart, Package, Factory,
   Boxes, Truck, ShoppingBag, IndianRupee, ChevronLeft,
-  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box, History
+  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box, History, CheckSquare
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -27,6 +27,7 @@ const navItems = [
       { name: 'Accounts', path: '/accounts', icon: IndianRupee },
     ]
   },
+  { name: 'Tasks', path: '/tasks', icon: CheckSquare },
   { name: 'Settings', path: '/settings', icon: Settings },
   { name: 'Logs', path: '/logs', icon: History },
   { name: 'Customize Packaging Request', path: '/customize-packaging-request', icon: Box },
@@ -197,7 +198,9 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
                       "font-medium text-[14px] transition-colors",
                       isActive ? "text-white" : "text-[#CBD5E1] group-hover:text-white"
                     )}>
-                      {item.name}
+                      {item.name === 'Tasks' 
+                        ? (currentUser?.profile?.designation === 'Administrator' ? 'Assign Task' : 'Assigned Task')
+                        : item.name}
                     </span>
                   )}
                 </>

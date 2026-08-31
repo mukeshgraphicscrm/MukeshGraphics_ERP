@@ -41,10 +41,7 @@ export default function NotificationsDropdown({ isOpen, onClose }) {
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40"
-        onClick={onClose}
-      />
+
       <div className="fixed left-4 right-4 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden sm:origin-top-right">
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50/80">
           <h3 className="font-semibold text-gray-900">Notifications</h3>

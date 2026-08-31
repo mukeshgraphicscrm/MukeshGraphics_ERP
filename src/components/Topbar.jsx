@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, Bell, Menu, LogOut, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,6 +10,17 @@ export default function Topbar({ onMenuClick }) {
   const { notifications } = useData();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notifRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   const name = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
   const designation = currentUser?.profile?.designation || 'Administrator';
@@ -59,9 +70,9 @@ export default function Topbar({ onMenuClick }) {
 
         {/* Right Side */}
         <div className="flex items-center space-x-4 md:space-x-6">
-          {/* Notifications (Employees Only) */}
-          {designation === 'Employee' && (
-            <div className="relative">
+          {/* Notifications */}
+          {(designation === 'Employee' || designation === 'Manager') && (
+            <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
                 className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative focus:outline-none"

@@ -42,9 +42,10 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
   const { currentUser } = useAuth();
   
   const isEmployee = currentUser?.profile?.designation === 'Employee';
+  const isAdministrator = !currentUser?.profile || currentUser?.profile?.designation === 'Administrator';
   const visibleNavItems = navItems.filter(item => {
     if (item.name === 'Settings' && isEmployee) return false;
-    if (item.name === 'Logs' && isEmployee) return false;
+    if (item.name === 'Logs' && !isAdministrator) return false;
     return true;
   });
 

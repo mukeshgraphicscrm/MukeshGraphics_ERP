@@ -493,8 +493,8 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
             console.error('Failed to send notification:', notifErr);
           }
         }
-        
         toast.success('Quotation updated successfully!');
+        resData = res.data;
       } else {
         const res = await api.post('/quotations', payload);
         if (onQuotationAdded) onQuotationAdded(res.data);
@@ -518,53 +518,55 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         }
         
         toast.success('Quotation created successfully!');
-
-        // Automatically generate PDF for the new quotation
-        const custMap = {};
-        customers.forEach(c => custMap[c.id] = c);
-        const prodMap = {};
-        products.forEach(p => prodMap[p.id] = p);
-
-        try {
-          await generateQuotationPDF(res.data, custMap, prodMap);
-        } catch (pdfErr) {
-          console.error('Error generating PDF:', pdfErr);
-          toast.error('Quotation created, but failed to generate PDF.');
-        }
-
-        // WhatsApp Check
-        let phone = '';
-        let message = `Hello, here are the details for your quotation:\n\n*Quotation No:* ${res.data.quotationNo}\n*Date:* ${new Date(res.data.date).toLocaleDateString()}\n*Company:* ${res.data.companyName}\n\n*Items:*\n`;
-        let totalAmount = 0;
-        (res.data.items || []).forEach((item, index) => {
-          const productName = activeTab === 'Lead Quotation' ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
-          const amount = (item.qty * item.price);
-          totalAmount += amount;
-          message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${Number(item.qty).toLocaleString('en-IN')}\n   Price: ₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-        });
-        message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
-
-        if (activeTab === 'Customer Quotation') {
-          const customer = customers.find(c => c.id === formData.customerId);
-          phone = customer?.mobile || customer?.phone || '';
-        } else {
-          const lead = leads.find(l => l.id === formData.leadId);
-          phone = lead?.mobile || lead?.phone || '';
-        }
-
-        if (phone) {
-          let formattedPhone = phone.replace(/\D/g, '');
-          if (formattedPhone.length === 10) {
-            formattedPhone = '91' + formattedPhone;
-          } else if (formattedPhone.startsWith('0')) {
-             formattedPhone = '91' + formattedPhone.substring(1);
-          }
-          setWhatsappInfo({ phone: formattedPhone, message });
-          setShowWhatsappPrompt(true);
-          setLoading(false);
-          return;
-        }
+        resData = res.data;
       }
+
+      // Automatically generate PDF for the new quotation
+      const custMap = {};
+      customers.forEach(c => custMap[c.id] = c);
+      const prodMap = {};
+      products.forEach(p => prodMap[p.id] = p);
+
+      try {
+        await generateQuotationPDF(resData, custMap, prodMap);
+      } catch (pdfErr) {
+        console.error('Error generating PDF:', pdfErr);
+        toast.error('Quotation created, but failed to generate PDF.');
+      }
+
+      // WhatsApp Check
+      let phone = '';
+      let message = `Hello, here are the details for your quotation:\n\n*Quotation No:* ${resData.quotationNo}\n*Date:* ${new Date(resData.date).toLocaleDateString()}\n*Company:* ${resData.companyName}\n\n*Items:*\n`;
+      let totalAmount = 0;
+      (resData.items || []).forEach((item, index) => {
+        const productName = activeTab === 'Lead Quotation' ? (item.productId || 'Product') : (products.find(p => p.id === item.productId)?.name || 'Product');
+        const amount = (item.qty * item.price);
+        totalAmount += amount;
+        message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${Number(item.qty).toLocaleString('en-IN')}\n   Price: ₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+      });
+      message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+
+      if (activeTab === 'Customer Quotation') {
+        const customer = customers.find(c => c.id === formData.customerId);
+        phone = customer?.mobile || customer?.phone || '';
+      } else {
+        const lead = leads.find(l => l.id === formData.leadId);
+        phone = lead?.mobile || lead?.phone || '';
+      }
+
+      if (phone) {
+        let formattedPhone = phone.replace(/\D/g, '');
+        if (formattedPhone.length === 10) {
+          formattedPhone = '91' + formattedPhone;
+        } else if (formattedPhone.startsWith('0')) {
+            formattedPhone = '91' + formattedPhone.substring(1);
+        }
+        setWhatsappInfo({ phone: formattedPhone, message });
+        setShowWhatsappPrompt(true);
+        setLoading(false);
+        return;
+      }
+      
       onClose();
     } catch (err) {
       console.error('Error saving quotation:', err);

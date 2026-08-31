@@ -8,9 +8,10 @@ import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
-export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, onInvoiceDeleted, invoiceToEdit }) {
+export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, onInvoiceDeleted, invoiceToEdit, initialViewMode = false }) {
   const { currentUser } = useAuth();
-  const { invoices, products, users, customers } = useData();
+  const { invoices, products, customers } = useData();
+  const [users, setUsers] = useState([]);
 
   const [formData, setFormData] = useState({
     invoiceNo: '',
@@ -74,9 +75,22 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
 
   useEffect(() => {
     if (isOpen) {
-      setIsViewMode(!!invoiceToEdit);
+      api.get('/users').then(res => setUsers(res.data)).catch(console.error);
+      setIsViewMode(initialViewMode);
 
       if (invoiceToEdit) {
+        let initialCustomGst = '';
+        if (invoiceToEdit.gst !== undefined && invoiceToEdit.gst !== null) {
+          const sub = (invoiceToEdit.items || []).reduce((sum, item) => {
+            const q = Number((item.qty || '0').toString().replace(/,/g, ''));
+            const p = Number((item.price || '0').toString().replace(/,/g, ''));
+            return sum + (q * p);
+          }, 0);
+          if (Math.abs(invoiceToEdit.gst - (sub * 0.18)) > 0.01) {
+            initialCustomGst = invoiceToEdit.gst;
+          }
+        }
+
         setFormData({
           invoiceNo: invoiceToEdit.invoiceNo || '',
           date: invoiceToEdit.date ? new Date(invoiceToEdit.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -89,6 +103,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
           employee: invoiceToEdit.employee || currentUser?.profile?.name || '',
           advancePaymentDate: invoiceToEdit.advancePaymentDate ? new Date(invoiceToEdit.advancePaymentDate).toISOString().split('T')[0] : '',
           advancePaymentAmount: invoiceToEdit.advancePaymentAmount ? formatIndianNumber(invoiceToEdit.advancePaymentAmount.toString()) : '',
+          customGst: initialCustomGst,
         });
       } else {
         initFreshForm();
@@ -123,6 +138,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
       employee: currentUser?.profile?.name || '',
       advancePaymentDate: '',
       advancePaymentAmount: '',
+      customGst: '',
     });
   };
 
@@ -300,6 +316,11 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         };
       });
 
+      const calculatedGst = totalAmount * 0.18;
+      const gstAmount = formData.customGst !== undefined && formData.customGst !== '' 
+        ? Number(formData.customGst.toString().replace(/,/g, ''))
+        : calculatedGst;
+
       const payload = {
         ...formData,
         dueDate: formData.date, // Match due date to date since UI no longer has due date
@@ -307,7 +328,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         items: processedItems,
         amount: totalAmount,
         advancePaymentAmount: formData.advancePaymentAmount ? Number(formData.advancePaymentAmount.toString().replace(/,/g, '')) : 0,
-        gst: 0,
+        gst: gstAmount,
       };
 
       setIsViewMode(false);
@@ -316,49 +337,55 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         payload.createdAt = new Date().toISOString();
       }
 
+      let resData;
       if (invoiceToEdit) {
         const res = await api.put(`/invoices/${invoiceToEdit.id}`, payload);
         if (onInvoiceUpdated) onInvoiceUpdated(res.data);
         toast.success('Estimate updated successfully!');
+        resData = res.data;
       } else {
         const res = await api.post('/invoices', payload);
         if (onInvoiceCreated) onInvoiceCreated(res.data);
         toast.success('Estimate created successfully!');
-
-        let phone = '';
-        let message = `Hello, here are the details for your Final Estimate:\n\n*Estimate No:* ${res.data.invoiceNo}\n*Date:* ${new Date(res.data.date).toLocaleDateString()}\n*Company:* ${res.data.companyName}\n\n*Items:*\n`;
-        (res.data.items || []).forEach((item, index) => {
-          const productName = products.find(p => p.id === item.productId)?.name || 'Product';
-          const amount = (item.qty * item.price);
-          message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${Number(item.qty).toLocaleString('en-IN')}\n   Price: ₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-        });
-        message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-
-        if (payload.advancePaymentAmount > 0) {
-          message += `\n*Advance Amount Received:* ₹${payload.advancePaymentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-          if (payload.advancePaymentDate) {
-            message += `\n*Advance Amount Received Date:* ${new Date(payload.advancePaymentDate).toLocaleDateString('en-IN')}`;
-          }
-          const remainingAmount = totalAmount - payload.advancePaymentAmount;
-          message += `\n*Remaining Amount:* ₹${remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-        }
-
-        const customer = customers.find(c => c.id === formData.customerId);
-        phone = customer?.mobile || customer?.phone || '';
-
-        if (phone) {
-          let formattedPhone = phone.replace(/\D/g, '');
-          if (formattedPhone.length === 10) {
-            formattedPhone = '91' + formattedPhone;
-          } else if (formattedPhone.startsWith('0')) {
-            formattedPhone = '91' + formattedPhone.substring(1);
-          }
-          setWhatsappInfo({ phone: formattedPhone, message });
-          setShowWhatsappPrompt(true);
-          setLoading(false);
-          return;
-        }
+        resData = res.data;
       }
+
+      let phone = '';
+      let message = `Hello, here are the details for your Final Estimate:\n\n*Estimate No:* ${resData.invoiceNo}\n*Date:* ${new Date(resData.date).toLocaleDateString()}\n*Company:* ${resData.companyName}\n\n*Items:*\n`;
+      (resData.items || []).forEach((item, index) => {
+        const productName = products.find(p => p.id === item.productId)?.name || 'Product';
+        const amount = (item.qty * item.price);
+        message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${Number(item.qty).toLocaleString('en-IN')}\n   Price: ₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
+      });
+      message += `\n*Subtotal:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      message += `\n*GST (18%):* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      message += `\n*Grand Total:* ₹${(totalAmount + gstAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+      if (payload.advancePaymentAmount > 0) {
+        message += `\n*Advance Amount Received:* ₹${payload.advancePaymentAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        if (payload.advancePaymentDate) {
+          message += `\n*Advance Amount Received Date:* ${new Date(payload.advancePaymentDate).toLocaleDateString('en-IN')}`;
+        }
+        const remainingAmount = (totalAmount + gstAmount) - payload.advancePaymentAmount;
+        message += `\n*Remaining Amount:* ₹${remainingAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      }
+
+      const customer = customers.find(c => c.id === formData.customerId);
+      phone = customer?.mobile || customer?.phone || '';
+
+      if (phone) {
+        let formattedPhone = phone.replace(/\D/g, '');
+        if (formattedPhone.length === 10) {
+          formattedPhone = '91' + formattedPhone;
+        } else if (formattedPhone.startsWith('0')) {
+          formattedPhone = '91' + formattedPhone.substring(1);
+        }
+        setWhatsappInfo({ phone: formattedPhone, message });
+        setShowWhatsappPrompt(true);
+        setLoading(false);
+        return;
+      }
+      
       onClose();
     } catch (err) {
       console.error('Error saving invoice:', err);
@@ -561,16 +588,41 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
             </div>
           )}
 
-          {formData.items && formData.items.length > 0 && (
-            <div className="mt-6 border-t border-gray-200 pt-6 space-y-4">
-              <div className="flex justify-between items-center text-lg font-bold text-gray-900">
-                <span>Grand Total</span>
-                <span>₹{formData.items.reduce((sum, item) => {
-                  const q = Number((item.qty || '0').toString().replace(/,/g, ''));
-                  const p = Number((item.price || '0').toString().replace(/,/g, ''));
-                  return sum + (q * p);
-                }, 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-              </div>
+          {formData.items && formData.items.length > 0 && (() => {
+            const subtotal = formData.items.reduce((sum, item) => {
+              const q = Number((item.qty || '0').toString().replace(/,/g, ''));
+              const p = Number((item.price || '0').toString().replace(/,/g, ''));
+              return sum + (q * p);
+            }, 0);
+            const calculatedGst = subtotal * 0.18;
+            const appliedGst = formData.customGst !== undefined && formData.customGst !== ''
+              ? Number(formData.customGst.toString().replace(/,/g, ''))
+              : calculatedGst;
+            const grandTotal = subtotal + appliedGst;
+
+            return (
+              <div className="mt-6 border-t border-gray-200 pt-6 space-y-4">
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-gray-600">
+                  <span>GST (18%)</span>
+                  <div className="flex items-center">
+                    <span className="mr-2">₹</span>
+                    <input
+                      type="text"
+                      className={`w-28 px-2 py-1 text-right border rounded-md focus:outline-none focus:ring-1 focus:ring-[#1b2f63] ${isViewMode ? 'bg-gray-50 border-transparent text-gray-500' : 'border-gray-300'}`}
+                      value={formData.customGst !== undefined && formData.customGst !== '' ? formData.customGst : calculatedGst.toFixed(2)}
+                      onChange={(e) => setFormData(prev => ({ ...prev, customGst: e.target.value }))}
+                      disabled={isViewMode}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-lg font-bold text-gray-900 border-t border-gray-100 pt-2">
+                  <span>Grand Total</span>
+                  <span>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-100">
                 <div>
@@ -601,7 +653,8 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           <div className={`mt-8 flex flex-col-reverse sm:flex-row ${invoiceToEdit ? 'sm:justify-between' : 'sm:justify-end'} items-stretch sm:items-center gap-3 border-t border-gray-100 pt-5`}>
             {invoiceToEdit && (

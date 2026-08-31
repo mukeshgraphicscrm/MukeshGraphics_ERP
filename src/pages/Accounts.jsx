@@ -11,9 +11,10 @@ export default function Accounts() {
   const { invoices, setInvoices, customerMap: customers, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
+  const [modalMode, setModalMode] = useState('create');
   const totalOutstanding = invoices
     .filter(i => i.status !== 'Paid')
-    .reduce((sum, i) => sum + i.amount + i.gst, 0);
+    .reduce((sum, i) => sum + (i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0), 0);
 
   const outstandingCustomersCount = new Set(
     invoices.filter(i => i.status !== 'Paid').map(i => i.customerId)
@@ -21,13 +22,17 @@ export default function Accounts() {
 
   const overduePayments = invoices
     .filter(i => i.status === 'Overdue')
-    .reduce((sum, i) => sum + i.amount + i.gst, 0);
+    .reduce((sum, i) => sum + (i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0), 0);
 
   const overdueInvoicesCount = invoices.filter(i => i.status === 'Overdue').length;
 
-  const collectionsThisMonth = invoices
-    .filter(i => i.status === 'Paid')
-    .reduce((sum, i) => sum + i.amount + i.gst, 0);
+  const collectionsThisMonth = invoices.reduce((sum, i) => {
+    if (i.status === 'Paid') {
+      return sum + (i.amount || 0) + (i.gst || 0);
+    } else {
+      return sum + (i.advancePaymentAmount || 0);
+    }
+  }, 0);
 
   const columns = [
     { header: 'INVOICE', accessor: row => row.invoiceNo, render: row => <span className="font-bold text-[13px] text-[#1b2f63]">{row.invoiceNo}</span> },
@@ -42,10 +47,12 @@ export default function Accounts() {
           row={row}
           onEdit={(r) => {
             setInvoiceToEdit(r);
+            setModalMode('edit');
             setIsModalOpen(true);
           }}
           onView={(r) => {
             setInvoiceToEdit(r);
+            setModalMode('view');
             setIsModalOpen(true);
           }}
         />
@@ -54,21 +61,37 @@ export default function Accounts() {
   ];
 
   // Calculate customer ledger (group by customer, sum outstanding)
-  const ledgerMap = {};
+  const outstandingMap = {};
+  const totalBusinessMap = {};
+  
   invoices.forEach(i => {
+    const custId = i.customerId;
+    if (!custId) return;
+
+    const invTotal = (i.amount || 0) + (i.gst || 0);
+    const advance = (i.advancePaymentAmount || 0);
+
+    if (!totalBusinessMap[custId]) totalBusinessMap[custId] = 0;
+    totalBusinessMap[custId] += invTotal;
+
     if (i.status !== 'Paid') {
-      if (!ledgerMap[i.customerId]) ledgerMap[i.customerId] = 0;
-      ledgerMap[i.customerId] += (i.amount + i.gst);
+      if (!outstandingMap[custId]) outstandingMap[custId] = 0;
+      outstandingMap[custId] += (invTotal - advance);
     }
   });
 
-  const ledgerEntries = Object.keys(ledgerMap).map(custId => {
+  const ledgerEntries = Object.keys(totalBusinessMap).map(custId => {
+    const cust = customers[custId];
+    const contactPerson = cust?.contactPerson;
+    const city = cust?.city;
+    const contactCity = contactPerson && city ? `${contactPerson}, ${city}` : (contactPerson || city || 'Unknown');
+
     return {
       customerId: custId,
-      customerName: customers[custId]?.name || custId,
-      city: customers[custId]?.city || 'Unknown',
-      outstanding: ledgerMap[custId],
-      totalBusiness: customers[custId]?.totalBusiness || 0,
+      customerName: cust?.name || custId,
+      contactCity: contactCity,
+      outstanding: outstandingMap[custId] || 0,
+      totalBusiness: totalBusinessMap[custId] || 0,
     };
   }).sort((a, b) => b.outstanding - a.outstanding);
 
@@ -97,6 +120,7 @@ export default function Accounts() {
         <button
           onClick={() => {
             setInvoiceToEdit(null);
+            setModalMode('create');
             setIsModalOpen(true);
           }}
           className="btn-add"
@@ -143,7 +167,7 @@ export default function Accounts() {
           </div>
           <div>
             <div className="text-3xl font-bold text-gray-900 leading-none mb-1">₹{collectionsThisMonth.toLocaleString('en-IN')}</div>
-            <div className="text-[11px] text-gray-500">June 2026</div>
+            <div className="text-[11px] text-gray-500">{new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</div>
           </div>
         </div>
       </div>
@@ -169,7 +193,7 @@ export default function Accounts() {
                 <div key={entry.customerId} className="flex justify-between items-start">
                   <div>
                     <p className="text-[13px] font-bold text-gray-900">{entry.customerName}</p>
-                    <p className="text-[11px] text-gray-500">{entry.city}</p>
+                    <p className="text-[11px] text-gray-500 uppercase">{entry.contactCity}</p>
                   </div>
                   <div className="text-right">
                     <p className="text-[13px] font-bold text-[#dc2626]">₹{entry.outstanding.toLocaleString('en-IN')}</p>
@@ -190,6 +214,7 @@ export default function Accounts() {
           setIsModalOpen(false);
           setInvoiceToEdit(null);
         }}
+        initialViewMode={modalMode === 'view'}
         customers={customers}
         onInvoiceCreated={(newInvoice) => {
           setInvoices(prev => [...prev, newInvoice]);

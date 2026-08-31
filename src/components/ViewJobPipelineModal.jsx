@@ -22,41 +22,41 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);
 
-  const customer = Object.values(customerMap || {}).find(c =>
+  const customer = Object.values(customerMap || {}).find(c => 
     c.name.toLowerCase() === job?.customerName?.toLowerCase()
   );
   const customerId = customer?.id;
 
-  const product = products.find(p =>
+  const product = products.find(p => 
     p.name.toLowerCase() === job?.productName?.toLowerCase()
   );
   const productId = product?.id;
 
   useEffect(() => {
     if (!job || !isOpen) return;
-
+    
     const jobDate = job.createdAt ? new Date(job.createdAt) : new Date();
 
     // Find Quotation
     let matchedQuote = null;
     if (customerId && productId) {
-      const possibleQuotes = quotations.filter(q =>
-        q.customerId === customerId &&
+      const possibleQuotes = quotations.filter(q => 
+        q.customerId === customerId && 
         q.items?.some(item => item.productId === productId)
       ).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
+      
       matchedQuote = possibleQuotes.find(q => new Date(q.createdAt) <= jobDate) || possibleQuotes[0];
     }
 
     // Find Order
     let matchedOrder = null;
     if (customerId && productId) {
-      const possibleOrders = orders.filter(o =>
+      const possibleOrders = orders.filter(o => 
         o.customerId === customerId &&
         (Array.isArray(o.productId) ? o.productId.includes(productId) : o.productId === productId)
       ).sort((a, b) => new Date(b.orderDate) - new Date(a.orderDate));
-
-      matchedOrder = possibleOrders.find(o => job.jobCardNo?.includes(o.orderNo))
+      
+      matchedOrder = possibleOrders.find(o => job.jobCardNo?.includes(o.orderNo)) 
         || possibleOrders.find(o => new Date(o.orderDate) <= jobDate)
         || possibleOrders[0];
     }
@@ -64,12 +64,12 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
     // Find Dispatch
     let matchedDispatch = null;
     if (dispatches && dispatches.length > 0) {
-      const possibleDispatches = dispatches.filter(d =>
-        d.jobCardNo === job.jobCardNo ||
+      const possibleDispatches = dispatches.filter(d => 
+        d.jobCardNo === job.jobCardNo || 
         d.customer === job.customerName ||
         d.customerName === job.customerName
       ).sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
-
+      
       matchedDispatch = possibleDispatches[0];
     }
 
@@ -106,21 +106,21 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
   const TimelineNode = ({ icon: Icon, title, status, date, isLast, details }) => {
     const isCompleted = status === 'completed';
     const isActive = status === 'active';
-
+    
     return (
       <div className="relative flex gap-4">
         {!isLast && (
           <div className={`absolute left-[19px] top-10 bottom-[-16px] w-[2px] ${isCompleted ? 'bg-emerald-500' : 'bg-gray-200'}`} />
         )}
-
+        
         <div className={`relative z-10 flex items-center justify-center w-10 h-10 rounded-full border-2 bg-white flex-shrink-0 transition-colors
-          ${isCompleted ? 'border-emerald-500 text-emerald-500' :
-            isActive ? 'border-brand-accent text-brand-accent' :
-              'border-gray-200 text-gray-400'}`}
+          ${isCompleted ? 'border-emerald-500 text-emerald-500' : 
+            isActive ? 'border-brand-accent text-brand-accent' : 
+            'border-gray-200 text-gray-400'}`}
         >
           <Icon className="w-5 h-5" />
         </div>
-
+        
         <div className={`flex-1 pb-8 ${!isCompleted && !isActive ? 'opacity-60' : ''}`}>
           <div className="flex items-start justify-between">
             <div>
@@ -140,7 +140,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
               </span>
             )}
           </div>
-
+          
           {details && (
             <div className="mt-3 bg-gray-50 border border-gray-100 rounded-lg p-3 text-sm space-y-1.5">
               {details.map((detail, idx) => (
@@ -157,15 +157,15 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
   };
 
   return createPortal(
-    <div
+    <div 
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200"
       onClick={onClose}
     >
-      <div
+      <div 
         className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-
+        
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
           <div>
@@ -182,7 +182,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
 
         {/* Content */}
         <div className="p-6 overflow-y-auto">
-
+          
           <div className="mb-6 pb-6 border-b border-gray-100 flex justify-between items-center bg-brand-accent/5 p-4 rounded-lg border border-brand-accent/20">
             <div>
               <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Customer</p>
@@ -196,9 +196,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
 
           <div className="px-2">
             {/* 1. Quotation */}
-            <TimelineNode
-              icon={FileText}
-              title="Quotation Created"
+            <TimelineNode 
+              icon={FileText} 
+              title="Quotation Created" 
               status={pipelineData.quotation ? 'completed' : 'pending'}
               date={pipelineData.quotation?.createdAt ? new Date(pipelineData.quotation.createdAt).toLocaleDateString('en-IN') : null}
               details={pipelineData.quotation ? [
@@ -208,9 +208,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
             />
 
             {/* 2. Order */}
-            <TimelineNode
-              icon={ShoppingCart}
-              title="Order Confirmed"
+            <TimelineNode 
+              icon={ShoppingCart} 
+              title="Order Confirmed" 
               status={pipelineData.order ? 'completed' : 'pending'}
               date={pipelineData.order?.orderDate ? new Date(pipelineData.order.orderDate).toLocaleDateString('en-IN') : null}
               details={pipelineData.order ? [
@@ -220,9 +220,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
             />
 
             {/* 3. Production */}
-            <TimelineNode
-              icon={Factory}
-              title="Production execution"
+            <TimelineNode 
+              icon={Factory} 
+              title="Production execution" 
               status={Number(pipelineData.production?.progress) === 100 ? 'completed' : 'active'}
               date={pipelineData.production?.createdAt ? new Date(pipelineData.production.createdAt).toLocaleDateString('en-IN') : null}
               details={[
@@ -233,9 +233,9 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
             />
 
             {/* 4. Dispatch */}
-            <TimelineNode
-              icon={Truck}
-              title="Dispatched"
+            <TimelineNode 
+              icon={Truck} 
+              title="Dispatched" 
               status={pipelineData.dispatch ? (pipelineData.dispatch.status === 'DELIVERED' ? 'completed' : 'active') : (Number(pipelineData.production?.progress) === 100 ? 'pending' : 'pending')}
               date={pipelineData.dispatch?.date ? new Date(pipelineData.dispatch.date).toLocaleDateString('en-IN') : null}
               isLast={true}
@@ -248,7 +248,7 @@ export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
           </div>
 
         </div>
-
+        
         {/* Footer */}
         <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
           <button

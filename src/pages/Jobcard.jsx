@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import DataTable from '../components/DataTable';
 import { useData } from '../contexts/DataContext';
-import { Eye } from 'lucide-react';
 import ViewJobPipelineModal from '../components/ViewJobPipelineModal';
 
 export default function Jobcard() {
@@ -31,22 +30,6 @@ export default function Jobcard() {
       </span>
     )},
     { header: 'Deadline', accessor: row => row.deadline ? new Date(row.deadline).toLocaleDateString('en-IN') : '-' },
-    {
-      header: 'Pipeline',
-      accessor: row => row.id,
-      render: row => (
-        <button
-          onClick={() => {
-            setSelectedJob(row);
-            setIsPipelineModalOpen(true);
-          }}
-          className="p-1.5 text-gray-400 hover:text-brand-accent hover:bg-orange-50 rounded-lg transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-100 text-xs font-medium"
-          title="View Pipeline"
-        >
-          <Eye className="w-3.5 h-3.5" /> View
-        </button>
-      )
-    }
   ];
 
   return (
@@ -57,6 +40,10 @@ export default function Jobcard() {
         subtitle="Records of all 100% completed production jobs."
         columns={columns}
         data={completedJobs}
+        onRowClick={(row) => {
+          setSelectedJob(row);
+          setIsPipelineModalOpen(true);
+        }}
       />
       
       {isPipelineModalOpen && (

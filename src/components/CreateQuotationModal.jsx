@@ -462,6 +462,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     setLoading(true);
     setError(null);
     try {
+      let resData;
       const payload = {
         ...formData,
         items: (formData.items || []).map(item => ({

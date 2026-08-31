@@ -15,13 +15,6 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [paperSizes, setPaperSizes] = useState([]);
-
-  useEffect(() => {
-    if (isOpen) {
-      api.get('/paperSizes').then(res => setPaperSizes(res.data)).catch(console.error);
-    }
-  }, [isOpen]);
 
   useEffect(() => {
     if (materialToEdit) {
@@ -155,14 +148,13 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Paper Size</label>
-              <CustomSelect
+              <input
+                type="text"
                 name="paperSize"
                 value={formData.paperSize}
                 onChange={handleChange}
-                options={[
-                  { value: '', label: 'Select Size' },
-                  ...paperSizes.map(ps => ({ value: ps.name, label: `${ps.name} ${ps.unit}` }))
-                ]}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                placeholder="e.g. 20x30 inch"
               />
             </div>
 

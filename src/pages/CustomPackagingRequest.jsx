@@ -15,6 +15,28 @@ export default function CustomPackagingRequest() {
     );
   });
 
+  const renderDate = (dateVal) => {
+    if (!dateVal) return 'N/A';
+    if (dateVal._seconds !== undefined) {
+      return new Date(dateVal._seconds * 1000).toLocaleString();
+    }
+    if (dateVal.seconds !== undefined) {
+      return new Date(dateVal.seconds * 1000).toLocaleString();
+    }
+    const dateObj = new Date(dateVal);
+    return isNaN(dateObj.getTime()) ? 'Invalid Date' : dateObj.toLocaleString();
+  };
+
+  const renderSpecValue = (val) => {
+    if (typeof val === 'object' && val !== null) {
+      if (val.length !== undefined && val.width !== undefined) {
+        return `${val.length} x ${val.width} ${val.height ? `x ${val.height}` : ''} ${val.unit || ''}`.trim();
+      }
+      return Object.entries(val).map(([k, v]) => `${k}: ${v}`).join(', ');
+    }
+    return String(val);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -56,7 +78,7 @@ export default function CustomPackagingRequest() {
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs text-gray-500 flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5" /> 
-                      {req.createdAt ? new Date(req.createdAt).toLocaleString() : 'N/A'}
+                      {renderDate(req.createdAt)}
                     </span>
                   </div>
                 </div>
@@ -89,7 +111,7 @@ export default function CustomPackagingRequest() {
                   </h4>
                   <ul className="text-sm text-gray-600 space-y-1">
                     {Object.entries(req.specifications).map(([key, value]) => (
-                      <li key={key}><span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span> {String(value)}</li>
+                      <li key={key}><span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span> {renderSpecValue(value)}</li>
                     ))}
                   </ul>
                 </div>

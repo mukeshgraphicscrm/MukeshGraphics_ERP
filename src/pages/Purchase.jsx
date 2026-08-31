@@ -12,7 +12,7 @@ import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
 import toast from 'react-hot-toast';
 
 export default function Purchase() {
-  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, inventory, setInventory, isLoaded } = useData();
+  const { purchaseOrders: poData, setPurchaseOrders: setPoData, grnData, setGrnData, supplierMap: suppliers, setSuppliers, inventory, setInventory, isLoaded, paperSizes, setPaperSizes } = useData();
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
@@ -171,6 +171,27 @@ export default function Purchase() {
           </div>
         </div>
 
+        {/* Paper Sizes Chips */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-bold text-gray-900">Paper Sizes</h3>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {paperSizes.length > 0 ? (
+              paperSizes.map(size => (
+                <span
+                  key={size.id}
+                  className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm transition-colors"
+                >
+                  {size.name}
+                </span>
+              ))
+            ) : (
+              <span className="text-sm text-gray-500">No paper sizes added yet.</span>
+            )}
+          </div>
+        </div>
+
         {/* PO Table */}
         <div>
           <DataTable
@@ -239,7 +260,9 @@ export default function Purchase() {
         isOpen={isAddPaperSizeModalOpen}
         onClose={() => setIsAddPaperSizeModalOpen(false)}
         onPaperSizeAdded={(newSize) => {
-          // If you add paperSizes to DataContext, update it here
+          if (setPaperSizes) {
+            setPaperSizes(prev => [...prev, newSize]);
+          }
         }}
       />
     </>

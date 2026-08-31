@@ -7,19 +7,27 @@ import CustomSelect from './CustomSelect';
 export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onMaterialUpdated, materialToEdit }) {
   const [formData, setFormData] = useState({
     material: '',
+    paperSize: '',
     category: 'Paper',
     stock: '',
     unit: 'Sheets',
     min: '',
-    min: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [paperSizes, setPaperSizes] = useState([]);
+
+  useEffect(() => {
+    if (isOpen) {
+      api.get('/paperSizes').then(res => setPaperSizes(res.data)).catch(console.error);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (materialToEdit) {
       setFormData({
         material: materialToEdit.material || '',
+        paperSize: materialToEdit.paperSize || '',
         category: materialToEdit.category || 'Paper',
         stock: materialToEdit.stock !== undefined ? materialToEdit.stock : '',
         unit: materialToEdit.unit || 'Sheets',
@@ -28,6 +36,7 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
     } else {
       setFormData({
         material: '',
+        paperSize: '',
         category: 'Paper',
         stock: '',
         unit: 'Sheets',
@@ -90,7 +99,7 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
         if (onMaterialAdded) onMaterialAdded(res.data);
         toast.success('Material added successfully!');
       }
-      
+
       onClose();
     } catch (err) {
       console.error('Error saving material:', err);
@@ -141,6 +150,19 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="e.g. SBS Board 300 GSM"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Paper Size</label>
+              <CustomSelect
+                name="paperSize"
+                value={formData.paperSize}
+                onChange={handleChange}
+                options={[
+                  { value: '', label: 'Select Size' },
+                  ...paperSizes.map(ps => ({ value: ps.name, label: ps.name }))
+                ]}
               />
             </div>
 

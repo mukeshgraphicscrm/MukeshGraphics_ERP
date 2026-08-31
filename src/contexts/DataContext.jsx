@@ -64,6 +64,7 @@ export function DataProvider({ children }) {
   const [jobPosted, setJobPosted] = useState([]);
   const [applicationsReceived, setApplicationsReceived] = useState([]);
   const [customPackages, setCustomPackages] = useState([]);
+  const [paperSizes, setPaperSizes] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -93,6 +94,7 @@ export function DataProvider({ children }) {
         api.get('/job_posted'),
         api.get('/application_received'),
         api.get('/custom_package'),
+        api.get('/paperSizes'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -127,6 +129,9 @@ export function DataProvider({ children }) {
       if (jobPostedRes.status === 'fulfilled') setJobPosted(Array.isArray(jobPostedRes.value.data) ? jobPostedRes.value.data : []);
       if (appRes.status === 'fulfilled') setApplicationsReceived(Array.isArray(appRes.value.data) ? appRes.value.data : []);
       if (customPackageRes.status === 'fulfilled') setCustomPackages(Array.isArray(customPackageRes.value.data) ? customPackageRes.value.data : []);
+      
+      const paperSizeRes = arguments[0]?.find(r => r?.value?.config?.url === '/paperSizes') || (await Promise.allSettled([api.get('/paperSizes')]))[0];
+      if (paperSizeRes?.status === 'fulfilled') setPaperSizes(Array.isArray(paperSizeRes.value.data) ? paperSizeRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -161,6 +166,7 @@ export function DataProvider({ children }) {
       setJobPosted([]);
       setApplicationsReceived([]);
       setCustomPackages([]);
+      setPaperSizes([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -246,6 +252,7 @@ export function DataProvider({ children }) {
     jobPosted, setJobPosted,
     applicationsReceived, setApplicationsReceived,
     customPackages, setCustomPackages,
+    paperSizes, setPaperSizes,
     // helper maps
     customerMap,
     productMap,

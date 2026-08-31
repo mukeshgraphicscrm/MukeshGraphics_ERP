@@ -9,6 +9,7 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
     name: '',
     length: '',
     width: '',
+    height: '',
     unit: 'Inches',
   });
   const [loading, setLoading] = useState(false);
@@ -20,6 +21,7 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
         name: paperSizeToEdit.name || '',
         length: paperSizeToEdit.length !== undefined ? paperSizeToEdit.length : '',
         width: paperSizeToEdit.width !== undefined ? paperSizeToEdit.width : '',
+        height: paperSizeToEdit.height !== undefined ? paperSizeToEdit.height : '',
         unit: paperSizeToEdit.unit || 'Inches',
       });
     } else {
@@ -27,6 +29,7 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
         name: '',
         length: '',
         width: '',
+        height: '',
         unit: 'Inches',
       });
     }
@@ -55,12 +58,16 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
     };
   }, [isOpen, onClose]);
 
-  // Auto-generate name based on length and width
+  // Auto-generate name based on length, width, and height
   useEffect(() => {
     if (!paperSizeToEdit && formData.length && formData.width) {
-      setFormData(prev => ({ ...prev, name: `${prev.length}x${prev.width}` }));
+      if (formData.height) {
+        setFormData(prev => ({ ...prev, name: `${prev.length}x${prev.width}x${prev.height}` }));
+      } else {
+        setFormData(prev => ({ ...prev, name: `${prev.length}x${prev.width}` }));
+      }
     }
-  }, [formData.length, formData.width, paperSizeToEdit]);
+  }, [formData.length, formData.width, formData.height, paperSizeToEdit]);
 
   if (!isOpen) return null;
 
@@ -78,6 +85,7 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
         ...formData,
         length: Number(formData.length),
         width: Number(formData.width),
+        height: formData.height ? Number(formData.height) : null,
       };
 
       if (paperSizeToEdit) {
@@ -147,6 +155,20 @@ export default function AddPaperSizeModal({ isOpen, onClose, onPaperSizeAdded, o
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="e.g. 23"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Height (Optional)</label>
+              <input
+                type="number"
+                name="height"
+                step="any"
+                min="0"
+                value={formData.height}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                placeholder="e.g. 5"
               />
             </div>
 

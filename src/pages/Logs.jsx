@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { 
   History, 
   Search, 
@@ -31,7 +33,21 @@ export default function Logs() {
   const [viewLog, setViewLog] = useState(null);
 
   useEffect(() => {
-    fetchLogs();
+    const q = query(collection(db, 'logs'), orderBy('createdAt', 'desc'));
+    setLoading(true);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const logsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setLogs(logsData);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error fetching realtime logs:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -56,18 +72,6 @@ export default function Logs() {
       document.documentElement.style.overflow = 'unset';
     };
   }, [viewLog]);
-
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      const response = await api.get('/logs');
-      setLogs(response.data);
-    } catch (error) {
-      console.error('Error fetching logs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -124,6 +128,46 @@ export default function Logs() {
       case 'delete': return 'text-red-600 bg-red-50 ring-red-500/20';
       default: return 'text-gray-600 bg-gray-50 ring-gray-500/20';
     }
+  };
+
+  const renderFullDetails = (details) => {
+    if (!details || typeof details !== 'object') return null;
+    
+    return (
+      <ul className="space-y-3">
+        {Object.entries(details).map(([key, value]) => {
+          // Format camelCase key to capitalized text
+          const formattedKey = key.replace(/([A-Z])/g, ' $1').trim();
+          const displayKey = formattedKey.charAt(0).toUpperCase() + formattedKey.slice(1);
+          
+          // Check if it's an update object with from/to
+          if (value && typeof value === 'object' && ('from' in value || 'to' in value)) {
+            return (
+              <li key={key} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                <span className="font-medium text-gray-700 min-w-[120px]">{displayKey}</span>
+                <div className="flex items-center gap-2 flex-wrap text-sm">
+                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md line-through">{value.from || '(empty)'}</span>
+                  <span className="text-gray-400 font-medium">→</span>
+                  <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md font-medium">{value.to || '(empty)'}</span>
+                </div>
+              </li>
+            );
+          } 
+          // Check if it's a primitive value for create/delete logs
+          else if (typeof value !== 'object') {
+            // Ignore system fields
+            if (key === 'createdAt' || key === 'updatedAt' || key === 'id') return null;
+            return (
+              <li key={key} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
+                <span className="font-medium text-gray-700 min-w-[120px]">{displayKey}</span>
+                <span className="text-gray-900 bg-gray-50 px-2.5 py-1 rounded-md text-sm break-all">{String(value)}</span>
+              </li>
+            );
+          }
+          return null;
+        })}
+      </ul>
+    );
   };
 
   return (
@@ -325,8 +369,8 @@ export default function Logs() {
               {viewLog.fullDetails && (
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Full Details Data</label>
-                  <div className="text-xs text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100 max-h-60 overflow-y-auto font-mono whitespace-pre-wrap custom-scrollbar">
-                    {JSON.stringify(viewLog.fullDetails, null, 2)}
+                  <div className="bg-white p-4 rounded-lg border border-gray-100 max-h-64 overflow-y-auto custom-scrollbar">
+                    {renderFullDetails(viewLog.fullDetails)}
                   </div>
                 </div>
               )}

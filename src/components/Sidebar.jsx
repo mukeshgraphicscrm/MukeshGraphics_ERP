@@ -21,12 +21,12 @@ const navItems = [
     name: 'Other',
     icon: Layers,
     subItems: [
-      { name: 'Job Data', path: '/jobcard', icon: ClipboardList },
       { name: 'Inventory', path: '/inventory', icon: Boxes },
       { name: 'Purchase', path: '/purchase', icon: ShoppingBag },
       { name: 'Accounts', path: '/accounts', icon: IndianRupee },
     ]
   },
+  { name: 'Job Data', path: '/jobcard', icon: ClipboardList },
   { name: 'Tasks', path: '/tasks', icon: CheckSquare },
   { name: 'Settings', path: '/settings', icon: Settings },
   { name: 'Logs', path: '/logs', icon: History },

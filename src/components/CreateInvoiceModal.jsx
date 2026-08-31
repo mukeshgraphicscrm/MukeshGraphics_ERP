@@ -7,6 +7,7 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import { generateInvoicePDF } from '../lib/pdfGenerator';
 
 export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, onInvoiceDeleted, invoiceToEdit, initialViewMode = false }) {
   const { currentUser } = useAuth();
@@ -348,6 +349,19 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
         if (onInvoiceCreated) onInvoiceCreated(res.data);
         toast.success('Estimate created successfully!');
         resData = res.data;
+      }
+
+      // Automatically generate PDF
+      const custMap = {};
+      customers.forEach(c => custMap[c.id] = c);
+      const prodMap = {};
+      products.forEach(p => prodMap[p.id] = p);
+
+      try {
+        await generateInvoicePDF(resData, custMap, prodMap);
+      } catch (pdfErr) {
+        console.error('Error generating PDF:', pdfErr);
+        toast.error('Estimate saved, but failed to generate PDF.');
       }
 
       let phone = '';

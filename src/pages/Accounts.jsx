@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { useData } from '../contexts/DataContext';
+import { generateInvoicePDF } from '../lib/pdfGenerator';
 
 export default function Accounts() {
-  const { invoices, setInvoices, customerMap: customers, isLoaded } = useData();
+  const { invoices, setInvoices, customerMap: customers, products, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
   const [modalMode, setModalMode] = useState('create');
@@ -54,6 +55,18 @@ export default function Accounts() {
             setInvoiceToEdit(r);
             setModalMode('view');
             setIsModalOpen(true);
+          }}
+          onDownload={async (r) => {
+            try {
+              const toastId = toast.loading('Generating PDF...');
+              const prodMap = {};
+              products.forEach(p => prodMap[p.id] = p);
+              await generateInvoicePDF(r, customers, prodMap);
+              toast.success('PDF downloaded successfully', { id: toastId });
+            } catch (err) {
+              console.error(err);
+              toast.error('Failed to generate PDF');
+            }
           }}
         />
       )
@@ -303,7 +316,7 @@ const InteractiveStatusBadge = ({ row, onStatusChange }) => {
   );
 };
 
-const AccountActions = ({ row, onEdit, onView }) => {
+const AccountActions = ({ row, onEdit, onView, onDownload }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -369,6 +382,12 @@ const AccountActions = ({ row, onEdit, onView }) => {
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
           >
             <Eye className="w-4 h-4 mr-2" /> View
+          </button>
+          <button
+            onClick={() => { setIsOpen(false); if(onDownload) onDownload(row); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download PDF
           </button>
         </div>
       )}

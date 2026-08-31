@@ -63,7 +63,8 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
   try {
     const bucket = getStorage().bucket();
-    const fileName = `uploads/${Date.now()}_${req.file.originalname}`;
+    // Re-implemented sanitization: removes spaces/weird characters that cause Firebase to throw "storage/invalid-argument"
+    const fileName = `uploads/${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const file = bucket.file(fileName);
 
     await file.save(req.file.buffer, {

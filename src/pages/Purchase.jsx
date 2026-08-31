@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
 import AddSupplierModal from '../components/AddSupplierModal';
 import AddMaterialModal from '../components/AddMaterialModal';
+import AddPaperSizeModal from '../components/AddPaperSizeModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
@@ -15,6 +16,7 @@ export default function Purchase() {
   const [isAddPOModalOpen, setIsAddPOModalOpen] = useState(false);
   const [isAddSupplierModalOpen, setIsAddSupplierModalOpen] = useState(false);
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
+  const [isAddPaperSizeModalOpen, setIsAddPaperSizeModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
   const [supplierToEdit, setSupplierToEdit] = useState(null);
 
@@ -111,6 +113,12 @@ export default function Purchase() {
             <p className="text-sm text-gray-500 mt-1">Manage suppliers, purchase orders and goods receipts.</p>
           </div>
           <div className="flex space-x-3">
+            <button
+              onClick={() => setIsAddPaperSizeModalOpen(true)}
+              className="btn-add bg-gray-700 hover:bg-gray-800"
+            >
+              <Plus className="w-4 h-4 mr-1" /> <span>Add Paper Size</span>
+            </button>
             <button
               onClick={() => setIsAddMaterialModalOpen(true)}
               className="btn-add bg-gray-700 hover:bg-gray-800"
@@ -225,6 +233,13 @@ export default function Purchase() {
         onClose={() => setIsAddMaterialModalOpen(false)}
         onMaterialAdded={(newMaterial) => {
           setInventory(prev => [...prev, newMaterial]);
+        }}
+      />
+      <AddPaperSizeModal
+        isOpen={isAddPaperSizeModalOpen}
+        onClose={() => setIsAddPaperSizeModalOpen(false)}
+        onPaperSizeAdded={(newSize) => {
+          // If you add paperSizes to DataContext, update it here
         }}
       />
     </>

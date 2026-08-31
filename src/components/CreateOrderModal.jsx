@@ -648,7 +648,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     type="date"
                     name="orderDate"
                     required
-                    min={new Date().toISOString().split('T')[0]}
                     value={formData.orderDate}
                     onChange={handleChange}
                     disabled={isViewMode}
@@ -663,7 +662,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     type="date"
                     name="deliveryDate"
                     required
-                    min={new Date().toISOString().split('T')[0]}
                     value={formData.deliveryDate}
                     onChange={handleChange}
                     disabled={isViewMode}

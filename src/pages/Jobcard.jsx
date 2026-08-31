@@ -1,9 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import DataTable from '../components/DataTable';
 import { useData } from '../contexts/DataContext';
+import { Eye } from 'lucide-react';
+import ViewJobPipelineModal from '../components/ViewJobPipelineModal';
 
 export default function Jobcard() {
   const { productionJobs: jobs, isLoaded } = useData();
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [isPipelineModalOpen, setIsPipelineModalOpen] = useState(false);
 
   // Filter for jobs that are 100% complete
   const completedJobs = useMemo(() => {
@@ -27,6 +31,22 @@ export default function Jobcard() {
       </span>
     )},
     { header: 'Deadline', accessor: row => row.deadline ? new Date(row.deadline).toLocaleDateString('en-IN') : '-' },
+    {
+      header: 'Pipeline',
+      accessor: row => row.id,
+      render: row => (
+        <button
+          onClick={() => {
+            setSelectedJob(row);
+            setIsPipelineModalOpen(true);
+          }}
+          className="p-1.5 text-gray-400 hover:text-brand-accent hover:bg-orange-50 rounded-lg transition-colors flex items-center gap-1.5 border border-transparent hover:border-orange-100 text-xs font-medium"
+          title="View Pipeline"
+        >
+          <Eye className="w-3.5 h-3.5" /> View
+        </button>
+      )
+    }
   ];
 
   return (
@@ -38,6 +58,17 @@ export default function Jobcard() {
         columns={columns}
         data={completedJobs}
       />
+      
+      {isPipelineModalOpen && (
+        <ViewJobPipelineModal
+          isOpen={isPipelineModalOpen}
+          onClose={() => {
+            setIsPipelineModalOpen(false);
+            setSelectedJob(null);
+          }}
+          job={selectedJob}
+        />
+      )}
     </div>
   );
 }

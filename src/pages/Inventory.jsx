@@ -13,9 +13,10 @@ export default function Inventory() {
   const [materialToEdit, setMaterialToEdit] = useState(null);
 
 
-
+  const [filterType, setFilterType] = useState('all');
 
   const lowStockItems = data.filter(item => item.status === 'Low Stock');
+  const filteredData = filterType === 'lowStock' ? lowStockItems : data;
 
   const columns = [
     { header: 'MATERIAL', accessor: row => row.material, render: row => <span className="font-bold text-gray-900 text-[13px]">{row.material}</span> },
@@ -68,7 +69,10 @@ export default function Inventory() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col h-[116px]">
+          <div 
+            onClick={() => setFilterType('all')}
+            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'all' ? 'border-gray-800 ring-1 ring-gray-800' : 'border-gray-200 hover:border-gray-300'}`}
+          >
             <div className="flex justify-between items-center">
               <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total SKUs</h3>
               <div className="w-8 h-8 rounded-full bg-[#f1f5f9] text-[#475569] flex items-center justify-center">
@@ -78,7 +82,10 @@ export default function Inventory() {
             <div className="text-3xl font-bold text-gray-900">{data.length}</div>
           </div>
 
-          <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm flex flex-col h-[116px]">
+          <div 
+            onClick={() => setFilterType('lowStock')}
+            className={`bg-white p-5 rounded-xl border shadow-sm flex flex-col h-[116px] cursor-pointer transition-all ${filterType === 'lowStock' ? 'border-gray-800 ring-1 ring-gray-800' : 'border-gray-200 hover:border-gray-300'}`}
+          >
             <div className="flex justify-between items-center">
               <h3 className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Low Stock Alerts</h3>
               <div className="w-8 h-8 rounded-full bg-[#fff7ed] text-[#ea580c] flex items-center justify-center">
@@ -136,7 +143,7 @@ export default function Inventory() {
             title=""
             searchPlaceholder="Search materials, categories..."
             columns={columns}
-            data={data}
+            data={filteredData}
             onRowClick={(row) => {
               setMaterialToEdit(row);
               setIsAddModalOpen(true);

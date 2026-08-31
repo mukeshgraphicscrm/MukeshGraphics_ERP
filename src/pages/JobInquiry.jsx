@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
 export default function JobInquiry() {
-  const { jobPosted: jobs, setJobPosted: setJobs, isLoaded } = useData();
+  const { jobPosted: jobs, setJobPosted: setJobs, isLoaded, applicationsReceived } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
@@ -24,6 +24,11 @@ export default function JobInquiry() {
     job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
     job.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const getApplicationCount = (job) => {
+    if (!applicationsReceived) return 0;
+    return applicationsReceived.filter(app => app.jobId === job.id || app.jobTitle === job.title).length;
+  };
 
   const handleAddJob = async (newJob) => {
     try {
@@ -135,9 +140,10 @@ export default function JobInquiry() {
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button 
                     onClick={() => { setViewingJobApplications(job); setIsViewApplicationsModalOpen(true); }}
-                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded"
+                    className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded flex items-center gap-1"
                     title="View Applications"
                   >
+                    {getApplicationCount(job) > 0 && <span className="text-sm font-semibold">{getApplicationCount(job)}</span>}
                     <Users className="w-4 h-4" />
                   </button>
                   <button 

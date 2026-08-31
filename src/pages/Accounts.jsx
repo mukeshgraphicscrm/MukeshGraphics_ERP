@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye } from 'lucide-react';
+import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 import { useData } from '../contexts/DataContext';
 
 export default function Accounts() {
@@ -34,7 +35,7 @@ export default function Accounts() {
     { header: 'AMOUNT', accessor: row => `₹${row.amount.toLocaleString('en-IN')}`, render: row => <span className="font-bold text-[13px] text-gray-900">₹{row.amount.toLocaleString('en-IN')}</span> },
     { header: 'GST', accessor: row => `₹${row.gst.toLocaleString('en-IN')}`, render: row => <span className="text-[13px] text-gray-500">₹{row.gst.toLocaleString('en-IN')}</span> },
     { header: 'DUE', accessor: row => new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }), render: row => <span className="text-[13px] text-gray-500">{new Date(row.dueDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
-    { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
+    { header: 'STATUS', accessor: row => row.status, render: row => <InteractiveStatusBadge row={row} onStatusChange={handleStatusChange} /> },
     {
       header: 'ACTIONS', accessor: row => row.id, render: row => (
         <AccountActions
@@ -70,6 +71,18 @@ export default function Accounts() {
       totalBusiness: customers[custId]?.totalBusiness || 0,
     };
   }).sort((a, b) => b.outstanding - a.outstanding);
+
+  const handleStatusChange = async (row, newStatus) => {
+    const toastId = toast.loading('Updating status...');
+    try {
+      const res = await api.put(`/invoices/${row.id}`, { ...row, status: newStatus });
+      setInvoices(prev => prev.map(inv => inv.id === row.id ? res.data : inv));
+      toast.success(`Status updated to ${newStatus}`, { id: toastId });
+    } catch (err) {
+      console.error('Error updating status:', err);
+      toast.error('Failed to update status', { id: toastId });
+    }
+  };
 
 
 
@@ -184,11 +197,61 @@ export default function Accounts() {
         onInvoiceUpdated={(updatedInvoice) => {
           setInvoices(prev => prev.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv));
         }}
+        onInvoiceDeleted={(deletedId) => {
+          setInvoices(prev => prev.filter(inv => inv.id !== deletedId));
+        }}
         invoiceToEdit={invoiceToEdit}
       />
     </div>
   );
 }
+
+const InteractiveStatusBadge = ({ row, onStatusChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+  
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  return (
+    <div className="relative inline-block" ref={menuRef} onClick={e => e.stopPropagation()}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)} 
+        className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1"
+        title="Click to change status"
+      >
+        <StatusBadge status={row.status} />
+      </div>
+      
+      {isOpen && (
+        <div className="absolute top-full mt-2 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1" style={{ right: 'auto', left: 0 }}>
+          {['Pending', 'Paid', 'Overdue'].map(status => (
+            row.status !== status && (
+              <button
+                key={status}
+                onClick={() => { setIsOpen(false); onStatusChange(row, status); }}
+                className="w-full text-left px-4 py-2 hover:bg-gray-50 flex items-center transition-colors"
+              >
+                <StatusBadge status={status} />
+              </button>
+            )
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AccountActions = ({ row, onEdit, onView }) => {
   const [isOpen, setIsOpen] = useState(false);

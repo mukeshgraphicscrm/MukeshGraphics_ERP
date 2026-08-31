@@ -8,7 +8,7 @@ import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
-export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, invoiceToEdit }) {
+export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, onInvoiceDeleted, invoiceToEdit }) {
   const { currentUser } = useAuth();
   const { invoices, products, users, customers } = useData();
 
@@ -176,6 +176,7 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
     try {
       await api.delete(`/invoices/${invoiceToEdit.id}`);
       toast.success('Estimate deleted successfully!');
+      if (onInvoiceDeleted) onInvoiceDeleted(invoiceToEdit.id);
       setIsDeleteModalOpen(false);
       onClose();
     } catch (err) {

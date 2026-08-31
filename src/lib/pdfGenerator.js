@@ -53,7 +53,7 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // Logo
   if (logoBase64) {
     // Use square dimensions since it's just the logo icon now
-    doc.addImage(logoBase64, 'PNG', hm, 20, 28, 28, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 23, 22, 22, '', 'FAST');
   }
 
   // Company Name next to logo
@@ -414,7 +414,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
+  const brandDark = [249, 115, 22];      // Orange (Replacing Dark Blue for PO)
   const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
   const brandLight = [255, 255, 255];    // White
   const textPrimary = [33, 37, 41];      // Dark Grey for normal text
@@ -440,7 +440,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const hm = margin - 7; 
 
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', hm, 20, 28, 28, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 23, 22, 22, '', 'FAST');
   }
 
   const centerX = pageW / 2;
@@ -654,7 +654,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
         data.cell.styles.fontStyle = 'bold';
         data.cell.styles.textColor = brandDark;
         data.cell.styles.fontSize = 11;
-        data.cell.styles.fillColor = [240, 244, 255]; 
+        data.cell.styles.fillColor = [255, 240, 230]; // light orange tint
       }
     },
     didDrawCell: (data) => {

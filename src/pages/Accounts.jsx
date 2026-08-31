@@ -17,7 +17,7 @@ export default function Accounts() {
     .reduce((sum, i) => sum + (i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0), 0);
 
   const outstandingCustomersCount = new Set(
-    invoices.filter(i => i.status !== 'Paid').map(i => i.customerId)
+    invoices.filter(i => i.status !== 'Paid' && ((i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0)) > 0).map(i => i.customerId)
   ).size;
 
   const overduePayments = invoices
@@ -234,33 +234,58 @@ export default function Accounts() {
 const InteractiveStatusBadge = ({ row, onStatusChange }) => {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  const badgeRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target) &&
+        badgeRef.current && !badgeRef.current.contains(event.target)
+      ) {
         setIsOpen(false);
       }
     };
+
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
+
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
     };
   }, [isOpen]);
 
+  const toggleMenu = () => {
+    if (!isOpen && badgeRef.current) {
+      const rect = badgeRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.left });
+    }
+    setIsOpen(!isOpen);
+  };
+
   return (
-    <div className="relative inline-block" ref={menuRef} onClick={e => e.stopPropagation()}>
+    <div onClick={e => e.stopPropagation()}>
       <div 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1"
+        ref={badgeRef}
+        onClick={toggleMenu} 
+        className="cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1"
         title="Click to change status"
       >
         <StatusBadge status={row.status} />
       </div>
       
       {isOpen && (
-        <div className="absolute top-full mt-2 w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1" style={{ right: 'auto', left: 0 }}>
+        <div 
+          ref={menuRef}
+          className="w-32 bg-white rounded-md shadow-lg border border-gray-100 z-[9999] py-1" 
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+        >
           {['Pending', 'Paid', 'Overdue'].map(status => (
             row.status !== status && (
               <button

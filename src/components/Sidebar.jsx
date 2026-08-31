@@ -15,13 +15,13 @@ const navItems = [
   { name: 'Products', path: '/products', icon: Package },
   { name: 'Quotations', path: '/quotations', icon: FileText },
   { name: 'Orders', path: '/orders', icon: ShoppingCart },
-  { name: 'Job Data', path: '/jobcard', icon: ClipboardList },
   { name: 'Production', path: '/production', icon: Factory },
   { name: 'Dispatch', path: '/dispatch', icon: Truck },
   {
     name: 'Other',
     icon: Layers,
     subItems: [
+      { name: 'Job Data', path: '/jobcard', icon: ClipboardList },
       { name: 'Inventory', path: '/inventory', icon: Boxes },
       { name: 'Purchase', path: '/purchase', icon: ShoppingBag },
       { name: 'Accounts', path: '/accounts', icon: IndianRupee },

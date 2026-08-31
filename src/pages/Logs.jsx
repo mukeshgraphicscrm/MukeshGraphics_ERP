@@ -322,6 +322,14 @@ export default function Logs() {
                   {viewLog.details}
                 </div>
               </div>
+              {viewLog.fullDetails && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Full Details Data</label>
+                  <div className="text-xs text-gray-800 bg-gray-50 p-3 rounded-lg border border-gray-100 max-h-60 overflow-y-auto font-mono whitespace-pre-wrap custom-scrollbar">
+                    {JSON.stringify(viewLog.fullDetails, null, 2)}
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 bg-gray-50 shrink-0">
               <button

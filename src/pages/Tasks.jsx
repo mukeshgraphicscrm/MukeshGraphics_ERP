@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { db } from '../lib/firebase';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { Plus, Search, Filter, Edit, Trash2, CheckSquare, Clock, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,32 +35,44 @@ export default function Tasks() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetchTasks();
-    if (isAdmin) {
-      fetchUsers();
-    }
-  }, [isAdmin]);
-
-  const fetchTasks = async () => {
-    try {
-      const res = await api.get('/tasks');
-      let fetchedTasks = res.data;
+    setLoading(true);
+    const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let fetchedTasks = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      
       if (!isAdmin) {
         fetchedTasks = fetchedTasks.filter(t => 
           t.assignedTo === currentUser?.profile?.name || 
           t.assignedToEmail === currentUser?.email
         );
       }
-      // Sort tasks by date, newest first
-      fetchedTasks.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       setTasks(fetchedTasks);
-    } catch (err) {
-      console.error('Error fetching tasks:', err);
-      toast.error('Failed to load tasks');
-    } finally {
       setLoading(false);
+    }, (error) => {
+      console.error('Error fetching tasks:', error);
+      setLoading(false);
+      toast.error('Failed to load tasks');
+    });
+
+    if (isAdmin) {
+      fetchUsers();
     }
-  };
+
+    return () => unsubscribe();
+  }, [isAdmin, currentUser]);
+
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape' && isModalOpen) {
+        setIsModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isModalOpen]);
 
   const fetchUsers = async () => {
     try {
@@ -110,9 +124,22 @@ export default function Tasks() {
       } else {
         await api.post('/tasks', payload);
         toast.success('Task created successfully');
+        
+        if (formData.assignedTo) {
+          try {
+            await api.post('/notifications', {
+              title: 'New Task Assigned',
+              message: `A new task "${formData.title}" has been assigned to you by ${payload.assignedBy}.`,
+              employee: formData.assignedTo,
+              read: false,
+              createdAt: new Date().toISOString()
+            });
+          } catch (notifErr) {
+            console.error('Failed to send notification:', notifErr);
+          }
+        }
       }
       setIsModalOpen(false);
-      fetchTasks();
     } catch (err) {
       console.error('Error saving task:', err);
       toast.error('Failed to save task');
@@ -126,7 +153,6 @@ export default function Tasks() {
     try {
       await api.delete(`/tasks/${taskToDelete}`);
       toast.success('Task deleted');
-      fetchTasks();
     } catch (err) {
       console.error('Error deleting task:', err);
       toast.error('Failed to delete task');
@@ -140,7 +166,6 @@ export default function Tasks() {
     try {
       await api.put(`/tasks/${taskId}`, { status: newStatus });
       toast.success('Status updated');
-      fetchTasks();
     } catch (err) {
       console.error('Error updating status:', err);
       toast.error('Failed to update status');
@@ -191,7 +216,7 @@ export default function Tasks() {
         {isAdmin && (
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center space-x-2 bg-[#1b2f63] text-white px-4 py-2.5 rounded-xl hover:bg-[#12224d] transition-colors shadow-sm"
+            className="btn-add"
           >
             <Plus className="w-5 h-5" />
             <span>Create Task</span>
@@ -333,9 +358,9 @@ export default function Tasks() {
                   type="text"
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({...formData, title: e.target.value.toUpperCase()})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63]"
-                  placeholder="Task title"
+                  placeholder="TASK TITLE"
                 />
               </div>
               
@@ -344,9 +369,9 @@ export default function Tasks() {
                 <textarea
                   rows={3}
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData({...formData, description: e.target.value.toUpperCase()})}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
-                  placeholder="Provide task details..."
+                  placeholder="PROVIDE TASK DETAILS..."
                 />
               </div>
 
@@ -410,7 +435,7 @@ export default function Tasks() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-4 py-2 bg-[#1b2f63] text-white font-medium rounded-lg hover:bg-[#12224d] transition-colors disabled:opacity-50 shadow-sm"
+                  className="btn-add disabled:opacity-50"
                 >
                   {saving ? 'Saving...' : (editingId ? 'Update Task' : 'Create Task')}
                 </button>

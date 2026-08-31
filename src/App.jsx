@@ -23,6 +23,7 @@ import Accounts from './pages/Accounts';
 import Jobcard from './pages/Jobcard';
 import Settings from './pages/Settings';
 import JobInquiry from './pages/JobInquiry';
+import CustomPackagingRequest from './pages/CustomPackagingRequest';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
                 <Route path="accounts" element={<Accounts />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="job-inquiry" element={<JobInquiry />} />
+                <Route path="customize-packaging-request" element={<CustomPackagingRequest />} />
               </Route>
             </Route>
           </Routes>

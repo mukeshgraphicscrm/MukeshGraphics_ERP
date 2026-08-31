@@ -15,6 +15,7 @@ const mockData = {
   invoices: [],
   categories: [],
   contact_form: [],
+  custom_package: [],
   users: []
 };
 

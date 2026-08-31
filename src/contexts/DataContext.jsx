@@ -63,6 +63,7 @@ export function DataProvider({ children }) {
   const [settings, setSettings] = useState([]);
   const [jobPosted, setJobPosted] = useState([]);
   const [applicationsReceived, setApplicationsReceived] = useState([]);
+  const [customPackages, setCustomPackages] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -70,7 +71,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes, customPackageRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -91,6 +92,7 @@ export function DataProvider({ children }) {
         api.get('/settings'),
         api.get('/job_posted'),
         api.get('/application_received'),
+        api.get('/custom_package'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -124,6 +126,7 @@ export function DataProvider({ children }) {
       if (settingsRes.status === 'fulfilled') setSettings(Array.isArray(settingsRes.value.data) ? settingsRes.value.data : []);
       if (jobPostedRes.status === 'fulfilled') setJobPosted(Array.isArray(jobPostedRes.value.data) ? jobPostedRes.value.data : []);
       if (appRes.status === 'fulfilled') setApplicationsReceived(Array.isArray(appRes.value.data) ? appRes.value.data : []);
+      if (customPackageRes.status === 'fulfilled') setCustomPackages(Array.isArray(customPackageRes.value.data) ? customPackageRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -157,6 +160,7 @@ export function DataProvider({ children }) {
       setSettings([]);
       setJobPosted([]);
       setApplicationsReceived([]);
+      setCustomPackages([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -241,6 +245,7 @@ export function DataProvider({ children }) {
     settings, setSettings,
     jobPosted, setJobPosted,
     applicationsReceived, setApplicationsReceived,
+    customPackages, setCustomPackages,
     // helper maps
     customerMap,
     productMap,

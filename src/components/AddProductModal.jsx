@@ -77,6 +77,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         printing: productToEdit.printing || '',
         unitPrice: productToEdit.unitPrice ? formatIndianNumber(productToEdit.unitPrice) : '',
         image: productToEdit.image || '',
+        images: productToEdit.images || (productToEdit.image ? [productToEdit.image] : []),
         employee: productToEdit.employee || currentUser?.profile?.name || '',
       });
       setIsViewMode(!startInEditMode);
@@ -91,6 +92,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
         printing: '',
         unitPrice: '',
         image: '',
+        images: [],
         employee: currentUser?.profile?.name || '',
       });
       setIsViewMode(false);
@@ -139,31 +141,53 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
   };
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     setUploadingImage(true);
-    const uploadData = new FormData();
-    uploadData.append('file', file);
+    const newUrls = [];
 
     try {
-      const res = await api.post('/upload', uploadData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      for (const file of files) {
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+        const res = await api.post('/upload', uploadData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        newUrls.push(res.data.url);
+      }
+
       setFormData(prev => {
         const isEmployeeEditing = productToEdit && currentUser?.profile?.designation === 'Employee';
         const autoEmployee = isEmployeeEditing ? currentUser?.profile?.name : prev.employee;
-        return { ...prev, image: res.data.url, ...(isEmployeeEditing && { employee: autoEmployee }) };
+        const updatedImages = [...(prev.images || []), ...newUrls];
+        return { 
+          ...prev, 
+          image: updatedImages.length > 0 ? updatedImages[0] : '',
+          images: updatedImages,
+          ...(isEmployeeEditing && { employee: autoEmployee }) 
+        };
       });
-      toast.success('Image uploaded successfully');
+      toast.success(files.length > 1 ? 'Images uploaded successfully' : 'Image uploaded successfully');
     } catch (err) {
-      console.error('Error uploading image:', err);
-      toast.error('Failed to upload image');
+      console.error('Error uploading images:', err);
+      toast.error('Failed to upload some images');
     } finally {
       setUploadingImage(false);
     }
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setFormData(prev => {
+      const updatedImages = prev.images.filter((_, index) => index !== indexToRemove);
+      return {
+        ...prev,
+        image: updatedImages.length > 0 ? updatedImages[0] : '',
+        images: updatedImages
+      };
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -407,37 +431,43 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
-              <div className="mt-1 flex items-center space-x-4">
-                {formData.image ? (
-                  <div className="relative w-20 h-20 rounded-md border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
-                    <img src={getImageUrl(formData.image)} alt="Product" className="object-contain w-full h-full p-1" />
-                    {!isViewMode && (
-                      <button
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
-                        className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-md hover:bg-red-600 transition-colors"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ) : (
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Images</label>
+              <div className="mt-1 space-y-4">
+                <div className="flex items-center space-x-4">
                   <div className="w-20 h-20 rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center bg-gray-50 text-gray-400 shrink-0">
                     <Upload className="w-6 h-6" />
                   </div>
-                )}
-
-                <div className="flex-1 min-w-0">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage || isViewMode}
-                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-accent/10 file:text-brand-accent hover:file:bg-brand-accent/20 transition-colors disabled:opacity-50"
-                  />
-                  {uploadingImage && <p className="text-sm text-brand-accent mt-2">Uploading...</p>}
+                  <div className="flex-1 min-w-0">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage || isViewMode}
+                      className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-brand-accent/10 file:text-brand-accent hover:file:bg-brand-accent/20 transition-colors disabled:opacity-50"
+                    />
+                    {uploadingImage && <p className="text-sm text-brand-accent mt-2">Uploading...</p>}
+                  </div>
                 </div>
+
+                {formData.images && formData.images.length > 0 && (
+                  <div className="flex flex-wrap gap-4">
+                    {formData.images.map((imgUrl, index) => (
+                      <div key={index} className="relative w-24 h-24 rounded-md border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
+                        <img src={getImageUrl(imgUrl)} alt={`Product ${index + 1}`} className="object-contain w-full h-full p-1" />
+                        {!isViewMode && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-md hover:bg-red-600 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>

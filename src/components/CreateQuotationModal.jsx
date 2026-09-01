@@ -89,7 +89,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       totalAmount += amount;
       message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Price: ₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
     });
-    message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+    const gstAmount = totalAmount * 0.18;
+    const finalAmount = totalAmount + gstAmount;
+    message += `\n*Sub Total:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*GST (18%):* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*Total Amount:* ₹${finalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
 
     let formattedPhone = phone.replace(/\D/g, '');
     if (formattedPhone.length === 10) {
@@ -139,7 +141,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
       totalAmount += amount;
       message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Price: ₹${price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
     });
-    message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+    const gstAmount = totalAmount * 0.18;
+    const finalAmount = totalAmount + gstAmount;
+    message += `\n*Sub Total:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*GST (18%):* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*Total Amount:* ₹${finalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
 
     let formattedPhone = phone.replace(/\D/g, '');
     if (formattedPhone.length === 10) {
@@ -545,7 +549,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         totalAmount += amount;
         message += `${index + 1}. *${productName}*\n   Specs: ${item.specs}\n   Qty: ${Number(item.qty).toLocaleString('en-IN')}\n   Price: ₹${Number(item.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
       });
-      message += `\n*Total Amount:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
+      const gstAmount = totalAmount * 0.18;
+      const finalAmount = totalAmount + gstAmount;
+      message += `\n*Sub Total:* ₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*GST (18%):* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n*Total Amount:* ₹${finalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nPlease find the attached PDF for more details.`;
 
       if (activeTab === 'Customer Quotation') {
         const customer = customers.find(c => c.id === formData.customerId);

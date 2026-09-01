@@ -254,10 +254,12 @@ export const generateQuotationPDF = async (quote, customers, products) => {
   // ==========================================
   // 4. TOTALS & BANK DETAILS
   // ==========================================
-  const finalTotal = subtotal;
+  const gstAmount = subtotal * 0.18;
+  const finalTotal = subtotal + gstAmount;
 
   const totalsData = [
     ['Sub Total', formatMoney(subtotal)],
+    ['GST (18%)', formatMoney(gstAmount)],
     ['Courier Charges', '-'],
     ['Transportation', '-'],
     ['Previous Due', '-'],

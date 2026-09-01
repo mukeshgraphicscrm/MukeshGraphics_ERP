@@ -5,6 +5,7 @@ const multer = require('multer');
 require('dotenv').config();
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getStorage } = require('firebase-admin/storage');
+const { v4: uuidv4 } = require('uuid');
 
 // Initialize Firebase Admin (Only if env vars are present)
 if (process.env.FIREBASE_PROJECT_ID) {
@@ -66,13 +67,19 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     // Re-implemented sanitization: removes spaces/weird characters that cause Firebase to throw "storage/invalid-argument"
     const fileName = `uploads/${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
     const file = bucket.file(fileName);
+    const uuid = uuidv4();
 
     await file.save(req.file.buffer, {
-      metadata: { contentType: req.file.mimetype }
+      metadata: { 
+        contentType: req.file.mimetype,
+        metadata: {
+          firebaseStorageDownloadTokens: uuid
+        }
+      }
     });
 
     const encodedName = encodeURIComponent(fileName);
-    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media`;
+    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media&token=${uuid}`;
 
     res.json({ url: publicUrl, filename: req.file.originalname, size: req.file.size });
   } catch (err) {

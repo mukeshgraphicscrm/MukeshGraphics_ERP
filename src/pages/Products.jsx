@@ -9,7 +9,17 @@ import { jsPDF } from 'jspdf';
 import toast from 'react-hot-toast';
 import { useData } from '../contexts/DataContext';
 
-
+export const getImageUrl = (image) => {
+  if (!image) return '';
+  if (image.startsWith('http')) return image;
+  if (image.startsWith('gs://')) {
+    const parts = image.replace('gs://', '').split('/');
+    const bucket = parts[0];
+    const path = encodeURIComponent(parts.slice(1).join('/'));
+    return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${path}?alt=media`;
+  }
+  return image.startsWith('/') ? `http://localhost:5000${image}` : `http://localhost:5000/${image}`;
+};
 export default function Products() {
   const { products, setProducts, categories, setCategories, isLoaded } = useData();
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,7 +118,7 @@ export default function Products() {
       // Preload images concurrently for faster PDF generation
       const imagePromises = filteredProducts.map(p => {
         if (p.image) {
-          const imgUrl = p.image.startsWith('http') ? p.image : `http://localhost:5000${p.image}`;
+          const imgUrl = getImageUrl(p.image);
           return loadImage(imgUrl).then(base64 => ({ id: p.id, base64 }));
         }
         return Promise.resolve({ id: p.id, base64: null });
@@ -367,7 +377,7 @@ export default function Products() {
               {/* Card Header (Dark Blue) */}
               <div className="bg-[#1b2f63] h-32 flex items-center justify-center overflow-hidden">
                 {product.image ? (
-                  <img src={product.image.startsWith('http') ? product.image : `http://localhost:5000${product.image}`} alt={product.name} className="w-full h-full object-contain bg-white" />
+                  <img src={getImageUrl(product.image)} alt={product.name} className="w-full h-full object-contain bg-white" />
                 ) : (
                   <Box className="w-10 h-10 text-orange-400" strokeWidth={1.5} />
                 )}

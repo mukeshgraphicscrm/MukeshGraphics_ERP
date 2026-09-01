@@ -5,6 +5,7 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { useAuth } from '../contexts/AuthContext';
+import { getImageUrl } from '../pages/Products';
 
 export default function AddProductModal({ isOpen, onClose, onProductAdded, onProductUpdated, onProductDeleted, productToEdit, startInEditMode }) {
   const { currentUser } = useAuth();
@@ -410,7 +411,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
               <div className="mt-1 flex items-center space-x-4">
                 {formData.image ? (
                   <div className="relative w-20 h-20 rounded-md border border-gray-200 overflow-hidden bg-gray-50 flex items-center justify-center shrink-0">
-                    <img src={formData.image.startsWith('http') ? formData.image : `http://localhost:5000${formData.image}`} alt="Product" className="object-contain w-full h-full p-1" />
+                    <img src={getImageUrl(formData.image)} alt="Product" className="object-contain w-full h-full p-1" />
                     {!isViewMode && (
                       <button
                         type="button"

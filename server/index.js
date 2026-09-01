@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const { initializeApp, cert, getApps } = require('firebase-admin/app');
 const { getStorage } = require('firebase-admin/storage');
 const { v4: uuidv4 } = require('uuid');

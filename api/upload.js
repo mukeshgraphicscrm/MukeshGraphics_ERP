@@ -1,4 +1,5 @@
 import multer from 'multer';
+import crypto from 'crypto';
 import { handleCors } from './lib/cors.js';
 import { getStorage } from './lib/firebase.js';
 
@@ -32,15 +33,23 @@ export default async function handler(req, res) {
       }
 
       const bucket = storage.bucket();
-      const fileName = `uploads/${Date.now()}_${req.file.originalname}`;
+      const sanitizedName = req.file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `uploads/${Date.now()}_${sanitizedName}`;
       const file = bucket.file(fileName);
       
+      const uuid = crypto.randomUUID();
+
       await file.save(req.file.buffer, {
-        metadata: { contentType: req.file.mimetype }
+        metadata: { 
+          contentType: req.file.mimetype,
+          metadata: {
+            firebaseStorageDownloadTokens: uuid
+          }
+        }
       });
       
       const encodedName = encodeURIComponent(fileName);
-      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media`;
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedName}?alt=media&token=${uuid}`;
 
       res.json({
         url: publicUrl,

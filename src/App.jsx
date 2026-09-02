@@ -13,6 +13,7 @@ import Customers from './pages/Customers';
 import Leads from './pages/Leads';
 import Quotations from './pages/Quotations';
 import Orders from './pages/Orders';
+import Design from './pages/Design';
 import Products from './pages/Products';
 
 import Production from './pages/Production';
@@ -42,6 +43,7 @@ function App() {
                 <Route path="leads" element={<Leads />} />
                 <Route path="quotations" element={<Quotations />} />
                 <Route path="orders" element={<Orders />} />
+                <Route path="design" element={<Design />} />
                 <Route path="products" element={<Products />} />
                 <Route path="jobcard" element={<Jobcard />} />
                 <Route path="production" element={<Production />} />

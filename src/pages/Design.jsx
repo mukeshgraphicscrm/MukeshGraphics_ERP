@@ -6,14 +6,19 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
+import { useAuth } from '../contexts/AuthContext';
+
 export default function Design() {
   const { artworks: data, setArtworks: setData, customerMap: customers, products, isLoaded } = useData();
+  const { currentUser } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     customerId: '',
     productId: '',
-    variety: '',
+    deadline: '',
+    employee: '',
     notes: ''
   });
 
@@ -21,7 +26,7 @@ export default function Design() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ customerId: '', productId: '', variety: '', notes: '' });
+    setFormData({ customerId: '', productId: '', deadline: '', employee: '', notes: '' });
   };
 
   useEffect(() => {
@@ -33,6 +38,20 @@ export default function Design() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModalOpen]);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      const fetchUsers = async () => {
+        try {
+          const res = await api.get('/users');
+          setUsers(res.data);
+        } catch (err) {
+          console.error('Error fetching users:', err);
+        }
+      };
+      fetchUsers();
+    }
   }, [isModalOpen]);
 
   const handleModalSubmit = async (e) => {
@@ -64,7 +83,8 @@ export default function Design() {
     setFormData({
       customerId: row.customerId || '',
       productId: row.productId || '',
-      variety: row.variety || '',
+      deadline: row.deadline || '',
+      employee: row.employee || '',
       notes: row.notes || '',
       uploadedAt: row.uploadedAt,
     });
@@ -80,9 +100,9 @@ export default function Design() {
         return p ? p.name : 'UNKNOWN PRODUCT';
       }
     },
-    { header: 'Variety', accessor: row => row.variety },
+    { header: 'Deadline', accessor: row => row.deadline ? new Date(row.deadline).toLocaleDateString('en-IN') : '-' },
+    { header: 'Employee', accessor: row => row.employee || '-' },
     { header: 'Notes', accessor: row => row.notes },
-    { header: 'Uploaded At', accessor: row => new Date(row.uploadedAt).toLocaleDateString('en-IN') },
   ];
 
 
@@ -147,16 +167,31 @@ export default function Design() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
-                  placeholder="Enter variety"
-                  value={formData.variety}
-                  onChange={e => setFormData({ ...formData, variety: e.target.value })}
-                  required
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Deadline *</label>
+                  <input
+                    type="date"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                    value={formData.deadline}
+                    onChange={e => setFormData({ ...formData, deadline: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                  <CustomSelect
+                    name="employee"
+                    value={formData.employee}
+                    onChange={e => setFormData({ ...formData, employee: e.target.value })}
+                    options={[
+                      { label: 'Select Employee', value: '' },
+                      ...users.map(user => ({ label: user.name, value: user.name }))
+                    ]}
+                    placeholder="Select employee"
+                  />
+                </div>
               </div>
 
               <div>

@@ -15,6 +15,7 @@ export default function Design() {
   const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     customerId: '',
+    designType: '',
     productId: '',
     variety: '',
     deadline: '',
@@ -25,7 +26,7 @@ export default function Design() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ customerId: '', productId: '', variety: '', deadline: '', employee: '', notes: '' });
+    setFormData({ customerId: '', designType: '', productId: '', variety: '', deadline: '', employee: '', notes: '' });
   };
 
   useEffect(() => {
@@ -81,6 +82,7 @@ export default function Design() {
     setEditingId(row.id);
     setFormData({
       customerId: row.customerId || '',
+      designType: row.designType || '',
       productId: row.productId || '',
       variety: row.variety || '',
       deadline: row.deadline || '',
@@ -93,8 +95,9 @@ export default function Design() {
 
   const columns = [
     { header: 'Customer', accessor: row => customers[row.customerId]?.name || 'UNKNOWN CUSTOMER' },
-    {
-      header: 'Product',
+    { header: 'Design', accessor: row => row.designType || '-' },
+    { 
+      header: 'Product', 
       accessor: row => {
         const p = products.find(prod => prod.id === row.productId);
         return p ? p.name : 'UNKNOWN PRODUCT';
@@ -156,6 +159,24 @@ export default function Design() {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Design</label>
+                  <CustomSelect
+                    name="designType"
+                    value={formData.designType}
+                    onChange={e => setFormData({ ...formData, designType: e.target.value })}
+                    options={[
+                      { label: 'Old', value: 'Old' },
+                      { label: 'New', value: 'New' },
+                      { label: 'Changes', value: 'Changes' }
+                    ]}
+                    placeholder="Select Design"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                   <CustomSelect
                     name="productId"
@@ -166,18 +187,18 @@ export default function Design() {
                     required
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
-                  placeholder="Enter variety"
-                  value={formData.variety}
-                  onChange={e => setFormData({ ...formData, variety: e.target.value })}
-                  required
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                    placeholder="Enter variety"
+                    value={formData.variety}
+                    onChange={e => setFormData({ ...formData, variety: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
 
               <div>

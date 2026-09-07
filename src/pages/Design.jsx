@@ -22,7 +22,7 @@ export default function Design() {
     deadline: '',
     employee: '',
     designer: '',
-    status: 'Active',
+    status: 'Pending',
     delayReason: '',
     notes: ''
   });
@@ -43,7 +43,7 @@ export default function Design() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setEditingId(null);
-    setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '' });
+    setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Pending', delayReason: '', notes: '' });
   };
 
   useEffect(() => {
@@ -96,7 +96,7 @@ export default function Design() {
   };
 
   const isLate = (deadlineStr, status, delayReason) => {
-    if (!deadlineStr || status === 'Final/Party Approve' || delayReason) return false;
+    if (!deadlineStr || status === 'Complete' || delayReason) return false;
     const deadlineDate = new Date(deadlineStr);
     deadlineDate.setHours(0, 0, 0, 0);
     const today = new Date();
@@ -136,7 +136,7 @@ export default function Design() {
       deadline: row.deadline || '',
       employee: row.employee || '',
       designer: row.designer || '',
-      status: row.status || 'Active',
+      status: row.status || 'Pending',
       delayReason: row.delayReason || '',
       notes: row.notes || '',
       uploadedAt: row.uploadedAt,
@@ -157,7 +157,7 @@ export default function Design() {
     { header: 'Variety', accessor: row => row.variety },
     { header: 'Start Date', accessor: row => row.startDate ? new Date(row.startDate).toLocaleDateString('en-IN') : '-' },
     { header: 'Deadline', accessor: row => row.deadline ? new Date(row.deadline).toLocaleDateString('en-IN') : '-' },
-    { header: 'Status', accessor: row => <span className={`px-2 py-1 text-xs font-semibold rounded-full ${row.status === 'Final/Party Approve' ? 'bg-green-100 text-green-800' : row.status === 'In Process' ? 'bg-blue-100 text-blue-800' : row.status === 'Delay' ? 'bg-red-100 text-red-800' : row.status === 'Hold' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>{row.status || 'Active'}</span> },
+    { header: 'Status', accessor: row => <span className={`px-2 py-1 text-xs font-semibold rounded-full ${row.status === 'Complete' ? 'bg-green-100 text-green-800' : row.status === 'In Progress' ? 'bg-blue-100 text-blue-800' : row.status === 'Delay' ? 'bg-red-100 text-red-800' : row.status === 'Hold' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>{row.status || 'Pending'}</span> },
     { header: 'Employee', accessor: row => row.employee || '-' },
     { header: 'Designer', accessor: row => row.designer || '-' },
     { header: 'Notes', accessor: row => row.notes },
@@ -362,11 +362,9 @@ export default function Design() {
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value })}
                     options={[
-                      { label: 'Active', value: 'Active' },
-                      { label: 'In Process', value: 'In Process' },
-                      { label: 'Hold', value: 'Hold' },
-                      { label: 'Delay', value: 'Delay' },
-                      { label: 'Final/Party Approve', value: 'Final/Party Approve' }
+                      { label: 'Pending', value: 'Pending' },
+                      { label: 'In Progress', value: 'In Progress' },
+                      { label: 'Complete', value: 'Complete' }
                     ]}
                     required
                   />

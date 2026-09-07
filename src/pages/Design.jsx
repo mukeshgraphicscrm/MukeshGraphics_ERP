@@ -163,87 +163,87 @@ export default function Design() {
     { header: 'Notes', accessor: row => row.notes },
   ];
 
-
-
   const filteredData = selectedStatus ? data.filter(item => item.status === selectedStatus) : data;
 
   return (
-    <div className="space-y-4 h-full flex flex-col">
-      {/* Design Pipeline Tiles */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 overflow-x-auto flex-shrink-0">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Design Pipeline</h3>
-          {selectedStatus && (
-            <button 
-              onClick={() => setSelectedStatus(null)}
-              className="text-xs font-semibold text-brand-accent hover:text-brand-primary"
-            >
-              Clear Filter
-            </button>
-          )}
-        </div>
-        <div className="flex space-x-3 min-w-max pb-2">
-          <div 
-            onClick={() => setSelectedStatus(null)}
-            className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${!selectedStatus ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
-          >
-            <div className="relative z-10">
-              <p className="font-medium text-gray-900 text-[13px] leading-tight">View All</p>
-              <p className="text-lg font-bold text-brand-accent mt-1">{data.length}</p>
-              <p className="text-[10px] text-gray-500 mt-0.5">Total designs</p>
-            </div>
-          </div>
-          {designStages.map((stage) => {
-            const count = data.filter(j => j.status === stage.key).length;
-            return (
-              <div 
-                key={stage.id} 
-                onClick={() => setSelectedStatus(stage.key)}
-                className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${selectedStatus === stage.key ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+    <>
+      <div className="space-y-4 h-full flex flex-col">
+        {/* Design Pipeline Tiles */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 overflow-x-auto flex-shrink-0">
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Design Pipeline</h3>
+            {selectedStatus && (
+              <button 
+                onClick={() => setSelectedStatus(null)}
+                className="text-xs font-semibold text-brand-accent hover:text-brand-primary"
               >
-                <div className="relative z-10">
-                  <p className="font-medium text-gray-900 text-[13px] leading-tight">{stage.name}</p>
-                  <p className="text-lg font-bold text-brand-accent mt-1">{count}</p>
-                  <p className="text-[10px] text-gray-500 mt-0.5">Designs</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Data Table */}
-      <div className="flex-1 overflow-hidden">
-        <DataTable
-          isLoading={!isLoaded}
-          title={selectedStatus ? `Designs - ${selectedStatus}` : "Design Management"}
-          subtitle="Manage all customer design assets and approval statuses."
-          actionButton={
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="btn-add"
+                Clear Filter
+              </button>
+            )}
+          </div>
+          <div className="flex space-x-3 min-w-max pb-2">
+            <div 
+              onClick={() => setSelectedStatus(null)}
+              className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${!selectedStatus ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
             >
-              <Plus className="w-4 h-4" />
-              <span>Add Design</span>
-            </button>
-          }
-          columns={columns}
-          data={filteredData}
-          onRowClick={handleRowClick}
-        />
+              <div className="relative z-10">
+                <p className="font-medium text-gray-900 text-[13px] leading-tight">View All</p>
+                <p className="text-lg font-bold text-brand-accent mt-1">{data.length}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Total designs</p>
+              </div>
+            </div>
+            {designStages.map((stage) => {
+              const count = data.filter(j => j.status === stage.key).length;
+              return (
+                <div 
+                  key={stage.id} 
+                  onClick={() => setSelectedStatus(stage.key)}
+                  className={`flex-1 min-w-[120px] border rounded-lg px-3 py-2.5 relative overflow-hidden cursor-pointer transition-colors ${selectedStatus === stage.key ? 'bg-brand-accent/10 border-brand-accent shadow-sm' : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                >
+                  <div className="relative z-10">
+                    <p className="font-medium text-gray-900 text-[13px] leading-tight">{stage.name}</p>
+                    <p className="text-lg font-bold text-brand-accent mt-1">{count}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">Designs</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="flex-1 overflow-hidden">
+          <DataTable
+            isLoading={!isLoaded}
+            title={selectedStatus ? `Designs - ${selectedStatus}` : "Design Management"}
+            subtitle="Manage all customer design assets and approval statuses."
+            actionButton={
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="btn-add"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add Design</span>
+              </button>
+            }
+            columns={columns}
+            data={filteredData}
+            onRowClick={handleRowClick}
+          />
+        </div>
       </div>
 
       {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? 'Edit Design' : 'Add New Design'}</h3>
               <button onClick={handleModalClose} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleModalSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleModalSubmit} className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
@@ -298,41 +298,6 @@ export default function Design() {
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <CustomSelect
-                    name="status"
-                    value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    options={[
-                      { label: 'Active', value: 'Active' },
-                      { label: 'In Process', value: 'In Process' },
-                      { label: 'Hold', value: 'Hold' },
-                      { label: 'Delay', value: 'Delay' },
-                      { label: 'Final/Party Approve', value: 'Final/Party Approve' }
-                    ]}
-                    required
-                  />
-                </div>
-              </div>
-
-              {formData.delayReason && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Delay Reason</label>
-                  <div className="w-full px-3 py-2 border border-red-300 bg-red-50 text-red-700 rounded-lg text-sm">
-                    {formData.delayReason}
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-                <textarea
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm min-h-[100px]"
-                  placeholder="Enter any additional notes..."
-                  value={formData.notes}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
-                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -388,6 +353,46 @@ export default function Design() {
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <CustomSelect
+                    name="status"
+                    value={formData.status}
+                    onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    options={[
+                      { label: 'Active', value: 'Active' },
+                      { label: 'In Process', value: 'In Process' },
+                      { label: 'Hold', value: 'Hold' },
+                      { label: 'Delay', value: 'Delay' },
+                      { label: 'Final/Party Approve', value: 'Final/Party Approve' }
+                    ]}
+                    required
+                  />
+                </div>
+              </div>
+
+              {formData.delayReason && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Delay Reason</label>
+                  <div className="w-full px-3 py-2 border border-red-300 bg-red-50 text-red-700 rounded-lg text-sm">
+                    {formData.delayReason}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm min-h-[100px]"
+                  placeholder="Enter any additional notes..."
+                  value={formData.notes}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                />
+              </div>
+
+
 
               <div className="flex justify-end space-x-3 mt-8 pt-4">
                 <button
@@ -446,6 +451,6 @@ export default function Design() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

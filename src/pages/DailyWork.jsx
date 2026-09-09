@@ -22,6 +22,7 @@ export default function DailyWork() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        const res = await api.get('/users');
         const filteredUsers = res.data.filter(u => !u.designation?.toLowerCase().includes('admin'));
         setUsers(filteredUsers);
       } catch (err) {
@@ -94,6 +95,52 @@ export default function DailyWork() {
     acc[user].push(log);
     return acc;
   }, {});
+
+  const renderFullDetails = (details) => {
+    if (!details || typeof details !== 'object') return null;
+    
+    const formatValue = (v) => {
+      if (v === null || v === undefined || v === '') return '(empty)';
+      if (typeof v === 'object') return JSON.stringify(v);
+      return String(v);
+    };
+
+    return (
+      <div className="mt-3 space-y-2 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+        {Object.entries(details).map(([key, value]) => {
+          // Format camelCase key to capitalized text
+          const formattedKey = key.replace(/([A-Z])/g, ' $1').trim();
+          const displayKey = formattedKey.charAt(0).toUpperCase() + formattedKey.slice(1);
+          
+          // Check if it's an update object with from/to
+          if (value && typeof value === 'object' && ('from' in value || 'to' in value)) {
+            return (
+              <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm border-b border-gray-100/50 pb-2 last:border-0 last:pb-0">
+                <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}</span>
+                <div className="flex items-center gap-2 flex-wrap text-xs">
+                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md line-through max-w-full sm:max-w-xs break-words">{formatValue(value.from)}</span>
+                  <span className="text-gray-400 font-medium">→</span>
+                  <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md font-medium max-w-full sm:max-w-xs break-words">{formatValue(value.to)}</span>
+                </div>
+              </div>
+            );
+          } 
+          // Check if it's a primitive value for create/delete logs
+          else if (typeof value !== 'object') {
+            // Ignore system fields
+            if (key === 'createdAt' || key === 'updatedAt' || key === 'id') return null;
+            return (
+              <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 text-sm border-b border-gray-100/50 pb-2 last:border-0 last:pb-0">
+                <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}</span>
+                <span className="text-gray-800 bg-white border border-gray-100 px-2 py-1 rounded-md text-xs break-words shadow-sm max-w-full sm:max-w-md">{formatValue(value)}</span>
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 pb-12">
@@ -202,6 +249,7 @@ export default function DailyWork() {
                       <p className="text-sm text-gray-700 mt-1">
                         {log.details}
                       </p>
+                      {log.fullDetails && renderFullDetails(log.fullDetails)}
                     </div>
                   </div>
                 ))}

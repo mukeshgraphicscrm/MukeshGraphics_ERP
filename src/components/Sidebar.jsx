@@ -31,6 +31,7 @@ const navItems = [
   { name: 'Tasks', path: '/tasks', icon: CheckSquare },
   { name: 'Settings', path: '/settings', icon: Settings },
   { name: 'Logs', path: '/logs', icon: History },
+  { name: 'Daily Work', path: '/daily-work', icon: ClipboardList },
   { name: 'Customize Packaging Request', path: '/customize-packaging-request', icon: Box },
   { name: 'Job Inquiry', path: '/job-inquiry', icon: Briefcase },
 ];
@@ -47,6 +48,7 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
   const visibleNavItems = navItems.filter(item => {
     if (item.name === 'Settings' && isEmployee) return false;
     if (item.name === 'Logs' && !isAdministrator) return false;
+    if (item.name === 'Daily Work' && !isAdministrator) return false;
     return true;
   });
 

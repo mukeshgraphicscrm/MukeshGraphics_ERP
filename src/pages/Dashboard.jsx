@@ -448,7 +448,7 @@ export default function Dashboard() {
                  </div>
               ) : myLeads.map(lead => {
                  return (
-                 <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/leads'}>
+                 <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = `/leads?view=my&expand=${encodeURIComponent(lead.stage)}`}>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{lead.company}</div>
                       <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>

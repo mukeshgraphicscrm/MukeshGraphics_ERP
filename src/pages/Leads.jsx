@@ -26,11 +26,21 @@ export default function Leads() {
   const [viewingLead, setViewingLead] = useState(null);
   const [pendingLostLead, setPendingLostLead] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('all');
+  const [viewMode, setViewMode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') === 'my' ? 'my' : 'all';
+  });
 
   const showToggle = currentUser?.profile?.designation === 'Employee' || currentUser?.profile?.designation === 'Manager';
 
-  const [expandedStages, setExpandedStages] = useState({});
+  const [expandedStages, setExpandedStages] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const expand = params.get('expand');
+    if (expand) {
+      return { [expand]: true };
+    }
+    return {};
+  });
   const [activeDropdownLeadId, setActiveDropdownLeadId] = useState(null);
 
   useEffect(() => {

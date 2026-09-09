@@ -101,7 +101,26 @@ export default function DailyWork() {
     
     const formatValue = (v) => {
       if (v === null || v === undefined || v === '') return '(empty)';
-      if (typeof v === 'object') return JSON.stringify(v);
+      if (Array.isArray(v)) {
+        if (v.length === 0) return '(empty)';
+        const formatted = v.map(item => {
+          if (typeof item === 'object' && item !== null) {
+            return Object.entries(item)
+              .filter(([_, val]) => val !== '' && val !== null && val !== undefined)
+              .map(([k, val]) => `${k}: ${val}`)
+              .join(', ');
+          }
+          return String(item);
+        }).filter(item => item !== '');
+        return formatted.length > 0 ? formatted.join(' | ') : '(empty)';
+      }
+      if (typeof v === 'object') {
+        if (Object.keys(v).length === 0) return '(empty)';
+        return Object.entries(v)
+          .filter(([_, val]) => val !== '' && val !== null && val !== undefined)
+          .map(([k, val]) => `${k}: ${val}`)
+          .join(', ');
+      }
       return String(v);
     };
 
@@ -114,29 +133,36 @@ export default function DailyWork() {
           
           // Check if it's an update object with from/to
           if (value && typeof value === 'object' && ('from' in value || 'to' in value)) {
+            const fromStr = formatValue(value.from);
+            const toStr = formatValue(value.to);
+            if (fromStr === '(empty)' && toStr === '(empty)') return null;
+
             return (
               <div key={key} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 text-sm border-b border-gray-100/50 pb-2 last:border-0 last:pb-0">
                 <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}</span>
                 <div className="flex items-center gap-2 flex-wrap text-xs">
-                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md line-through max-w-full sm:max-w-xs break-words">{formatValue(value.from)}</span>
+                  <span className="bg-red-50 text-red-600 px-2 py-1 rounded-md line-through max-w-full sm:max-w-xs break-words">{fromStr}</span>
                   <span className="text-gray-400 font-medium">→</span>
-                  <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md font-medium max-w-full sm:max-w-xs break-words">{formatValue(value.to)}</span>
+                  <span className="bg-emerald-50 text-emerald-600 px-2 py-1 rounded-md font-medium max-w-full sm:max-w-xs break-words">{toStr}</span>
                 </div>
               </div>
             );
           } 
-          // Check if it's a primitive value for create/delete logs
-          else if (typeof value !== 'object') {
+          // For create/delete logs or nested objects
+          else {
             // Ignore system fields
             if (key === 'createdAt' || key === 'updatedAt' || key === 'id') return null;
+            
+            const valStr = formatValue(value);
+            if (valStr === '(empty)' || valStr === '') return null; // Skip rendering empty fields
+
             return (
               <div key={key} className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-3 text-sm border-b border-gray-100/50 pb-2 last:border-0 last:pb-0">
                 <span className="font-medium text-gray-600 min-w-[120px]">{displayKey}</span>
-                <span className="text-gray-800 bg-white border border-gray-100 px-2 py-1 rounded-md text-xs break-words shadow-sm max-w-full sm:max-w-md">{formatValue(value)}</span>
+                <span className="text-gray-800 bg-white border border-gray-100 px-2 py-1 rounded-md text-xs break-words shadow-sm max-w-full sm:max-w-md">{valStr}</span>
               </div>
             );
           }
-          return null;
         })}
       </div>
     );

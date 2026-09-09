@@ -1,0 +1,24 @@
+IMPLEMENTATION GUIDE: Employee-wise Daily Work Tracker
+
+1. DATABASE & FRONTEND UPDATE (Tasks)
+- File: src/pages/Tasks.jsx
+- Action: Update the `handleStatusChange` function.
+- Detail: When the 'Complete' button is clicked, include a timestamp in the API payload: 
+  { status: 'Completed', completedAt: new Date().toISOString() }
+
+2. CREATE NEW ADMIN PAGE
+- File: src/pages/DailyWork.jsx (New File)
+- Action: Build a new page to display the daily work logs.
+- UI Components:
+  - Date Picker (to select the specific day)
+  - Employee Dropdown (to filter by specific employee)
+  - Data Table showing: Employee Name | Task Title | Completion Time
+
+3. DATA FETCHING LOGIC
+- Action: Fetch completed tasks from Firestore on the new DailyWork page.
+- Query Example: 
+  Fetch from `tasks` collection where `status == 'Completed'` AND `completedAt` falls between the start and end of the selected date.
+
+4. NAVIGATION
+- Action: Add the new `DailyWork.jsx` to your routing (App.jsx) and Sidebar navigation.
+- Security: Ensure this route is only visible and accessible to users where `isAdmin === true`.

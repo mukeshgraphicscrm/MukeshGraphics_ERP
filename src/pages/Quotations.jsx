@@ -126,15 +126,7 @@ export default function Quotations() {
     {
       header: 'DOCUMENT',
       accessor: 'document',
-      render: row => (
-        <button 
-          onClick={(e) => { e.stopPropagation(); generatePDF(row); }}
-          className="p-1.5 bg-brand-primary/10 text-brand-primary rounded-md hover:bg-brand-primary/20 transition-colors"
-          title="Generate Quotation Document"
-        >
-          <FileDown className="w-4 h-4" />
-        </button>
-      )
+      render: row => <ExportDocumentMenu row={row} onExport={handleExport} />
     },
     {
       header: 'ACTION',
@@ -182,14 +174,14 @@ export default function Quotations() {
     }
   };
 
-  const generatePDF = async (quote) => {
-    const toastId = toast.loading('Generating PDF...');
+  const handleExport = async (quote, exportType) => {
+    const toastId = toast.loading(`Generating ${exportType.toUpperCase()}...`);
     try {
-      await generateQuotationPDF(quote, customers, products);
-      toast.success('Quotation document generated!', { id: toastId });
+      await generateQuotationPDF(quote, customers, products, exportType);
+      toast.success(`Quotation ${exportType.toUpperCase()} generated!`, { id: toastId });
     } catch (err) {
-      console.error('Error generating PDF:', err);
-      toast.error('Failed to generate PDF.', { id: toastId });
+      console.error(`Error generating ${exportType.toUpperCase()}:`, err);
+      toast.error(`Failed to generate ${exportType.toUpperCase()}.`, { id: toastId });
     }
   };
 
@@ -349,3 +341,76 @@ const QuotationActions = ({ row, onEdit, onDelete, onMoveToOrder }) => {
     </div>
   );
 }
+
+const ExportDocumentMenu = ({ row, onExport }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        menuRef.current && !menuRef.current.contains(event.target) &&
+        buttonRef.current && !buttonRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      window.addEventListener('scroll', handleScroll, true);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [isOpen]);
+
+  const toggleMenu = () => {
+    if (!isOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      setMenuPos({ top: rect.bottom + 4, left: rect.right - 140 }); // Adjust left for width
+    }
+    setIsOpen(!isOpen);
+  };
+
+  return (
+    <div onClick={e => e.stopPropagation()}>
+      <button 
+        ref={buttonRef}
+        onClick={toggleMenu}
+        className="p-1.5 bg-brand-primary/10 text-brand-primary rounded-md hover:bg-brand-primary/20 transition-colors flex items-center justify-center"
+        title="Export Quotation Document"
+      >
+        <FileDown className="w-4 h-4" />
+      </button>
+
+      {isOpen && (
+        <div 
+          ref={menuRef}
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+          className="w-36 bg-white rounded-md shadow-[0_0_15px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] py-1"
+        >
+          <button
+            onClick={() => { setIsOpen(false); onExport(row, 'pdf'); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            Export as PDF
+          </button>
+          <button
+            onClick={() => { setIsOpen(false); onExport(row, 'jpg'); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            Export as JPG
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};

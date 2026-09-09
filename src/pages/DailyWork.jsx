@@ -22,8 +22,8 @@ export default function DailyWork() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await api.get('/users');
-        setUsers(res.data);
+        const filteredUsers = res.data.filter(u => !u.designation?.toLowerCase().includes('admin'));
+        setUsers(filteredUsers);
       } catch (err) {
         console.error('Error fetching users:', err);
       }
@@ -73,8 +73,12 @@ export default function DailyWork() {
     }
   };
 
-  // Filter logs based on user and search term
+  // Filter logs based on user, search term, and exclude admins/notifications
   const filteredLogs = logs.filter(log => {
+    // Exclude logs from administrators and notification module
+    if (log.userRole?.toLowerCase().includes('admin')) return false;
+    if (log.module === 'notifications') return false;
+
     const matchesUser = selectedUser === 'All' || log.userName === selectedUser;
     const searchString = `${log.module} ${log.action} ${log.details}`.toLowerCase();
     const matchesSearch = searchString.includes(searchTerm.toLowerCase());

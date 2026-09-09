@@ -1,17 +1,124 @@
-import React, { useMemo } from 'react';
-import { ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, 
+  TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon,
+  Clock, CheckSquare
+} from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
   BarChart, Bar
 } from 'recharts';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import toast from 'react-hot-toast';
 import KpiCard from '../components/KpiCard';
 import api from '../lib/api';
 import { cn } from '../lib/utils';
 import { useData } from '../contexts/DataContext';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
-  const { dashboardData: data, settings, orders } = useData();
+  const { 
+    dashboardData: data, settings, orders, 
+    productionJobs, leads, productMap, customerMap 
+  } = useData();
+  const { currentUser } = useAuth();
+  const isEmployee = currentUser?.profile?.designation === 'Employee';
+  const employeeName = currentUser?.profile?.name || '';
+
+  const [tasks, setTasks] = useState([]);
+  const [realtimeOrders, setRealtimeOrders] = useState([]);
+  const [realtimeJobs, setRealtimeJobs] = useState([]);
+  const [realtimeLeads, setRealtimeLeads] = useState([]);
+
+  useEffect(() => {
+    if (!isEmployee || !employeeName) return;
+    
+    // Realtime Tasks
+    const qTasks = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
+    const unsubTasks = onSnapshot(qTasks, (snapshot) => {
+      let fetchedTasks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTasks(fetchedTasks.filter(t => t.assignedTo === employeeName || t.assignedToEmail === currentUser?.email));
+    }, (error) => console.error('Error fetching tasks:', error));
+
+    // Realtime Orders
+    const qOrders = query(collection(db, 'orders'), where('employee', '==', employeeName));
+    const unsubOrders = onSnapshot(qOrders, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRealtimeOrders(fetched.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled'));
+    }, (error) => console.error('Error fetching orders:', error));
+
+    // Realtime Jobs
+    const qJobs = query(collection(db, 'productionJobs'), where('employee', '==', employeeName));
+    const unsubJobs = onSnapshot(qJobs, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRealtimeJobs(fetched.filter(j => j.status !== 'Completed' && j.status !== 'Cancelled'));
+    }, (error) => console.error('Error fetching jobs:', error));
+
+    // Realtime Leads
+    const qLeads = query(collection(db, 'leads'), where('employee', '==', employeeName));
+    const unsubLeads = onSnapshot(qLeads, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setRealtimeLeads(fetched.filter(l => l.stage !== 'Closed Won' && l.stage !== 'Closed Lost'));
+    }, (error) => console.error('Error fetching leads:', error));
+
+    return () => {
+      unsubTasks();
+      unsubOrders();
+      unsubJobs();
+      unsubLeads();
+    };
+  }, [isEmployee, employeeName, currentUser?.email]);
+
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    try {
+      await api.put(`/tasks/${taskId}`, { status: newStatus });
+      toast.success('Task status updated');
+    } catch (err) {
+      console.error('Error updating status:', err);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const myOrders = realtimeOrders;
+  const myJobs = realtimeJobs;
+  const myLeads = realtimeLeads;
+  
+  const pendingTasks = tasks.filter(t => t.status !== 'Completed');
+
+  const isApproachingDeadline = (dateString) => {
+    if (!dateString) return false;
+    const target = new Date(dateString);
+    const today = new Date();
+    const diffTime = target - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 5;
+  };
+  
+  const isOverdue = (dateString) => {
+    if (!dateString) return false;
+    const target = new Date(dateString);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    target.setHours(0,0,0,0);
+    return target < today;
+  };
+
+  const getRemainingDaysText = (dateString) => {
+    if (!dateString) return '';
+    const target = new Date(dateString);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    target.setHours(0,0,0,0);
+    const diffTime = target.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
+    if (diffDays === 0) return 'Due today';
+    if (diffDays === 1) return 'Due tomorrow';
+    return `${diffDays} days left`;
+  };
   const goalsBoard = useMemo(() => {
     const goalSettings = settings?.find(s => s.type === 'goals');
     const targetYear = goalSettings?.year ? parseInt(goalSettings.year, 10) : new Date().getFullYear();
@@ -90,13 +197,268 @@ export default function Dashboard() {
 
   const { kpi, charts } = data;
 
+  if (isEmployee) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Employee Dashboard</h1>
+          <p className="text-gray-500 mt-1">Welcome back, {employeeName || currentUser?.displayName || 'User'} — here is your assigned work.</p>
+        </div>
+        
+        {/* Top section: Goals & Summary */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <div className="bg-gradient-to-br from-[#1b2f63] to-[#12224d] rounded-xl shadow-lg border border-[#1b2f63] p-6 text-white flex flex-col relative overflow-hidden h-full min-h-[280px]">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Target className="w-24 h-24" />
+              </div>
+              
+              <div className="relative z-10 flex flex-col h-full">
+                <div className="flex items-center space-x-2 mb-6">
+                  <div className="p-2 bg-white/10 rounded-lg">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold tracking-tight">{goalsBoard.targetYear} Goals</h2>
+                </div>
 
+                <div className="space-y-5 flex-1">
+                  <div>
+                    <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider mb-1">Sales Target</p>
+                    <p className="text-2xl xl:text-xl 2xl:text-3xl font-bold tracking-tight break-all">₹{goalsBoard.salesTarget.toLocaleString('en-IN')}</p>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-end mb-1">
+                      <p className="text-brand-accent/80 text-xs font-semibold uppercase tracking-wider">Achieved</p>
+                      <span className="text-xs font-bold text-green-400">{goalsBoard.progress}%</span>
+                    </div>
+                    <p className="text-xl xl:text-lg 2xl:text-2xl font-bold text-green-400 tracking-tight break-all">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
+                    
+                    <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
+                      <div 
+                        className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out" 
+                        style={{ width: `${goalsBoard.progress}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-start pt-4 border-t border-white/10 mt-auto gap-2">
+                    <div className="shrink-0">
+                      <div className="flex items-center space-x-1.5 text-brand-accent/80 mb-1">
+                        <CalendarDays className="w-3.5 h-3.5" />
+                        <p className="text-[11px] font-semibold uppercase tracking-wider">Days Left</p>
+                      </div>
+                      <p className="text-base xl:text-sm 2xl:text-lg font-bold">{goalsBoard.daysLeft}</p>
+                    </div>
+                    <div className="text-right min-w-0">
+                      <div className="flex items-center justify-end space-x-1.5 text-brand-accent/80 mb-1">
+                        <TrendingUpIcon className="w-3.5 h-3.5" />
+                        <p className="text-[11px] font-semibold uppercase tracking-wider">Per Day</p>
+                      </div>
+                      <p className="text-base xl:text-sm 2xl:text-lg font-bold tracking-tight break-all">₹{Math.ceil(goalsBoard.perDayRequired).toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Tasks</p>
+                <p className="text-4xl font-bold text-gray-900">{pendingTasks.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner border border-blue-100">
+                <CheckSquare className="w-7 h-7" />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-orange-300 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Active Orders</p>
+                <p className="text-4xl font-bold text-gray-900">{myOrders.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center shadow-inner border border-orange-100">
+                <ShoppingCart className="w-7 h-7" />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-green-300 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Production Jobs</p>
+                <p className="text-4xl font-bold text-gray-900">{myJobs.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-inner border border-green-100">
+                <Factory className="w-7 h-7" />
+              </div>
+            </div>
+            
+            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
+              <div>
+                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Open Leads</p>
+                <p className="text-4xl font-bold text-gray-900">{myLeads.length}</p>
+              </div>
+              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-inner border border-purple-100">
+                <Target className="w-7 h-7" />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Work modules grids */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Tasks Panel */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <CheckSquare className="w-5 h-5 text-blue-600" /> My Tasks
+              </h2>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+              {pendingTasks.length === 0 ? (
+                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <CheckSquare className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No pending tasks.</p>
+                 </div>
+              ) : pendingTasks.map(task => (
+                 <div key={task.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all bg-white">
+                    <div className="flex justify-between items-start mb-2 gap-2">
+                      <h3 className="font-semibold text-gray-900 flex-1 leading-tight">{task.title}</h3>
+                      <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${task.priority === 'High' ? 'bg-red-50 text-red-600 border border-red-100' : task.priority === 'Medium' ? 'bg-yellow-50 text-yellow-600 border border-yellow-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>{task.priority}</span>
+                    </div>
+                    {task.dueDate && (
+                      <div className={`flex items-center gap-1.5 text-xs font-semibold mb-3 ${isOverdue(task.dueDate) ? 'text-red-600' : isApproachingDeadline(task.dueDate) ? 'text-orange-500' : 'text-gray-500'}`}>
+                        <Clock className="w-3.5 h-3.5" /> Due: {new Date(task.dueDate).toLocaleDateString()}
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ml-1 ${isOverdue(task.dueDate) ? 'bg-red-100 text-red-700' : isApproachingDeadline(task.dueDate) ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {getRemainingDaysText(task.dueDate)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
+                      <button 
+                        onClick={() => handleTaskStatusChange(task.id, 'In Progress')}
+                        disabled={task.status === 'In Progress'}
+                        className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex justify-center items-center gap-1.5 transition-all ${task.status === 'In Progress' ? 'bg-gray-50 text-gray-400 border border-gray-100' : 'bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 hover:border-blue-300'}`}
+                      >
+                        In Progress
+                      </button>
+                      <button 
+                        onClick={() => handleTaskStatusChange(task.id, 'Completed')}
+                        className="flex-1 py-1.5 text-xs font-semibold rounded-lg flex justify-center items-center gap-1.5 transition-all bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 hover:border-green-300"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" /> Complete
+                      </button>
+                    </div>
+                 </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Orders Panel */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <ShoppingCart className="w-5 h-5 text-orange-600" /> My Orders
+              </h2>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+              {myOrders.length === 0 ? (
+                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <ShoppingCart className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No active orders assigned to you.</p>
+                 </div>
+              ) : myOrders.map(order => (
+                 <div key={order.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/orders'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{order.orderNo}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{customerMap[order.customerId]?.name || 'Unknown Customer'}</div>
+                    </div>
+                    <div className="text-right flex flex-col items-end">
+                      <div className={`text-xs font-bold ${isOverdue(order.deliveryDate) ? 'text-red-600' : isApproachingDeadline(order.deliveryDate) ? 'text-orange-500' : 'text-gray-900'}`}>
+                        {new Date(order.deliveryDate).toLocaleDateString()}
+                      </div>
+                      <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(order.deliveryDate) ? 'bg-red-100 text-red-700' : isApproachingDeadline(order.deliveryDate) ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
+                        {getRemainingDaysText(order.deliveryDate)}
+                      </div>
+                    </div>
+                 </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Jobs Panel */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <Factory className="w-5 h-5 text-green-600" /> My Production Jobs
+              </h2>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+              {myJobs.length === 0 ? (
+                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <Factory className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No active production jobs assigned.</p>
+                 </div>
+              ) : myJobs.map(job => (
+                 <div key={job.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-green-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/production'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{job.jobId}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{productMap[job.productId]?.name || 'Unknown Product'}</div>
+                    </div>
+                    <div className="text-right flex flex-col items-end">
+                      <div className={`text-xs font-bold flex items-center gap-1 ${isOverdue(job.targetDate) ? 'text-red-600' : isApproachingDeadline(job.targetDate) ? 'text-orange-500' : 'text-gray-900'}`}>
+                         {job.targetDate ? new Date(job.targetDate).toLocaleDateString() : 'No date'}
+                      </div>
+                      {job.targetDate && (
+                        <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(job.targetDate) ? 'bg-red-100 text-red-700' : isApproachingDeadline(job.targetDate) ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
+                          {getRemainingDaysText(job.targetDate)}
+                        </div>
+                      )}
+                    </div>
+                 </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Leads Panel */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                <Target className="w-5 h-5 text-purple-600" /> My Open Leads
+              </h2>
+            </div>
+            <div className="p-4 flex-1 overflow-y-auto space-y-3">
+              {myLeads.length === 0 ? (
+                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <Target className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No open leads assigned to you.</p>
+                 </div>
+              ) : myLeads.map(lead => (
+                 <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/leads'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{lead.company}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs font-bold text-gray-900">{new Date(lead.date).toLocaleDateString()}</div>
+                      <div className="text-[10px] uppercase font-bold text-purple-600 mt-1 bg-purple-50 px-2 py-0.5 rounded">{lead.stage}</div>
+                    </div>
+                 </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome back, Mukesh — here's how the plant is running today.</p>
+        <p className="text-gray-500 mt-1">Welcome back, {currentUser?.profile?.name || currentUser?.displayName || 'Mukesh'} — here's how the plant is running today.</p>
       </div>
 
       {/* KPI & Goals Grid */}

@@ -119,6 +119,18 @@ export default function Dashboard() {
     if (diffDays === 1) return 'Due tomorrow';
     return `${diffDays} days left`;
   };
+
+  const getLeadDate = (lead) => {
+    if (lead.followUps && lead.followUps.length > 0) {
+      // Find the most recently added follow-up that has a date
+      const followUpsWithDates = lead.followUps.filter(f => f.date);
+      if (followUpsWithDates.length > 0) {
+        return followUpsWithDates[followUpsWithDates.length - 1].date;
+      }
+    }
+    return lead.createdAt || null;
+  };
+
   const goalsBoard = useMemo(() => {
     const goalSettings = settings?.find(s => s.type === 'goals');
     const targetYear = goalSettings?.year ? parseInt(goalSettings.year, 10) : new Date().getFullYear();
@@ -434,18 +446,19 @@ export default function Dashboard() {
                     <Target className="w-10 h-10 mb-2 opacity-50" />
                     <p>No open leads assigned to you.</p>
                  </div>
-              ) : myLeads.map(lead => (
+              ) : myLeads.map(lead => {
+                 return (
                  <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/leads'}>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{lead.company}</div>
                       <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-gray-900">{new Date(lead.date).toLocaleDateString()}</div>
-                      <div className="text-[10px] uppercase font-bold text-purple-600 mt-1 bg-purple-50 px-2 py-0.5 rounded">{lead.stage}</div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <div className="text-[10px] uppercase font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded">{lead.stage}</div>
                     </div>
                  </div>
-              ))}
+                 );
+              })}
             </div>
           </div>
 

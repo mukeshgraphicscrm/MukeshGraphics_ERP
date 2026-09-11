@@ -195,6 +195,21 @@ export function DataProvider({ children }) {
     return () => unsubscribe();
   }, [currentUser]);
 
+  // Listen to leads in real-time
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const unsubscribe = onSnapshot(collection(db, 'leads'), (snapshot) => {
+      const allLeads = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      allLeads.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      setLeads(allLeads);
+    }, (error) => {
+      console.error('Firestore leads listener error:', error);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
   // Helper maps derived from arrays — Array.isArray guards prevent crashes if any state is non-array
   const customerMap = React.useMemo(() => {
     const m = {};

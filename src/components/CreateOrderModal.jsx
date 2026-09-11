@@ -16,6 +16,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     productId: [],
     quantities: {},
     amounts: {},
+    varieties: {},
     orderDate: '',
     deliveryDate: '',
     notes: '',
@@ -95,6 +96,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         const pIds = Array.isArray(orderToEdit.productId) ? orderToEdit.productId : (orderToEdit.productId ? [orderToEdit.productId] : []);
         const initQuantities = orderToEdit.quantities || {};
         const initAmounts = orderToEdit.amounts || {};
+        const initVarieties = orderToEdit.varieties || {};
 
         // Backward compatibility for old single-product orders
         if (!orderToEdit.quantities && pIds.length > 0) {
@@ -110,6 +112,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           productId: pIds,
           quantities: initQuantities,
           amounts: initAmounts,
+          varieties: initVarieties,
           orderDate: orderToEdit.orderDate ? new Date(orderToEdit.orderDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
           deliveryDate: orderToEdit.deliveryDate ? new Date(orderToEdit.deliveryDate).toISOString().split('T')[0] : '',
           notes: orderToEdit.notes || '',
@@ -133,6 +136,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         let pIds = [];
         const initQuantities = {};
         const initAmounts = {};
+        const initVarieties = {};
         let initialNotes = '';
 
         if (initialData?.items && initialData.items.length > 0) {
@@ -160,6 +164,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           productId: pIds,
           quantities: initQuantities,
           amounts: initAmounts,
+          varieties: initVarieties,
           orderDate: new Date().toISOString().split('T')[0],
           deliveryDate: new Date().toISOString().split('T')[0],
           notes: initialNotes,
@@ -638,6 +643,83 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                             }`}
                           placeholder="e.g. 25,000"
                         />
+                      </div>
+
+                      <div className="md:col-span-2 mt-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Variety</label>
+                        <div className="overflow-x-auto rounded-lg border border-gray-200">
+                          <table className="min-w-full divide-y divide-gray-200 text-sm">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-16">Sr No.</th>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700">Name</th>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-32">Quantity</th>
+                                <th className="px-3 py-2 text-center font-semibold text-gray-700 w-16">Act</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white">
+                              {(formData.varieties[id] || [{ name: '', quantity: '' }]).map((variety, vIndex) => (
+                                <tr key={vIndex}>
+                                  <td className="px-3 py-2 text-gray-500 font-medium">{vIndex + 1}</td>
+                                  <td className="px-3 py-2">
+                                    <input
+                                      type="text"
+                                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent uppercase"
+                                      value={variety.name}
+                                      onChange={(e) => {
+                                        const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
+                                        newVarieties[vIndex].name = e.target.value.toUpperCase();
+                                        setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
+                                      }}
+                                      disabled={isViewMode}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2">
+                                    <input
+                                      type="text"
+                                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent"
+                                      value={variety.quantity}
+                                      onChange={(e) => {
+                                        const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
+                                        newVarieties[vIndex].quantity = formatIndianNumber(e.target.value);
+                                        setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
+                                      }}
+                                      disabled={isViewMode}
+                                    />
+                                  </td>
+                                  <td className="px-3 py-2 text-center">
+                                    {vIndex > 0 && !isViewMode && (
+                                      <button
+                                        type="button"
+                                        className="text-red-500 hover:text-red-700 transition-colors"
+                                        onClick={() => {
+                                          const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
+                                          newVarieties.splice(vIndex, 1);
+                                          setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
+                                        }}
+                                      >
+                                        <Trash2 className="w-4 h-4 mx-auto" />
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                        {!isViewMode && (
+                          <button
+                            type="button"
+                            className="mt-2 text-xs font-semibold text-brand-primary hover:text-brand-secondary flex items-center"
+                            onClick={() => {
+                              const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
+                              newVarieties.push({ name: '', quantity: '' });
+                              setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
+                            }}
+                          >
+                            + Add Extra Row
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

@@ -45,6 +45,7 @@ export default function Design() {
   const [delayReasonText, setDelayReasonText] = useState('');
   const [pendingRow, setPendingRow] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isStatusReasonModalOpen, setIsStatusReasonModalOpen] = useState(false);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -55,14 +56,23 @@ export default function Design() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isModalOpen && !isDeleteModalOpen) {
-        handleModalClose();
+      if (e.key === 'Escape') {
+        if (isDeleteModalOpen) {
+          setIsDeleteModalOpen(false);
+        } else if (isStatusReasonModalOpen) {
+          setIsStatusReasonModalOpen(false);
+        } else if (isDelayModalOpen) {
+          setIsDelayModalOpen(false);
+          setPendingRow(null);
+        } else if (isModalOpen) {
+          handleModalClose();
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen, isDeleteModalOpen]);
+  }, [isModalOpen, isDeleteModalOpen, isStatusReasonModalOpen, isDelayModalOpen]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -93,13 +103,13 @@ export default function Design() {
     }
   };
 
-  const handleModalSubmit = async (e) => {
-    e.preventDefault();
+  const executeSave = async (reason = formData.delayReason) => {
     try {
       const finalVariety = formData.varietyNames.filter(n => n.trim() !== '').join(',') || formData.varietyCount;
       const { varietyCount, varietyNames, ...restFormData } = formData;
       const payload = {
         ...restFormData,
+        delayReason: reason,
         variety: finalVariety,
         uploadedAt: formData.uploadedAt || new Date().toISOString(),
       };
@@ -118,6 +128,26 @@ export default function Design() {
       console.error('Error saving artwork:', err);
       toast.error('Failed to save design.');
     }
+  };
+
+  const handleModalSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if ((formData.status === 'Hold' || formData.status === 'Delay') && !formData.delayReason) {
+      setDelayReasonText('');
+      setIsStatusReasonModalOpen(true);
+      return;
+    }
+    await executeSave();
+  };
+
+  const handleStatusReasonSubmit = () => {
+    if (!delayReasonText.trim()) {
+      toast.error('Please provide a reason.');
+      return;
+    }
+    setFormData(prev => ({ ...prev, delayReason: delayReasonText }));
+    setIsStatusReasonModalOpen(false);
+    executeSave(delayReasonText);
   };
 
   const isLate = (deadlineStr, status, delayReason) => {
@@ -196,7 +226,34 @@ export default function Design() {
         return p ? p.name : (row.productId || 'UNKNOWN PRODUCT');
       }
     },
-    { header: 'Variety', accessor: row => row.variety },
+    { 
+      header: 'Variety', 
+      accessor: row => {
+        if (!row.variety) return '-';
+        if (!isNaN(row.variety) && !String(row.variety).includes(',')) return row.variety;
+        return String(row.variety).split(',').filter(Boolean).length;
+      }
+    },
+    { 
+      header: 'Variety Name', 
+      accessor: row => {
+        if (!row.variety) return '-';
+        if (!isNaN(row.variety) && !String(row.variety).includes(',')) return '-';
+        const names = String(row.variety).split(',').map(s => s.trim()).filter(Boolean);
+        return (
+          <div className="flex flex-col gap-1 py-1">
+            {names.map((name, i) => (
+              <span key={i} className="whitespace-nowrap">{name}</span>
+            ))}
+          </div>
+        );
+      },
+      exportAccessor: row => {
+        if (!row.variety) return '-';
+        if (!isNaN(row.variety) && !String(row.variety).includes(',')) return '-';
+        return row.variety;
+      }
+    },
     { header: 'Start Date', accessor: row => row.startDate ? new Date(row.startDate).toLocaleDateString('en-IN') : '-' },
     { header: 'Deadline', accessor: row => row.deadline ? new Date(row.deadline).toLocaleDateString('en-IN') : '-' },
     { header: 'Status', accessor: row => <span className={`px-2 py-1 text-xs font-semibold rounded-full ${row.status === 'Final/Party Approve' ? 'bg-green-100 text-green-800' : row.status === 'In Process' ? 'bg-blue-100 text-blue-800' : row.status === 'Delay' ? 'bg-red-100 text-red-800' : row.status === 'Hold' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800'}`}>{row.status || 'Active'}</span> },
@@ -205,7 +262,8 @@ export default function Design() {
     { header: 'Notes', accessor: row => row.notes },
   ];
 
-  const filteredData = selectedStatus ? data.filter(item => item.status === selectedStatus) : data;
+  const activeData = data.filter(item => item.status !== 'Final/Party Approve');
+  const filteredData = selectedStatus ? data.filter(item => item.status === selectedStatus) : activeData;
 
   return (
     <>
@@ -230,8 +288,8 @@ export default function Design() {
             >
               <div className="relative z-10">
                 <p className="font-medium text-gray-900 text-[13px] leading-tight">View All</p>
-                <p className="text-lg font-bold text-brand-accent mt-1">{data.length}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Total designs</p>
+                <p className="text-lg font-bold text-brand-accent mt-1">{activeData.length}</p>
+                <p className="text-[10px] text-gray-500 mt-0.5">Active designs</p>
               </div>
             </div>
             {designStages.map((stage) => {
@@ -511,7 +569,14 @@ export default function Design() {
                   <CustomSelect
                     name="status"
                     value={formData.status}
-                    onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    onChange={e => {
+                      const newStatus = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        status: newStatus,
+                        delayReason: (newStatus === 'Hold' || newStatus === 'Delay') ? prev.delayReason : ''
+                      }));
+                    }}
                     options={designStages.map(stage => ({ label: stage.name, value: stage.key }))}
                     required
                   />
@@ -582,36 +647,98 @@ export default function Design() {
 
       {/* Delay Reason Modal */}
       {isDelayModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
-            <div className="p-6">
-              <h3 className="text-lg font-bold text-red-600 mb-2">Deadline Passed</h3>
-              <p className="text-sm text-gray-600 mb-4">
-                This design has passed its deadline. Please enter a reason for the delay to proceed.
-              </p>
-              <textarea
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm min-h-[80px]"
-                placeholder="Enter delay reason..."
-                value={delayReasonText}
-                onChange={(e) => setDelayReasonText(e.target.value)}
-              />
-              <div className="flex justify-end space-x-3 mt-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) { setIsDelayModalOpen(false); setPendingRow(null); } }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-red-50 shrink-0">
+              <h2 className="text-lg font-bold text-red-700">Deadline Passed</h2>
+              <button onClick={() => { setIsDelayModalOpen(false); setPendingRow(null); }} className="text-red-400 hover:text-red-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  This design has passed its deadline. Please enter a reason for the delay to proceed.
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Delay Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors resize-none uppercase text-sm"
+                  rows="3"
+                  placeholder="Enter delay reason..."
+                  value={delayReasonText}
+                  onChange={(e) => setDelayReasonText(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
                 <button
                   type="button"
                   onClick={() => {
                     setIsDelayModalOpen(false);
                     setPendingRow(null);
                   }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleDelaySubmit}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors"
+                  disabled={!delayReasonText.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
                   Proceed
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Reason Modal */}
+      {isStatusReasonModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsStatusReasonModalOpen(false); }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-100 bg-red-50 shrink-0">
+              <h2 className="text-lg font-bold text-red-700">Provide Reason</h2>
+              <button onClick={() => setIsStatusReasonModalOpen(false)} className="text-red-400 hover:text-red-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto">
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  You are marking this design as <strong>{formData.status}</strong>. Please provide a reason.
+                </p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Reason <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-colors resize-none uppercase text-sm"
+                  rows="3"
+                  placeholder="e.g., AWAITING CLIENT APPROVAL"
+                  value={delayReasonText}
+                  onChange={(e) => setDelayReasonText(e.target.value.toUpperCase())}
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusReasonModalOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleStatusReasonSubmit}
+                  disabled={!delayReasonText.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  Confirm
                 </button>
               </div>
             </div>

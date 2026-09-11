@@ -651,10 +651,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                           <table className="min-w-full divide-y divide-gray-200 text-sm">
                             <thead className="bg-gray-50">
                               <tr>
-                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-16">Sr No.</th>
-                                <th className="px-3 py-2 text-left font-semibold text-gray-700">Name</th>
-                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-32">Quantity</th>
-                                <th className="px-3 py-2 text-center font-semibold text-gray-700 w-16">Act</th>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-[10%] whitespace-nowrap">Sr No.</th>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-[55%]">Name</th>
+                                <th className="px-3 py-2 text-left font-semibold text-gray-700 w-[25%]">Quantity</th>
+                                <th className="px-3 py-2 text-center font-semibold text-gray-700 w-[10%]">Act</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200 bg-white">

@@ -20,6 +20,8 @@ export default function Design() {
     designType: '',
     productId: '',
     variety: '',
+    varietyCount: '',
+    varietyNames: [],
     startDate: '',
     deadline: '',
     employee: '',
@@ -48,7 +50,7 @@ export default function Design() {
     setIsModalOpen(false);
     setEditingId(null);
     setActiveTab('Customer Design');
-    setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '', leadId: '' });
+    setFormData({ customerId: '', designType: '', productId: '', variety: '', varietyCount: '', varietyNames: [], startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '', leadId: '' });
   };
 
   useEffect(() => {
@@ -94,8 +96,11 @@ export default function Design() {
   const handleModalSubmit = async (e) => {
     e.preventDefault();
     try {
+      const finalVariety = formData.varietyNames.filter(n => n.trim() !== '').join(',') || formData.varietyCount;
+      const { varietyCount, varietyNames, ...restFormData } = formData;
       const payload = {
-        ...formData,
+        ...restFormData,
+        variety: finalVariety,
         uploadedAt: formData.uploadedAt || new Date().toISOString(),
       };
 
@@ -148,11 +153,26 @@ export default function Design() {
   const openEditModal = (row) => {
     setEditingId(row.id);
     setActiveTab(row.leadId ? 'Lead Design' : 'Customer Design');
+    
+    let vCount = '';
+    let vNames = [];
+    if (row.variety) {
+       if (!isNaN(row.variety) && !row.variety.includes(',')) {
+          vCount = parseInt(row.variety) || '';
+          vNames = Array(vCount || 0).fill('');
+       } else {
+          vNames = row.variety.split(',').map(s => s.trim());
+          vCount = vNames.length;
+       }
+    }
+
     setFormData({
       customerId: row.customerId || '',
       designType: row.designType || '',
       productId: row.productId || '',
       variety: row.variety || '',
+      varietyCount: vCount,
+      varietyNames: vNames,
       startDate: row.startDate || '',
       deadline: row.deadline || '',
       employee: row.employee || '',
@@ -285,33 +305,30 @@ export default function Design() {
 
             <form onSubmit={handleModalSubmit} className="p-6 space-y-4 overflow-y-auto">
               {activeTab === 'Lead Design' && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead</label>
-                  <CustomSelect
-                    name="leadId"
-                    value={formData.leadId}
-                    onChange={e => {
-                      const selectedLead = leads.find(l => l.id === e.target.value);
-                      setFormData({ 
-                        ...formData, 
-                        leadId: e.target.value,
-                        customerId: selectedLead ? (selectedLead.contactPerson || '').toUpperCase() : formData.customerId
-                      });
-                    }}
-                    options={(leads || []).map(l => ({
-                      label: `${l.contactPerson || 'Unknown Contact'} ${l.company ? `(${l.company})` : ''}`.trim(),
-                      value: l.id
-                    }))}
-                    placeholder="Select a Lead to Link"
-                    required
-                  />
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                  {activeTab === 'Lead Design' ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead</label>
+                    <CustomSelect
+                      name="leadId"
+                      value={formData.leadId}
+                      onChange={e => {
+                        const selectedLead = leads.find(l => l.id === e.target.value);
+                        setFormData({ 
+                          ...formData, 
+                          leadId: e.target.value,
+                          customerId: selectedLead ? (selectedLead.contactPerson || '').toUpperCase() : formData.customerId
+                        });
+                      }}
+                      options={(leads || []).map(l => ({
+                        label: `${l.contactPerson || 'Unknown Contact'} ${l.company ? `(${l.company})` : ''}`.trim(),
+                        value: l.id
+                      }))}
+                      placeholder="Select a Lead to Link"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
                     <input
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
@@ -320,7 +337,14 @@ export default function Design() {
                       onChange={e => setFormData({ ...formData, customerId: e.target.value.toUpperCase() })}
                       required
                     />
-                  ) : (
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                {activeTab === 'Customer Design' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
                     <CustomSelect
                       name="customerId"
                       value={formData.customerId}
@@ -329,8 +353,8 @@ export default function Design() {
                       placeholder="Select a customer"
                       required
                     />
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Design</label>
@@ -347,12 +371,10 @@ export default function Design() {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                  {activeTab === 'Lead Design' ? (
+                {activeTab === 'Lead Design' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                     <input
                       type="text"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
@@ -361,7 +383,14 @@ export default function Design() {
                       onChange={e => setFormData({ ...formData, productId: e.target.value.toUpperCase() })}
                       required
                     />
-                  ) : (
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {activeTab === 'Customer Design' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                     <CustomSelect
                       name="productId"
                       value={formData.productId}
@@ -372,21 +401,55 @@ export default function Design() {
                       placeholder="Select a product"
                       required
                     />
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Variety (Count)</label>
                   <input
-                    type="text"
+                    type="number"
+                    min="1"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
-                    placeholder="Enter variety"
-                    value={formData.variety}
-                    onChange={e => setFormData({ ...formData, variety: e.target.value.toUpperCase() })}
+                    placeholder="Enter number of varieties"
+                    value={formData.varietyCount}
+                    onChange={e => {
+                      const count = parseInt(e.target.value) || 0;
+                      setFormData(prev => {
+                        const newNames = [...prev.varietyNames];
+                        if (count > newNames.length) {
+                          for (let i = newNames.length; i < count; i++) newNames.push('');
+                        } else if (count < newNames.length) {
+                          newNames.splice(count);
+                        }
+                        return { ...prev, varietyCount: e.target.value, varietyNames: newNames };
+                      });
+                    }}
                     required
                   />
                 </div>
               </div>
+
+              {formData.varietyNames.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
+                  {formData.varietyNames.map((name, index) => (
+                    <div key={index}>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Variety {index + 1} Name</label>
+                      <input
+                        type="text"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                        placeholder={`Enter variety ${index + 1}`}
+                        value={name}
+                        onChange={e => {
+                          const newNames = [...formData.varietyNames];
+                          newNames[index] = e.target.value.toUpperCase();
+                          setFormData({ ...formData, varietyNames: newNames });
+                        }}
+                        required
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -276,7 +276,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.setFillColor(248, 250, 252); // Very light blue/grey tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos, bankCardW, 40, 2, 2, 'FD'); // Fill and draw border
+  doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD'); // Fill and draw border
 
   doc.setTextColor(...brandDark);
   doc.setFontSize(11);

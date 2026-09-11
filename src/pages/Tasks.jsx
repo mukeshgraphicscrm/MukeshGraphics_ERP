@@ -98,7 +98,7 @@ export default function Tasks() {
       setFormData({
         title: '',
         description: '',
-        assignedTo: '',
+        assignedTo: isAdmin ? '' : (currentUser?.profile?.name || ''),
         priority: 'Medium',
         status: 'Pending',
         dueDate: ''
@@ -213,15 +213,13 @@ export default function Tasks() {
           </p>
         </div>
         
-        {isAdmin && (
-          <button
-            onClick={() => handleOpenModal()}
-            className="btn-add"
-          >
-            <Plus className="w-5 h-5" />
-            <span>Create Task</span>
-          </button>
-        )}
+        <button
+          onClick={() => handleOpenModal()}
+          className="btn-add"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Create Task</span>
+        </button>
       </div>
 
       {/* Filters and Search */}
@@ -340,8 +338,8 @@ export default function Tasks() {
         )}
       </div>
 
-      {/* Task Modal (Admin Only) */}
-      {isModalOpen && isAdmin && createPortal(
+      {/* Task Modal */}
+      {isModalOpen && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false); }}>
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative z-[70]">
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -378,13 +376,22 @@ export default function Tasks() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                  <CustomSelect
-                    options={users.map(u => ({ label: u.name, value: u.name }))}
-                    value={formData.assignedTo}
-                    onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
-                    placeholder="Select User"
-                    required
-                  />
+                  {isAdmin ? (
+                    <CustomSelect
+                      options={users.map(u => ({ label: u.name, value: u.name }))}
+                      value={formData.assignedTo}
+                      onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
+                      placeholder="Select User"
+                      required
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      value={formData.assignedTo}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>

@@ -313,7 +313,7 @@ export default function Design() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
                     placeholder="Enter variety"
                     value={formData.variety}
-                    onChange={e => setFormData({ ...formData, variety: e.target.value })}
+                    onChange={e => setFormData({ ...formData, variety: e.target.value.toUpperCase() })}
                     required
                   />
                 </div>
@@ -401,7 +401,7 @@ export default function Design() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm min-h-[100px]"
                   placeholder="Enter any additional notes..."
                   value={formData.notes}
-                  onChange={e => setFormData({ ...formData, notes: e.target.value })}
+                  onChange={e => setFormData({ ...formData, notes: e.target.value.toUpperCase() })}
                 />
               </div>
 

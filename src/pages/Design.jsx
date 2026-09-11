@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import CustomSelect from '../components/CustomSelect';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -39,6 +40,7 @@ export default function Design() {
   const [isDelayModalOpen, setIsDelayModalOpen] = useState(false);
   const [delayReasonText, setDelayReasonText] = useState('');
   const [pendingRow, setPendingRow] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -48,14 +50,14 @@ export default function Design() {
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isModalOpen) {
+      if (e.key === 'Escape' && isModalOpen && !isDeleteModalOpen) {
         handleModalClose();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isModalOpen]);
+  }, [isModalOpen, isDeleteModalOpen]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -70,6 +72,21 @@ export default function Design() {
       fetchUsers();
     }
   }, [isModalOpen]);
+
+  const confirmDelete = async () => {
+    if (!editingId) return;
+    
+    try {
+      await api.delete(`/artworks/${editingId}`);
+      setData(prev => prev.filter(item => item.id !== editingId));
+      toast.success('Design deleted successfully.');
+      setIsDeleteModalOpen(false);
+      handleModalClose();
+    } catch (err) {
+      console.error('Error deleting design:', err);
+      toast.error('Failed to delete design.');
+    }
+  };
 
   const handleModalSubmit = async (e) => {
     e.preventDefault();
@@ -235,8 +252,8 @@ export default function Design() {
 
       {/* Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onMouseDown={(e) => { if (e.target === e.currentTarget) handleModalClose(); }}>
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">{editingId ? 'Edit Design' : 'Add New Design'}</h3>
               <button onClick={handleModalClose} className="text-gray-400 hover:text-gray-600">
@@ -390,25 +407,47 @@ export default function Design() {
 
 
 
-              <div className="flex justify-end space-x-3 mt-8 pt-4">
-                <button
-                  type="button"
-                  onClick={handleModalClose}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors"
-                >
-                  {editingId ? 'Update Design' : 'Save Design'}
-                </button>
+              <div className="flex justify-between items-center mt-8 pt-4">
+                <div>
+                  {editingId && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDeleteModalOpen(true)}
+                      className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors"
+                    >
+                      Delete Design
+                    </button>
+                  )}
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleModalClose}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#0f172a] hover:bg-[#1e293b] rounded-lg transition-colors"
+                  >
+                    {editingId ? 'Update Design' : 'Save Design'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Delete Design"
+        message="Are you sure you want to delete this design? This action cannot be undone."
+      />
+
       {/* Delay Reason Modal */}
       {isDelayModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">

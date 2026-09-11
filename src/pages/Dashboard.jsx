@@ -447,6 +447,19 @@ export default function Dashboard() {
                     <p>No open leads assigned to you.</p>
                  </div>
               ) : myLeads.map(lead => {
+                 const followUps = lead.followUps && lead.followUps.length > 0 
+                   ? lead.followUps 
+                   : (lead.notes || lead.date || lead.time 
+                       ? [{ date: lead.date || '', time: lead.time || '', notes: lead.notes || '' }] 
+                       : []);
+                 const lastFollowUp = followUps.length > 0 ? followUps[followUps.length - 1] : null;
+                 let nextFollowUpText = 'No Follow-up';
+                 let followUpDateStr = null;
+                 if (lastFollowUp && (lastFollowUp.date || lastFollowUp.time)) {
+                   nextFollowUpText = `${lastFollowUp.date || ''} ${lastFollowUp.time ? `at ${lastFollowUp.time}` : ''}`.trim();
+                   followUpDateStr = lastFollowUp.date;
+                 }
+
                  return (
                  <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = `/leads?view=my&expand=${encodeURIComponent(lead.stage)}`}>
                     <div>
@@ -454,7 +467,14 @@ export default function Dashboard() {
                       <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>
                     </div>
                     <div className="text-right flex flex-col items-end justify-center">
-                      <div className="text-[10px] uppercase font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded">{lead.stage}</div>
+                      <div className={`text-xs font-bold ${followUpDateStr && isOverdue(followUpDateStr) ? 'text-red-600' : followUpDateStr && isApproachingDeadline(followUpDateStr) ? 'text-orange-500' : 'text-purple-600'}`}>
+                        {nextFollowUpText}
+                      </div>
+                      {followUpDateStr && (
+                        <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(followUpDateStr) ? 'bg-red-100 text-red-700' : isApproachingDeadline(followUpDateStr) ? 'bg-orange-100 text-orange-700' : 'bg-purple-50 text-purple-600'}`}>
+                          {getRemainingDaysText(followUpDateStr)}
+                        </div>
+                      )}
                     </div>
                  </div>
                  );

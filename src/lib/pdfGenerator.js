@@ -57,7 +57,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   // Logo
   if (logoBase64) {
     // Use square dimensions since it's just the logo icon now
-    doc.addImage(logoBase64, 'PNG', hm, 23, 22, 22, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 15, 22, 22, '', 'FAST');
   }
 
   // Company Name next to logo
@@ -70,23 +70,23 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.setTextColor(...brandDark);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("MUKESH GRAPHICS", centerX, 31, { align: 'center' });
+  doc.text("MUKESH GRAPHICS", centerX, 23, { align: 'center' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 37, { align: 'center' });
+  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 29, { align: 'center' });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 42, { align: 'center' });
-  doc.text("GST: 24ANVPB6301P1ZP", centerX, 47, { align: 'center' });
+  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 34, { align: 'center' });
+  doc.text("GST: 24ANVPB6301P1ZP", centerX, 39, { align: 'center' });
 
   // Quote / Estimate Tag
   const tagW = 35;
   const tagH = 8;
   const tagX = pageW - hm - tagW;
-  const tagY = 23;
+  const tagY = 16;
 
   doc.setFillColor(...brandDark);
   doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'F');
@@ -104,22 +104,22 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text(`Estimate No:`, pageW - hm - 25, 39, { align: 'right' });
+  doc.text(`Estimate No:`, pageW - hm - 25, 31, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${quote.quotationNo || 'N/A'}`, pageW - hm, 39, { align: 'right' });
+  doc.text(`${quote.quotationNo || 'N/A'}`, pageW - hm, 31, { align: 'right' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
-  doc.text(`Date:`, pageW - hm - 25, 44, { align: 'right' });
+  doc.text(`Date:`, pageW - hm - 25, 36, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${dateStr}`, pageW - hm, 44, { align: 'right' });
+  doc.text(`${dateStr}`, pageW - hm, 36, { align: 'right' });
 
   // Add a very subtle horizontal separator
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.line(hm, 54, pageW - hm, 54);
+  doc.line(hm, 44, pageW - hm, 44);
 
   // ==========================================
   // 2. FROM / TO SECTION (Cards)
@@ -129,7 +129,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const custGst = customers[quote.customerId]?.gstNumber || '';
   const custMobile = customers[quote.customerId]?.mobile || '';
 
-  const startY = 60;
+  const startY = 49;
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)
@@ -265,8 +265,6 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
     ['Sub Total', formatMoney(subtotal)],
     ['GST (18%)', formatMoney(gstAmount)],
     ['Courier Charges', '-'],
-    ['Transportation', '-'],
-    ['Previous Due', '-'],
     ['Advance', '-'],
     ['Net Payable', formatMoney(finalTotal)],
   ];
@@ -278,7 +276,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.setFillColor(248, 250, 252); // Very light blue/grey tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD'); // Fill and draw border
+  doc.roundedRect(margin, yPos, bankCardW, 40, 2, 2, 'FD'); // Fill and draw border
 
   doc.setTextColor(...brandDark);
   doc.setFontSize(11);
@@ -472,7 +470,7 @@ export const generateInvoicePDF = async (invoice, customers, products) => {
   // Logo
   if (logoBase64) {
     // Use square dimensions since it's just the logo icon now
-    doc.addImage(logoBase64, 'PNG', hm, 23, 22, 22, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 15, 22, 22, '', 'FAST');
   }
 
   // Company Name next to logo
@@ -485,23 +483,23 @@ export const generateInvoicePDF = async (invoice, customers, products) => {
   doc.setTextColor(...brandDark);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("MUKESH GRAPHICS", centerX, 31, { align: 'center' });
+  doc.text("MUKESH GRAPHICS", centerX, 23, { align: 'center' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 37, { align: 'center' });
+  doc.text("PRINTING & PACKAGING SOLUTIONS", centerX, 29, { align: 'center' });
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 42, { align: 'center' });
-  doc.text("GST: 24ANVPB6301P1ZP", centerX, 47, { align: 'center' });
+  doc.text("Bhavnagar, Gujarat | MO: 9512007008", centerX, 34, { align: 'center' });
+  doc.text("GST: 24ANVPB6301P1ZP", centerX, 39, { align: 'center' });
 
   // Quote / Estimate Tag
   const tagW = 35;
   const tagH = 8;
   const tagX = pageW - hm - tagW;
-  const tagY = 23;
+  const tagY = 16;
 
   doc.setFillColor(...brandDark);
   doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'F');
@@ -519,22 +517,22 @@ export const generateInvoicePDF = async (invoice, customers, products) => {
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
-  doc.text(`Estimate No:`, pageW - hm - 25, 39, { align: 'right' });
+  doc.text(`Estimate No:`, pageW - hm - 25, 31, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${invoice.invoiceNo || 'N/A'}`, pageW - hm, 39, { align: 'right' });
+  doc.text(`${invoice.invoiceNo || 'N/A'}`, pageW - hm, 31, { align: 'right' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "bold");
-  doc.text(`Date:`, pageW - hm - 25, 44, { align: 'right' });
+  doc.text(`Date:`, pageW - hm - 25, 36, { align: 'right' });
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "bold");
-  doc.text(`${dateStr}`, pageW - hm, 44, { align: 'right' });
+  doc.text(`${dateStr}`, pageW - hm, 36, { align: 'right' });
 
   // Add a very subtle horizontal separator
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.line(hm, 54, pageW - hm, 54);
+  doc.line(hm, 44, pageW - hm, 44);
 
   // ==========================================
   // 2. FROM / TO SECTION (Cards)
@@ -544,7 +542,7 @@ export const generateInvoicePDF = async (invoice, customers, products) => {
   const custGst = customers[invoice.customerId]?.gstNumber || '';
   const custMobile = customers[invoice.customerId]?.mobile || '';
 
-  const startY = 60;
+  const startY = 49;
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)

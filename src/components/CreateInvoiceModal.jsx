@@ -556,13 +556,13 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Product Specs <span className="text-red-500">*</span></label>
-                        <input
-                          type="text"
+                        <textarea
                           required
+                          rows="2"
                           value={item.specs}
                           onChange={(e) => handleItemChange(index, 'specs', e.target.value)}
                           disabled={isViewMode}
-                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors resize-y ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`}
                           placeholder="e.g. 350 GSM Duplex · 5 Color Offset"
                         />
                       </div>

@@ -9,7 +9,7 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Design() {
-  const { artworks: data, setArtworks: setData, customerMap: customers, products, isLoaded } = useData();
+  const { artworks: data, setArtworks: setData, customerMap: customers, products, leads, isLoaded } = useData();
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState('Customer Design');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,7 +26,8 @@ export default function Design() {
     designer: '',
     status: 'Active',
     delayReason: '',
-    notes: ''
+    notes: '',
+    leadId: ''
   });
   
   const [selectedStatus, setSelectedStatus] = useState(null);
@@ -47,7 +48,7 @@ export default function Design() {
     setIsModalOpen(false);
     setEditingId(null);
     setActiveTab('Customer Design');
-    setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '' });
+    setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '', leadId: '' });
   };
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export default function Design() {
 
   const openEditModal = (row) => {
     setEditingId(row.id);
+    setActiveTab(row.leadId ? 'Lead Design' : 'Customer Design');
     setFormData({
       customerId: row.customerId || '',
       designType: row.designType || '',
@@ -159,18 +161,19 @@ export default function Design() {
       delayReason: row.delayReason || '',
       notes: row.notes || '',
       uploadedAt: row.uploadedAt,
+      leadId: row.leadId || '',
     });
     setIsModalOpen(true);
   };
 
   const columns = [
-    { header: 'Customer', accessor: row => customers[row.customerId]?.name || 'UNKNOWN CUSTOMER' },
+    { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId || 'UNKNOWN CUSTOMER' },
     { header: 'Design', accessor: row => row.designType || '-' },
     { 
       header: 'Product', 
       accessor: row => {
         const p = products.find(prod => prod.id === row.productId);
-        return p ? p.name : 'UNKNOWN PRODUCT';
+        return p ? p.name : (row.productId || 'UNKNOWN PRODUCT');
       }
     },
     { header: 'Variety', accessor: row => row.variety },
@@ -281,17 +284,52 @@ export default function Design() {
             </div>
 
             <form onSubmit={handleModalSubmit} className="p-6 space-y-4 overflow-y-auto">
+              {activeTab === 'Lead Design' && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link Lead</label>
+                  <CustomSelect
+                    name="leadId"
+                    value={formData.leadId}
+                    onChange={e => {
+                      const selectedLead = leads.find(l => l.id === e.target.value);
+                      setFormData({ 
+                        ...formData, 
+                        leadId: e.target.value,
+                        customerId: selectedLead ? (selectedLead.contactPerson || '').toUpperCase() : formData.customerId
+                      });
+                    }}
+                    options={(leads || []).map(l => ({
+                      label: `${l.contactPerson || 'Unknown Contact'} ${l.company ? `(${l.company})` : ''}`.trim(),
+                      value: l.id
+                    }))}
+                    placeholder="Select a Lead to Link"
+                    required
+                  />
+                </div>
+              )}
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer</label>
-                  <CustomSelect
-                    name="customerId"
-                    value={formData.customerId}
-                    onChange={e => setFormData({ ...formData, customerId: e.target.value })}
-                    options={Object.values(customers).map(c => ({ label: c.name, value: c.id }))}
-                    placeholder="Select a customer"
-                    required
-                  />
+                  {activeTab === 'Lead Design' ? (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                      placeholder="Enter customer name"
+                      value={formData.customerId}
+                      onChange={e => setFormData({ ...formData, customerId: e.target.value.toUpperCase() })}
+                      required
+                    />
+                  ) : (
+                    <CustomSelect
+                      name="customerId"
+                      value={formData.customerId}
+                      onChange={e => setFormData({ ...formData, customerId: e.target.value })}
+                      options={Object.values(customers).map(c => ({ label: c.name, value: c.id }))}
+                      placeholder="Select a customer"
+                      required
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -314,16 +352,27 @@ export default function Design() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                  <CustomSelect
-                    name="productId"
-                    value={formData.productId}
-                    onChange={e => setFormData({ ...formData, productId: e.target.value })}
-                    options={(products || [])
-                      .filter(p => !formData.customerId || p.companyName === customers[formData.customerId]?.name)
-                      .map(p => ({ label: p.name, value: p.id }))}
-                    placeholder="Select a product"
-                    required
-                  />
+                  {activeTab === 'Lead Design' ? (
+                    <input
+                      type="text"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-accent focus:border-brand-accent text-sm"
+                      placeholder="Enter product name"
+                      value={formData.productId}
+                      onChange={e => setFormData({ ...formData, productId: e.target.value.toUpperCase() })}
+                      required
+                    />
+                  ) : (
+                    <CustomSelect
+                      name="productId"
+                      value={formData.productId}
+                      onChange={e => setFormData({ ...formData, productId: e.target.value })}
+                      options={(products || [])
+                        .filter(p => !formData.customerId || p.companyName === customers[formData.customerId]?.name)
+                        .map(p => ({ label: p.name, value: p.id }))}
+                      placeholder="Select a product"
+                      required
+                    />
+                  )}
                 </div>
 
                 <div>

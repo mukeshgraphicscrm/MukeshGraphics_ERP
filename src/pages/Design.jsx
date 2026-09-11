@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 export default function Design() {
   const { artworks: data, setArtworks: setData, customerMap: customers, products, isLoaded } = useData();
   const { currentUser } = useAuth();
+  const [activeTab, setActiveTab] = useState('Customer Design');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [users, setUsers] = useState([]);
@@ -45,6 +46,7 @@ export default function Design() {
   const handleModalClose = () => {
     setIsModalOpen(false);
     setEditingId(null);
+    setActiveTab('Customer Design');
     setFormData({ customerId: '', designType: '', productId: '', variety: '', startDate: '', deadline: '', employee: '', designer: '', status: 'Active', delayReason: '', notes: '' });
   };
 
@@ -260,6 +262,24 @@ export default function Design() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+            
+            <div className="flex border-b border-gray-100 shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveTab('Customer Design')}
+                className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors ${activeTab === 'Customer Design' ? 'border-[#1b2f63] text-[#1b2f63]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Customer Design
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab('Lead Design')}
+                className={`flex-1 py-3 text-sm font-bold text-center border-b-2 transition-colors ${activeTab === 'Lead Design' ? 'border-[#1b2f63] text-[#1b2f63]' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+              >
+                Lead Design
+              </button>
+            </div>
+
             <form onSubmit={handleModalSubmit} className="p-6 space-y-4 overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div>

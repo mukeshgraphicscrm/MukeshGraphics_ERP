@@ -65,70 +65,84 @@ export default function Customers() {
   };
 
   const columns = [
-    { header: 'Customer', accessor: row => row.name, render: row => {
-      const initials = row.name ? row.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase() : 'NA';
-      return (
-        <div className="flex items-center">
-          <div className="w-9 h-9 rounded-full bg-[#f1f5f9] text-[#1e3a8a] flex items-center justify-center font-bold text-xs mr-4 border border-[#e2e8f0]">
-            {initials}
+    {
+      header: 'Customer', accessor: row => row.name, render: row => {
+        const initials = row.name ? row.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NA';
+        return (
+          <div className="flex items-center">
+            <div className="w-9 h-9 rounded-full bg-[#f1f5f9] text-[#1e3a8a] flex items-center justify-center font-bold text-xs mr-4 border border-[#e2e8f0]">
+              {initials}
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-[13px]">{row.brandName || row.name}</div>
+              <div className="text-gray-700 text-[12px]">{row.name}</div>
+            </div>
           </div>
-          <div>
-            <div className="font-bold text-gray-900 text-[13px]">{row.name}</div>
-            <div className="text-gray-500 text-[12px]">{row.contactPerson}</div>
-          </div>
-        </div>
-      );
-    }},
-    { header: 'Mobile', accessor: row => row.mobile, render: row => {
-      let num = (row.mobile || '').replace(/\D/g, '');
-      if (num.startsWith('91') && num.length === 12) num = num.substring(2);
-      
-      const formattedMobile = num.length === 10 
-        ? `+91 ${num.substring(0, 5)} ${num.substring(5)}`
-        : (row.mobile?.startsWith('+') ? row.mobile : `+91 ${row.mobile || ''}`);
+        );
+      }
+    },
+    {
+      header: 'Mobile', accessor: row => row.mobile, render: row => {
+        let num = (row.mobile || '').replace(/\D/g, '');
+        if (num.startsWith('91') && num.length === 12) num = num.substring(2);
 
-      return (
+        const formattedMobile = num.length === 10
+          ? `+91 ${num.substring(0, 5)} ${num.substring(5)}`
+          : (row.mobile?.startsWith('+') ? row.mobile : `+91 ${row.mobile || ''}`);
+
+        return (
+          <div className="flex items-center text-gray-600 text-[13px]">
+            <Phone className="w-3.5 h-3.5 mr-2 text-gray-400" />
+            {formattedMobile}
+          </div>
+        );
+      }
+    },
+    {
+      header: 'City', accessor: row => row.city, render: row => (
         <div className="flex items-center text-gray-600 text-[13px]">
-          <Phone className="w-3.5 h-3.5 mr-2 text-gray-400" />
-          {formattedMobile}
+          <MapPin className="w-3.5 h-3.5 mr-2 text-gray-400" />
+          {row.city}
         </div>
-      );
-    }},
-    { header: 'City', accessor: row => row.city, render: row => (
-      <div className="flex items-center text-gray-600 text-[13px]">
-        <MapPin className="w-3.5 h-3.5 mr-2 text-gray-400" />
-        {row.city}
-      </div>
-    )},
-    { header: 'GST Number', accessor: row => row.gstNumber, render: row => (
-      <span className="text-gray-500 text-[11px] tracking-wider uppercase">{row.gstNumber}</span>
-    )},
-    { header: 'Outstanding', accessor: row => customerOutstandingMap[row.id] || 0, render: row => {
-      const outst = customerOutstandingMap[row.id] || 0;
-      return (
-      <span className={outst > 0 ? "text-red-500 font-medium text-[13px]" : "text-gray-900 text-[13px]"}>
-        ₹{outst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
-      </span>
-      );
-    }},
-    { header: 'Total Business', accessor: row => customerBusinessMap[row.id] || 0, render: row => (
-      <span className="font-bold text-gray-900 text-[13px]">₹{(customerBusinessMap[row.id] || 0).toLocaleString('en-IN')}</span>
-    )},
-    { header: 'Actions', accessor: row => row.id, render: row => (
-      <CustomerActions 
-        row={row}
-        onEdit={(r) => {
-          setStartInEditMode(true);
-          setCustomerToEdit(r);
-          setIsModalOpen(true);
-        }}
-        onViewHistory={(r) => {
-          setCustomerForHistory(r);
-          setHistoryModalOpen(true);
-        }}
-        onDelete={(r, e) => confirmDeleteCustomer(r, e)}
-      />
-    )},
+      )
+    },
+    {
+      header: 'GST Number', accessor: row => row.gstNumber, render: row => (
+        <span className="text-gray-500 text-[11px] tracking-wider uppercase">{row.gstNumber}</span>
+      )
+    },
+    {
+      header: 'Outstanding', accessor: row => customerOutstandingMap[row.id] || 0, render: row => {
+        const outst = customerOutstandingMap[row.id] || 0;
+        return (
+          <span className={outst > 0 ? "text-red-500 font-medium text-[13px]" : "text-gray-900 text-[13px]"}>
+            ₹{outst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          </span>
+        );
+      }
+    },
+    {
+      header: 'Total Business', accessor: row => customerBusinessMap[row.id] || 0, render: row => (
+        <span className="font-bold text-gray-900 text-[13px]">₹{(customerBusinessMap[row.id] || 0).toLocaleString('en-IN')}</span>
+      )
+    },
+    {
+      header: 'Actions', accessor: row => row.id, render: row => (
+        <CustomerActions
+          row={row}
+          onEdit={(r) => {
+            setStartInEditMode(true);
+            setCustomerToEdit(r);
+            setIsModalOpen(true);
+          }}
+          onViewHistory={(r) => {
+            setCustomerForHistory(r);
+            setHistoryModalOpen(true);
+          }}
+          onDelete={(r, e) => confirmDeleteCustomer(r, e)}
+        />
+      )
+    },
   ];
 
 
@@ -149,7 +163,7 @@ export default function Customers() {
         subtitle="Manage clients, outstanding balances and business history."
         searchPlaceholder="Search customers, GST, city..."
         actionButton={
-          <button 
+          <button
             onClick={() => {
               setStartInEditMode(false);
               setCustomerToEdit(null);
@@ -169,12 +183,12 @@ export default function Customers() {
           setIsModalOpen(true);
         }}
       />
-      <AddCustomerModal 
-        isOpen={isModalOpen} 
+      <AddCustomerModal
+        isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setCustomerToEdit(null);
-        }} 
+        }}
         onCustomerAdded={handleCustomerAdded}
         onCustomerUpdated={handleCustomerUpdated}
         customerToEdit={customerToEdit}
@@ -224,7 +238,7 @@ const CustomerActions = ({ row, onEdit, onViewHistory, onDelete }) => {
         setIsOpen(false);
       }
     };
-    
+
     const handleScroll = () => {
       if (isOpen) setIsOpen(false);
     };
@@ -250,7 +264,7 @@ const CustomerActions = ({ row, onEdit, onViewHistory, onDelete }) => {
 
   return (
     <div onClick={e => e.stopPropagation()}>
-      <button 
+      <button
         ref={buttonRef}
         onClick={toggleMenu}
         className="text-gray-400 hover:text-gray-600 p-1.5 rounded-md hover:bg-gray-100 transition-colors"
@@ -260,7 +274,7 @@ const CustomerActions = ({ row, onEdit, onViewHistory, onDelete }) => {
       </button>
 
       {isOpen && (
-        <div 
+        <div
           ref={menuRef}
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
           className="w-48 bg-white rounded-md shadow-[0_0_15px_rgba(0,0,0,0.15)] border border-gray-100 z-[9999] py-1"

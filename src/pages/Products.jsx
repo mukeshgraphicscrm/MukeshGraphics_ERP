@@ -260,7 +260,8 @@ export default function Products() {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      p.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory ? p.category === selectedCategory : true;
     return matchesSearch && matchesCategory;
   });

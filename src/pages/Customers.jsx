@@ -9,7 +9,7 @@ import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
 export default function Customers() {
-  const { customers: data, orders = [], products = [], setCustomers: setData, isLoaded } = useData();
+  const { customers: data, orders = [], invoices = [], products = [], setCustomers: setData, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [customerToEdit, setCustomerToEdit] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -28,6 +28,18 @@ export default function Customers() {
     });
     return map;
   }, [orders]);
+
+  const customerOutstandingMap = React.useMemo(() => {
+    const map = {};
+    invoices.forEach(i => {
+      if (i.customerId && i.status === 'Overdue') {
+        const invTotal = (i.amount || 0) + (i.gst || 0);
+        const advance = (i.advancePaymentAmount || 0);
+        map[i.customerId] = (map[i.customerId] || 0) + (invTotal - advance);
+      }
+    });
+    return map;
+  }, [invoices]);
 
   const confirmDeleteCustomer = (customer, e) => {
     e.stopPropagation();
@@ -91,11 +103,14 @@ export default function Customers() {
     { header: 'GST Number', accessor: row => row.gstNumber, render: row => (
       <span className="text-gray-500 text-[11px] tracking-wider uppercase">{row.gstNumber}</span>
     )},
-    { header: 'Outstanding', accessor: row => row.outstanding, render: row => (
-      <span className={row.outstanding > 0 ? "text-red-500 font-medium text-[13px]" : "text-gray-900 text-[13px]"}>
-        ₹{row.outstanding?.toLocaleString('en-IN') || 0}
+    { header: 'Outstanding', accessor: row => customerOutstandingMap[row.id] || 0, render: row => {
+      const outst = customerOutstandingMap[row.id] || 0;
+      return (
+      <span className={outst > 0 ? "text-red-500 font-medium text-[13px]" : "text-gray-900 text-[13px]"}>
+        ₹{outst.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
       </span>
-    )},
+      );
+    }},
     { header: 'Total Business', accessor: row => customerBusinessMap[row.id] || 0, render: row => (
       <span className="font-bold text-gray-900 text-[13px]">₹{(customerBusinessMap[row.id] || 0).toLocaleString('en-IN')}</span>
     )},

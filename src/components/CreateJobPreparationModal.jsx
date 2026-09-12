@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
@@ -44,9 +45,24 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     }
   }, [jobToEdit, isOpen]);
 
+  // Close on Escape key + lock body scroll
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKeyDown);
+    // Prevent background scroll
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
+  const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value.toUpperCase() }));
+  const setDirect = (field) => (e) => setFormData(prev => ({ ...prev, [field]: (e.target.value || '').toUpperCase() }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -64,7 +80,6 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       }
       onClose();
     } catch (error) {
-      // Fallback: keep UI working if API not ready
       const newJob = jobToEdit ? { id: jobToEdit.id, ...formData } : { id: Date.now().toString(), ...formData };
       if (jobToEdit) onUpdated(newJob); else onAdded(newJob);
       toast.success(jobToEdit ? 'Job updated' : 'Job created');
@@ -76,9 +91,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
   const handleDelete = async () => {
     setLoading(true);
-    try {
-      await api.delete(`/job_preparations/${jobToEdit.id}`);
-    } catch (_) {}
+    try { await api.delete(`/job_preparations/${jobToEdit.id}`); } catch (_) { }
     onDeleted(jobToEdit.id);
     toast.success('Job deleted');
     setIsDeleteModalOpen(false);
@@ -87,6 +100,21 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   };
 
   const isNoteVisible = formData.status === 'Hold' || formData.status === 'Delay';
+
+  const customerOptions = [
+    ...(customers || []).map(c => ({ label: c.name, value: c.name }))
+  ];
+
+  const supplierOptions = [
+    ...(suppliers || []).map(s => ({ label: s.name, value: s.name }))
+  ];
+
+  const statusOptions = [
+    { label: 'Active', value: 'Active' },
+    { label: 'Delay', value: 'Delay' },
+    { label: 'Done', value: 'Done' },
+    { label: 'Hold', value: 'Hold' },
+  ];
 
   return (
     <>
@@ -137,20 +165,18 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 />
               </div>
 
-              {/* Party */}
+              {/* Customer (was Party) */}
               <div>
-                <label className={LABEL_CLS}>Party</label>
-                <select
-                  required
+                <label className={LABEL_CLS}>Customer</label>
+                <CustomSelect
+                  name="party"
                   value={formData.party}
-                  onChange={set('party')}
-                  className={INPUT_CLS}
-                >
-                  <option value="">Select Party</option>
-                  {customers && customers.map(c => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
+                  onChange={(e) => setFormData(prev => ({ ...prev, party: e.target.value }))}
+                  options={customerOptions}
+                  placeholder="Select Customer..."
+                  required
+                  searchable={true}
+                />
               </div>
 
               {/* Job No. */}
@@ -205,40 +231,35 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               {/* Supplier */}
               <div>
                 <label className={LABEL_CLS}>Supplier</label>
-                <select
+                <CustomSelect
+                  name="supplier"
                   value={formData.supplier}
-                  onChange={set('supplier')}
-                  className={INPUT_CLS}
-                >
-                  <option value="">Select Supplier</option>
-                  {suppliers && suppliers.map(s => (
-                    <option key={s.id} value={s.name}>{s.name}</option>
-                  ))}
-                </select>
+                  onChange={(e) => setFormData(prev => ({ ...prev, supplier: e.target.value }))}
+                  options={supplierOptions}
+                  placeholder="Select Supplier..."
+                  searchable={true}
+                />
               </div>
 
               {/* Status */}
               <div>
                 <label className={LABEL_CLS}>Status</label>
-                <select
+                <CustomSelect
+                  name="status"
                   value={formData.status}
-                  onChange={set('status')}
-                  className={INPUT_CLS}
-                >
-                  <option value="Active">Active</option>
-                  <option value="Delay">Delay</option>
-                  <option value="Done">Done</option>
-                  <option value="Hold">Hold</option>
-                </select>
+                  onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                  options={statusOptions}
+                  placeholder="Select Status..."
+                />
               </div>
 
-              {/* Note — always visible but highlighted when Hold/Delay */}
+              {/* Note */}
               <div className="md:col-span-2">
                 <label className={LABEL_CLS}>
                   Status Note / Remarks
                   {isNoteVisible && (
                     <span className="ml-2 text-[11px] font-normal text-amber-600 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                      Required for {formData.status}
+                      Reason for {formData.status}
                     </span>
                   )}
                 </label>

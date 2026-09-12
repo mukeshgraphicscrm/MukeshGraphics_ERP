@@ -17,6 +17,7 @@ const navItems = [
   { name: 'Orders', path: '/orders', icon: ShoppingCart },
   { name: 'Design', path: '/design', icon: PenTool },
   { name: 'Production', path: '/production', icon: Factory },
+  { name: 'Job Preparation', path: '/job-preparation', icon: FilePlus },
   { name: 'Dispatch', path: '/dispatch', icon: Truck },
   {
     name: 'Other',
@@ -34,7 +35,6 @@ const navItems = [
   { name: 'Daily Work', path: '/daily-work', icon: ClipboardList },
   { name: 'Customize Packaging Request', path: '/customize-packaging-request', icon: Box },
   { name: 'Job Inquiry', path: '/job-inquiry', icon: Briefcase },
-  { name: 'Job Preparation', path: '/job-preparation', icon: FilePlus },
 ];
 
 import { useAuth } from '../contexts/AuthContext';

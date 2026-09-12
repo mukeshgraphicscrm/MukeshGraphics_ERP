@@ -189,7 +189,34 @@ export default function Dashboard() {
   };
 
   const myOrders = realtimeOrders;
-  const myJobs = realtimeJobs;
+
+  const getJobStatus = (job) => {
+    let derivedStatus = job.status || 'On Schedule';
+    if (job.deadline) {
+      const deadlineDate = new Date(job.deadline);
+      deadlineDate.setHours(0, 0, 0, 0);
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0);
+      const diffTime = deadlineDate - todayDate;
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+      if (diffDays < 0 && Number(job.progress) < 100) {
+        derivedStatus = 'Delayed';
+      } else if (diffDays >= 0 && diffDays <= 3 && Number(job.progress) < 90) {
+        derivedStatus = 'At Risk';
+      } else {
+        derivedStatus = 'On Schedule';
+      }
+    }
+    return derivedStatus;
+  };
+
+  const myJobs = useMemo(() => {
+    return realtimeJobs.filter(job => {
+      if (job.stage === 'Dispatched') return false;
+      const status = getJobStatus(job);
+      return status === 'At Risk' || status === 'Delayed';
+    }).map(job => ({ ...job, displayStatus: getJobStatus(job) }));
+  }, [realtimeJobs]);
   const myLeads = realtimeLeads;
 
   const pendingTasks = tasks.filter(t => t.status !== 'Completed');
@@ -628,8 +655,13 @@ export default function Dashboard() {
                 ) : myJobs.map(job => (
                   <div key={job.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-green-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/production'}>
                     <div>
-                      <div className="font-bold text-gray-900 text-sm">{job.jobId}</div>
-                      <div className="text-xs font-medium text-gray-500 mt-1">{productMap[job.productId]?.name || 'Unknown Product'}</div>
+                      <div className="font-bold text-gray-900 text-sm flex items-center gap-2">
+                        {job.jobCardNo || job.jobId || 'N/A'}
+                        <span className={`text-[9px] px-1.5 py-0.5 rounded-full uppercase font-bold ${job.displayStatus === 'Delayed' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                          {job.displayStatus}
+                        </span>
+                      </div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{job.productName || productMap[job.productId]?.name || 'Unknown Product'}</div>
                     </div>
                     <div className="text-right flex flex-col items-end">
                       <div className={`text-xs font-bold flex items-center gap-1 ${isOverdue(job.targetDate) ? 'text-red-600' : isApproachingDeadline(job.targetDate) ? 'text-orange-500' : 'text-gray-900'}`}>

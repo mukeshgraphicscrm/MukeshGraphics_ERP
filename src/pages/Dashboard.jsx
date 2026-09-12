@@ -319,7 +319,7 @@ export default function Dashboard() {
         
         {/* Top section: Goals & Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 order-1 lg:order-2">
             <div className="bg-gradient-to-br from-[#1b2f63] to-[#12224d] rounded-xl shadow-lg border border-[#1b2f63] p-6 text-white flex flex-col relative overflow-hidden h-full min-h-[280px]">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Target className="w-24 h-24" />
@@ -375,7 +375,7 @@ export default function Dashboard() {
             </div>
           </div>
           
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 order-2 lg:order-1">
             <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
               <div>
                 <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Tasks</p>

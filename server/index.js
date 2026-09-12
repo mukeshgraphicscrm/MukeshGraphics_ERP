@@ -70,7 +70,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     const uuid = uuidv4();
 
     await file.save(req.file.buffer, {
-      metadata: { 
+      metadata: {
         contentType: req.file.mimetype,
         metadata: {
           firebaseStorageDownloadTokens: uuid

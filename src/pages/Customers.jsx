@@ -32,7 +32,7 @@ export default function Customers() {
   const customerOutstandingMap = React.useMemo(() => {
     const map = {};
     invoices.forEach(i => {
-      if (i.customerId && i.status === 'Overdue') {
+      if (i.customerId && (i.status === 'Overdue' || i.status === 'Pending')) {
         const invTotal = (i.amount || 0) + (i.gst || 0);
         const advance = (i.advancePaymentAmount || 0);
         map[i.customerId] = (map[i.customerId] || 0) + (invTotal - advance);

@@ -76,7 +76,7 @@ export default function Accounts() {
   // Calculate customer ledger (group by customer, sum outstanding)
   const outstandingMap = {};
   const totalBusinessMap = {};
-  
+
   invoices.forEach(i => {
     const custId = i.customerId;
     if (!custId) return;
@@ -249,7 +249,7 @@ const InteractiveStatusBadge = ({ row, onStatusChange }) => {
   const menuRef = useRef(null);
   const badgeRef = useRef(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -284,19 +284,19 @@ const InteractiveStatusBadge = ({ row, onStatusChange }) => {
 
   return (
     <div onClick={e => e.stopPropagation()}>
-      <div 
+      <div
         ref={badgeRef}
-        onClick={toggleMenu} 
+        onClick={toggleMenu}
         className="cursor-pointer hover:opacity-80 transition-opacity inline-flex items-center gap-1"
         title="Click to change status"
       >
         <StatusBadge status={row.status} />
       </div>
-      
+
       {isOpen && (
-        <div 
+        <div
           ref={menuRef}
-          className="w-32 bg-white rounded-md shadow-lg border border-gray-100 z-[9999] py-1" 
+          className="w-32 bg-white rounded-md shadow-lg border border-gray-100 z-[9999] py-1"
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
         >
           {['Pending', 'Paid', 'Overdue'].map(status => (
@@ -384,7 +384,7 @@ const AccountActions = ({ row, onEdit, onView, onDownload }) => {
             <Eye className="w-4 h-4 mr-2" /> View
           </button>
           <button
-            onClick={() => { setIsOpen(false); if(onDownload) onDownload(row); }}
+            onClick={() => { setIsOpen(false); if (onDownload) onDownload(row); }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
           >
             <Download className="w-4 h-4 mr-2" /> Download PDF

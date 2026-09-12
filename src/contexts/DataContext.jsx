@@ -7,27 +7,27 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore';
 const playNotificationSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    
+
     const osc = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    
+
     osc.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    
+
     // Bubble (bloop) sound
     osc.type = 'sine';
     const now = audioCtx.currentTime;
     const duration = 0.15;
-    
+
     // Pitch bend upwards for a bubble effect
     osc.frequency.setValueAtTime(250, now);
     osc.frequency.exponentialRampToValueAtTime(800, now + duration);
-    
+
     // Quick volume envelope
     gainNode.gain.setValueAtTime(0, now);
     gainNode.gain.linearRampToValueAtTime(4.0, now + 0.02); // Increased peak volume
     gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration);
-    
+
     osc.start(now);
     osc.stop(now + duration);
   } catch (e) {
@@ -111,7 +111,7 @@ export function DataProvider({ children }) {
       if (grnRes.status === 'fulfilled') setGrnData(Array.isArray(grnRes.value.data) ? grnRes.value.data : []);
       if (supRes.status === 'fulfilled') setSuppliers(Array.isArray(supRes.value.data) ? supRes.value.data : []);
       if (artRes.status === 'fulfilled') setArtworks(Array.isArray(artRes.value.data) ? artRes.value.data : []);
-      
+
       if (notifRes.status === 'fulfilled') {
         const allNotifs = Array.isArray(notifRes.value.data) ? notifRes.value.data : [];
         setNotifications(allNotifs);
@@ -121,7 +121,7 @@ export function DataProvider({ children }) {
           const res = await api.get('/notifications', { params: { employee: currentUser?.profile?.name } });
           const allNotifs = Array.isArray(res.data) ? res.data : [];
           setNotifications(allNotifs);
-        } catch(e) {}
+        } catch (e) { }
       }
 
       if (dashRes.status === 'fulfilled') setDashboardData(dashRes.value.data);
@@ -182,7 +182,7 @@ export function DataProvider({ children }) {
       setNotifications(prev => {
         const newUnread = allNotifs.filter(n => !n.read);
         const oldUnread = prev.filter(n => !n.read);
-        
+
         if (newUnread.length > oldUnread.length) {
           playNotificationSound();
         }

@@ -71,7 +71,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDeleteModalOpen]);
 
   if (!isOpen) return null;
 

@@ -48,7 +48,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   // Close on Escape key + lock body scroll
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e) => { if (e.key === 'Escape') onClose(); };
+    const handleKeyDown = (e) => { if (e.key === 'Escape' && !isDeleteModalOpen) onClose(); };
     document.addEventListener('keydown', handleKeyDown);
     // Prevent background scroll
     const prev = document.body.style.overflow;
@@ -57,7 +57,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = prev;
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isDeleteModalOpen]);
 
   if (!isOpen) return null;
 

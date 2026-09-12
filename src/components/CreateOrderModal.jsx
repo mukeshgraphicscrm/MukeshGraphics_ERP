@@ -276,14 +276,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
       
       const userDesignation = currentUser?.profile?.designation || 'Administrator';
       const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
-      const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+      const isAdmin = userDesignation === 'Administrator';
 
       if (orderToEdit) {
         const res = await api.put(`/orders/${orderToEdit.id}`, payload);
         if (onOrderUpdated) onOrderUpdated(res.data);
         toast.success('Order updated successfully!');
 
-        if (isAdminOrManager && formData.employee && formData.employee !== orderToEdit.employee && formData.employee !== userName) {
+        if (isAdmin && formData.employee && formData.employee !== orderToEdit.employee && formData.employee !== userName) {
           try {
             await api.post('/notifications', {
               title: 'Order Re-assigned',
@@ -301,7 +301,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         if (onOrderAdded) onOrderAdded(res.data);
         toast.success('Order created successfully!');
 
-        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+        if (isAdmin && formData.employee && formData.employee !== userName) {
           try {
             await api.post('/notifications', {
               title: 'New Order Assigned',

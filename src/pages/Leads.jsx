@@ -31,7 +31,7 @@ export default function Leads() {
     return params.get('view') === 'my' ? 'my' : 'all';
   });
 
-  const showToggle = currentUser?.profile?.designation === 'Employee' || currentUser?.profile?.designation === 'Manager';
+  const showToggle = currentUser?.profile?.designation === 'Employee';
 
   const [expandedStages, setExpandedStages] = useState(() => {
     const params = new URLSearchParams(window.location.search);

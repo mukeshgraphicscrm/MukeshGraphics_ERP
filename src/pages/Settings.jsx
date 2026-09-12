@@ -290,8 +290,7 @@ export default function Settings() {
                   value={formData.designation}
                   onChange={handleChange}
                   options={[
-                    { label: 'Employee', value: 'Employee' },
-                    { label: 'Manager', value: 'Manager' }
+                    { label: 'Employee', value: 'Employee' }
                   ]}
                   placeholder="Select designation"
                 />
@@ -466,11 +465,7 @@ export default function Settings() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-4">
-                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${
-                          user.designation === 'Manager' 
-                            ? 'bg-purple-100 text-purple-700 border border-purple-200' 
-                            : 'bg-blue-100 text-blue-700 border border-blue-200'
-                        }`}>
+                        <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider bg-blue-100 text-blue-700 border border-blue-200`}>
                           {user.designation}
                         </span>
                         <div className="flex items-center space-x-1 pl-2">

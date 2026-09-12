@@ -483,9 +483,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         
         const userDesignation = currentUser?.profile?.designation || 'Administrator';
         const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
-        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        const isAdmin = userDesignation === 'Administrator';
         
-        if (isAdminOrManager && formData.employee && formData.employee !== quotationToEdit.employee && formData.employee !== userName) {
+        if (isAdmin && formData.employee && formData.employee !== quotationToEdit.employee && formData.employee !== userName) {
           try {
             await api.post('/notifications', {
               title: 'Quotation Re-assigned',
@@ -506,9 +506,9 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
         
         const userDesignation = currentUser?.profile?.designation || 'Administrator';
         const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
-        const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+        const isAdmin = userDesignation === 'Administrator';
         
-        if (isAdminOrManager && formData.employee && formData.employee !== userName) {
+        if (isAdmin && formData.employee && formData.employee !== userName) {
           try {
             await api.post('/notifications', {
               title: 'New Quotation Assigned',

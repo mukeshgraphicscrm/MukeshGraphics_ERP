@@ -158,9 +158,9 @@ export default function EditLeadModal({ isOpen, onClose, onLeadUpdated, onLeadDe
       // Notify assigned employee if changed
       const userDesignation = currentUser?.profile?.designation || 'Administrator';
       const userName = currentUser?.displayName || currentUser?.profile?.name || 'BHUPAT BHUT';
-      const isAdminOrManager = userDesignation === 'Administrator' || userDesignation === 'Manager';
+      const isAdmin = userDesignation === 'Administrator';
       
-      if (isAdminOrManager && formData.employee && formData.employee !== lead.employee && formData.employee !== userName) {
+      if (isAdmin && formData.employee && formData.employee !== lead.employee && formData.employee !== userName) {
         try {
           await api.post('/notifications', {
             title: 'Lead Re-assigned',

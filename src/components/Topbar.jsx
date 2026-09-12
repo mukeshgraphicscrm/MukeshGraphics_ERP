@@ -71,7 +71,7 @@ export default function Topbar({ onMenuClick }) {
         {/* Right Side */}
         <div className="flex items-center space-x-4 md:space-x-6">
           {/* Notifications */}
-          {(designation === 'Employee' || designation === 'Manager') && (
+          {designation === 'Employee' && (
             <div className="relative" ref={notifRef}>
               <button
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}

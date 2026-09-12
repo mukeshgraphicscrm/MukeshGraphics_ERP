@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download } from 'lucide-react';
+import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download, X } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -13,21 +13,63 @@ export default function Accounts() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
   const [modalMode, setModalMode] = useState('create');
-  const totalOutstanding = invoices
-    .filter(i => i.status !== 'Paid')
-    .reduce((sum, i) => sum + (i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0), 0);
+  
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
 
-  const outstandingCustomersCount = new Set(
-    invoices.filter(i => i.status !== 'Paid' && ((i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0)) > 0).map(i => i.customerId)
-  ).size;
+  // Filter invoices based on date range
+  const filteredInvoices = invoices.filter(i => {
+    if (!fromDate && !toDate) return true;
+    const invDateStr = i.date || i.createdAt || i.dueDate;
+    if (!invDateStr) return true;
+    
+    const invDate = new Date(invDateStr);
+    invDate.setHours(0,0,0,0);
+    
+    if (fromDate) {
+      const fd = new Date(fromDate);
+      fd.setHours(0,0,0,0);
+      if (invDate < fd) return false;
+    }
+    if (toDate) {
+      const td = new Date(toDate);
+      td.setHours(0,0,0,0);
+      if (invDate > td) return false;
+    }
+    return true;
+  });
 
-  const overduePayments = invoices
+  // Calculate customer ledger (group by customer, sum outstanding)
+  const outstandingMap = {};
+  const totalBusinessMap = {};
+
+  filteredInvoices.forEach(i => {
+    const custId = i.customerId;
+    if (!custId) return;
+
+    const invTotal = (i.amount || 0) + (i.gst || 0);
+    const advance = (i.advancePaymentAmount || 0);
+
+    if (!totalBusinessMap[custId]) totalBusinessMap[custId] = 0;
+    totalBusinessMap[custId] += invTotal;
+
+    if (i.status !== 'Paid') {
+      if (!outstandingMap[custId]) outstandingMap[custId] = 0;
+      outstandingMap[custId] += (invTotal - advance);
+    }
+  });
+
+  const totalOutstanding = Object.values(outstandingMap).reduce((sum, val) => sum + val, 0);
+  const outstandingCustomersCount = Object.values(outstandingMap).filter(val => val > 0).length;
+
+  const overduePayments = filteredInvoices
     .filter(i => i.status === 'Overdue')
     .reduce((sum, i) => sum + (i.amount || 0) + (i.gst || 0) - (i.advancePaymentAmount || 0), 0);
 
-  const overdueInvoicesCount = invoices.filter(i => i.status === 'Overdue').length;
+  const overdueInvoicesCount = filteredInvoices.filter(i => i.status === 'Overdue').length;
 
-  const collectionsThisMonth = invoices.reduce((sum, i) => {
+  const collectionsThisMonth = filteredInvoices.reduce((sum, i) => {
     if (i.status === 'Paid') {
       return sum + (i.amount || 0) + (i.gst || 0);
     } else {
@@ -73,25 +115,8 @@ export default function Accounts() {
     },
   ];
 
-  // Calculate customer ledger (group by customer, sum outstanding)
-  const outstandingMap = {};
-  const totalBusinessMap = {};
 
-  invoices.forEach(i => {
-    const custId = i.customerId;
-    if (!custId) return;
 
-    const invTotal = (i.amount || 0) + (i.gst || 0);
-    const advance = (i.advancePaymentAmount || 0);
-
-    if (!totalBusinessMap[custId]) totalBusinessMap[custId] = 0;
-    totalBusinessMap[custId] += invTotal;
-
-    if (i.status !== 'Paid') {
-      if (!outstandingMap[custId]) outstandingMap[custId] = 0;
-      outstandingMap[custId] += (invTotal - advance);
-    }
-  });
 
   const ledgerEntries = Object.keys(totalBusinessMap).map(custId => {
     const cust = customers[custId];
@@ -130,17 +155,52 @@ export default function Accounts() {
           <h2 className="text-2xl font-bold text-gray-900">Accounts & Payments</h2>
           <p className="text-sm text-gray-500 mt-1">Invoices, GST, collections and customer ledgers.</p>
         </div>
-        <button
-          onClick={() => {
-            setInvoiceToEdit(null);
-            setModalMode('create');
-            setIsModalOpen(true);
-          }}
-          className="btn-add"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          <span>Final Estimate</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm text-sm">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 font-medium">From:</span>
+              <input 
+                type="date" 
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="border-none bg-transparent focus:ring-0 p-0 text-gray-700 font-medium w-28 cursor-pointer"
+              />
+            </div>
+            <div className="h-4 w-px bg-gray-300"></div>
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 font-medium">To:</span>
+              <input 
+                type="date" 
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="border-none bg-transparent focus:ring-0 p-0 text-gray-700 font-medium w-28 cursor-pointer"
+              />
+            </div>
+            {(fromDate || toDate) && (
+              <>
+                <div className="h-4 w-px bg-gray-300"></div>
+                <button 
+                  onClick={() => { setFromDate(''); setToDate(''); }}
+                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                  title="Clear Dates"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => {
+              setInvoiceToEdit(null);
+              setModalMode('create');
+              setIsModalOpen(true);
+            }}
+            className="btn-add whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            <span>Final Estimate</span>
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -192,7 +252,7 @@ export default function Accounts() {
             title="Invoices"
             searchPlaceholder="Search invoices..."
             columns={columns}
-            data={invoices}
+            data={filteredInvoices}
           />
         </div>
 

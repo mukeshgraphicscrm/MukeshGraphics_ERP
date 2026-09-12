@@ -80,6 +80,56 @@ export default function Orders() {
         return <span className="text-gray-600">{row.quantity.toLocaleString('en-IN')}</span>;
       }
     },
+    {
+      header: 'Variety',
+      accessor: row => {
+        if (Array.isArray(row.productId) && row.varieties) {
+          return row.productId.map(id => {
+            const vars = row.varieties[id] || [];
+            return vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+          }).join(' | ');
+        }
+        if (row.varieties && !Array.isArray(row.productId)) {
+           const vars = row.varieties[row.productId] || [];
+           return vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+        }
+        return '-';
+      },
+      exportAccessor: row => {
+        if (Array.isArray(row.productId) && row.varieties) {
+          return row.productId.map(id => {
+            const vars = row.varieties[id] || [];
+            return vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+          });
+        }
+        if (row.varieties && !Array.isArray(row.productId)) {
+           const vars = row.varieties[row.productId] || [];
+           return vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+        }
+        return '-';
+      },
+      render: row => {
+        if (Array.isArray(row.productId) && row.varieties) {
+          return (
+            <div className="flex flex-col gap-1">
+              {row.productId.map(id => {
+                const vars = row.varieties[id] || [];
+                const display = vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+                return (
+                  <div key={id} className="whitespace-nowrap text-sm text-gray-600">{display}</div>
+                );
+              })}
+            </div>
+          );
+        }
+        if (row.varieties && !Array.isArray(row.productId)) {
+           const vars = row.varieties[row.productId] || [];
+           const display = vars.filter(v => v.name).map(v => `${v.name} (${v.quantity})`).join(', ') || '-';
+           return <span className="text-gray-600 text-sm">{display}</span>;
+        }
+        return <span className="text-gray-600 text-sm">-</span>;
+      }
+    },
     { 
       header: 'Amount', 
       accessor: row => `₹${row.amount.toLocaleString('en-IN')}`,

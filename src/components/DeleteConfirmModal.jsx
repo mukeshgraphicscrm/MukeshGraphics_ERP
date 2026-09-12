@@ -30,9 +30,9 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-md transform transition-all flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900 flex items-center text-red-600">
-            <AlertTriangle className="w-5 h-5 mr-2" />
+        <div className="flex justify-between items-center px-6 py-4 shrink-0">
+          <h2 className="text-lg font-bold text-gray-900 flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2 text-red-600" />
             {title || 'Confirm Delete'}
           </h2>
           <button onClick={onClose} disabled={isDeleting} className="text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50">

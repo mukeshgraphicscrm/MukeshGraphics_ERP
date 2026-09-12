@@ -285,13 +285,13 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
       </div>
     </div>
     
-    {supplierToEdit && (
+    {(supplierToEdit || supplierToDelete) && (
       <DeleteConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDelete}
         title="Delete Supplier"
-        message="Are you sure you want to delete this supplier? This action cannot be undone and it will be permanently removed from the system."
+        message="Are you sure you want to delete this supplier? This action cannot be undone."
         isDeleting={loading}
       />
     )}

@@ -28,6 +28,7 @@ import JobInquiry from './pages/JobInquiry';
 import CustomPackagingRequest from './pages/CustomPackagingRequest';
 import Tasks from './pages/Tasks';
 import DailyWork from './pages/DailyWork';
+import JobPreparation from './pages/JobPreparation';
 
 function App() {
   return (
@@ -58,6 +59,7 @@ function App() {
                 <Route path="job-inquiry" element={<JobInquiry />} />
                 <Route path="customize-packaging-request" element={<CustomPackagingRequest />} />
                 <Route path="tasks" element={<Tasks />} />
+                <Route path="job-preparation" element={<JobPreparation />} />
               </Route>
             </Route>
           </Routes>

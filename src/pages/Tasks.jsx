@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
-import { Plus, Search, Filter, Edit, Trash2, CheckSquare, Clock, CheckCircle } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Plus, Search, Filter, Edit, Trash2, CheckSquare, Clock, CheckCircle, Mic, Square } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
@@ -33,6 +34,9 @@ export default function Tasks() {
   });
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
 
   useEffect(() => {
     setLoading(true);
@@ -105,7 +109,40 @@ export default function Tasks() {
       });
       setEditingId(null);
     }
+    setAudioBlob(null);
     setIsModalOpen(true);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Error accessing microphone:', err);
+      toast.error('Could not access microphone');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -113,9 +150,17 @@ export default function Tasks() {
     setSaving(true);
     
     try {
+      let audioUrl = null;
+      if (audioBlob) {
+        const audioRef = ref(storage, `task-audio/${Date.now()}.webm`);
+        await uploadBytes(audioRef, audioBlob);
+        audioUrl = await getDownloadURL(audioRef);
+      }
+
       const payload = {
         ...formData,
-        assignedBy: currentUser?.profile?.name || 'Admin'
+        assignedBy: currentUser?.profile?.name || 'Admin',
+        ...(audioUrl && { audioUrl })
       };
 
       if (editingId) {
@@ -288,6 +333,12 @@ export default function Tasks() {
                 {task.description}
               </p>
               
+              {task.audioUrl && (
+                <div className="mb-3">
+                  <audio src={task.audioUrl} controls className="w-full h-8" />
+                </div>
+              )}
+              
               <div className="space-y-2 mt-auto pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Priority:</span>
@@ -363,7 +414,22 @@ export default function Tasks() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  {!audioBlob && (
+                    <button 
+                      type="button" 
+                      onClick={isRecording ? stopRecording : startRecording}
+                      className={`text-xs flex items-center gap-1 font-medium transition-colors ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-blue-500 hover:text-blue-600'}`}
+                    >
+                      {isRecording ? (
+                        <><Square className="w-3.5 h-3.5 fill-current" /> Stop Recording</>
+                      ) : (
+                        <><Mic className="w-3.5 h-3.5" /> Add Voice Note</>
+                      )}
+                    </button>
+                  )}
+                </div>
                 <textarea
                   rows={3}
                   value={formData.description}
@@ -371,6 +437,23 @@ export default function Tasks() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                   placeholder="PROVIDE TASK DETAILS..."
                 />
+                {audioBlob && (
+                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                        <Mic className="w-4 h-4" />
+                      </div>
+                      <audio src={URL.createObjectURL(audioBlob)} controls className="h-8 max-w-[200px]" />
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => setAudioBlob(null)}
+                      className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">

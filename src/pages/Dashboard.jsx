@@ -479,7 +479,7 @@ export default function Dashboard() {
             {hasAccess('Dispatch') && (
               <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-cyan-300 transition-colors">
                 <div>
-                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Dispatches</p>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Dispatches</p>
                   <p className="text-4xl font-bold text-gray-900">{pendingDispatches.length}</p>
                 </div>
                 <div className="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center shadow-inner border border-cyan-100">
@@ -739,7 +739,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
               <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
                 <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Truck className="w-5 h-5 text-cyan-600" /> Pending Dispatches
+                  <Truck className="w-5 h-5 text-cyan-600" /> Dispatches
                 </h2>
               </div>
               <div className="p-4 flex-1 overflow-y-auto space-y-3">

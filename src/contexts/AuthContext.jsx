@@ -7,7 +7,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from 'firebase/auth';
-import { auth } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 import api from '../lib/api';
@@ -38,7 +39,9 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let profileUnsubscribe = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser({
           uid: user.uid,
@@ -48,20 +51,27 @@ export function AuthProvider({ children }) {
         });
         setLoading(false);
 
-        try {
-          const res = await api.get(`/users/${user.uid}`);
-          setCurrentUser(prev => prev ? {
-            ...prev,
-            profile: res.data
-          } : null);
-          api.defaults.headers.common['x-user-name'] = res.data?.name || user.displayName || 'BHUPAT BHUT';
-          api.defaults.headers.common['x-user-role'] = res.data?.designation || 'Administrator';
-        } catch (error) {
-          console.error('Failed to fetch user profile data:', error);
+        // Real-time listener for profile changes
+        profileUnsubscribe = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            const profileData = { id: docSnap.id, ...docSnap.data() };
+            setCurrentUser(prev => prev ? {
+              ...prev,
+              profile: profileData
+            } : null);
+            api.defaults.headers.common['x-user-name'] = profileData.name || user.displayName || 'BHUPAT BHUT';
+            api.defaults.headers.common['x-user-role'] = profileData.designation || 'Administrator';
+          }
+        }, (error) => {
+          console.error('Failed to listen to user profile data:', error);
           api.defaults.headers.common['x-user-name'] = user.displayName || 'BHUPAT BHUT';
           api.defaults.headers.common['x-user-role'] = 'Administrator';
-        }
+        });
       } else {
+        if (profileUnsubscribe) {
+          profileUnsubscribe();
+          profileUnsubscribe = null;
+        }
         setCurrentUser(null);
         setLoading(false);
         api.defaults.headers.common['x-user-name'] = 'BHUPAT BHUT';
@@ -69,7 +79,12 @@ export function AuthProvider({ children }) {
       }
     });
 
-    return unsubscribe;
+    return () => {
+      authUnsubscribe();
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+      }
+    };
   }, []);
 
   const value = {

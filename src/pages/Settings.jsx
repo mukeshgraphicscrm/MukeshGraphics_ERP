@@ -9,16 +9,16 @@ import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
 const AVAILABLE_MODULES = [
-  'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations', 
-  'Orders', 'Design', 'Production', 'Dispatch', 'Inventory', 
-  'Purchase', 'Accounts', 'Job Data', 'Tasks', 'Daily Work', 
+  'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations',
+  'Orders', 'Design', 'Production', 'Dispatch', 'Inventory',
+  'Purchase', 'Accounts', 'Job Data', 'Tasks', 'Daily Work',
   'Customize Packaging Request', 'Job Inquiry'
 ];
 
 export default function Settings() {
   const { currentUser, changePassword } = useAuth();
   const { settings, setSettings } = useData();
-  
+
   // Protect the route
   if (currentUser?.profile?.designation === 'Employee') {
     return <Navigate to="/" replace />;
@@ -39,7 +39,7 @@ export default function Settings() {
     salesTarget: ''
   });
   const [goalLoading, setGoalLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     mobile: '',
@@ -76,7 +76,7 @@ export default function Settings() {
 
   useEffect(() => {
     fetchUsers();
-    
+
     // Load existing goal settings
     if (settings && settings.length > 0) {
       const goals = settings.find(s => s.type === 'goals');
@@ -173,7 +173,7 @@ export default function Settings() {
       const existingGoals = settings.find(s => s.type === 'goals');
       const payload = { type: 'goals', ...goalSettings };
       let res;
-      
+
       if (existingGoals && existingGoals.id) {
         res = await api.put(`/settings/${existingGoals.id}`, payload);
         setSettings(prev => prev.map(s => s.id === res.data.id ? res.data : s));
@@ -181,7 +181,7 @@ export default function Settings() {
         res = await api.post('/settings', payload);
         setSettings(prev => [...prev, res.data]);
       }
-      
+
       toast.success('Goals updated successfully');
     } catch (err) {
       console.error('Error saving goals:', err);
@@ -206,7 +206,7 @@ export default function Settings() {
               {userToEdit ? <Edit className="w-5 h-5 text-[#1b2f63]" /> : <UserPlus className="w-5 h-5 text-[#1b2f63]" />}
               <h3 className="font-bold text-gray-900">{userToEdit ? 'Edit User' : 'Add New User'}</h3>
               {userToEdit && (
-                <button 
+                <button
                   onClick={() => {
                     setUserToEdit(null);
                     setFormData({ name: '', mobile: '', email: '', password: '', designation: 'Employee', accessibleModules: [] });
@@ -230,7 +230,7 @@ export default function Settings() {
                   placeholder="e.g. John Doe"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mobile Number *</label>
                 <input
@@ -476,7 +476,7 @@ export default function Settings() {
                 {users.length} Users
               </span>
             </div>
-            
+
             <div className="flex-1 overflow-auto">
               {users.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">

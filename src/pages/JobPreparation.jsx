@@ -153,10 +153,10 @@ export default function JobPreparation() {
                 )}
                 <button
                   onClick={e => { e.stopPropagation(); setIsSupplierModalOpen(true); }}
-                  className="flex items-center px-3 py-2 text-[13px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-all"
+                  className="btn-add"
                 >
-                  <Plus className="w-4 h-4 mr-1.5 text-gray-500" strokeWidth={3} />
-                  <span className="tracking-wide">Add Supplier</span>
+                  <Plus className="w-4 h-4 mr-1.5" strokeWidth={3} />
+                  <span className="font-bold tracking-wide">Add Supplier</span>
                 </button>
                 <button
                   onClick={e => { e.stopPropagation(); setJobToEdit(null); setIsModalOpen(true); }}

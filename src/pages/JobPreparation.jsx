@@ -3,12 +3,14 @@ import { Plus, Activity, Clock, CheckCircle2, PauseCircle } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreateJobPreparationModal from '../components/CreateJobPreparationModal';
+import AddSupplierModal from '../components/AddSupplierModal';
 import { useData } from '../contexts/DataContext';
 import { cn } from '../lib/utils';
 
 export default function JobPreparation() {
   const { jobPreparations, setJobPreparations: setData, artworks, customerMap, isLoaded } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [jobToEdit, setJobToEdit] = useState(null);
   const [statusFilter, setStatusFilter] = useState(null);
 
@@ -150,6 +152,13 @@ export default function JobPreparation() {
                   </button>
                 )}
                 <button
+                  onClick={e => { e.stopPropagation(); setIsSupplierModalOpen(true); }}
+                  className="flex items-center px-3 py-2 text-[13px] font-bold text-gray-700 bg-white border border-gray-200 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-300 hover:text-gray-900 transition-all"
+                >
+                  <Plus className="w-4 h-4 mr-1.5 text-gray-500" strokeWidth={3} />
+                  <span className="tracking-wide">Add Supplier</span>
+                </button>
+                <button
                   onClick={e => { e.stopPropagation(); setJobToEdit(null); setIsModalOpen(true); }}
                   className="btn-add"
                 >
@@ -169,6 +178,11 @@ export default function JobPreparation() {
         onUpdated={handleJobUpdated}
         onDeleted={handleJobDeleted}
         jobToEdit={jobToEdit}
+      />
+
+      <AddSupplierModal
+        isOpen={isSupplierModalOpen}
+        onClose={() => setIsSupplierModalOpen(false)}
       />
     </>
   );

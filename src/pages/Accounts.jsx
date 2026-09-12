@@ -10,7 +10,7 @@ import { useData } from '../contexts/DataContext';
 import { generateInvoicePDF } from '../lib/pdfGenerator';
 
 export default function Accounts() {
-  const { invoices, setInvoices, customerMap: customers, products, isLoaded } = useData();
+  const { invoices, setInvoices, customerMap: customers, products, isLoaded, payments, setPayments } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [invoiceToEdit, setInvoiceToEdit] = useState(null);
   const [modalMode, setModalMode] = useState('create');
@@ -182,6 +182,24 @@ export default function Accounts() {
     setIsPaymentModalOpen(true);
   };
 
+  const handlePaymentAmountChange = (e) => {
+    const val = e.target.value.replace(/[^0-9.]/g, '');
+    const parts = val.split('.');
+    if (parts.length > 2) return;
+    setPaymentAmount(val);
+  };
+
+  const formatAmountForDisplay = (val) => {
+    if (!val) return '';
+    const parts = val.toString().split('.');
+    const integerPart = parts[0];
+    const formattedInteger = integerPart ? parseInt(integerPart, 10).toLocaleString('en-IN') : '';
+    if (parts.length > 1) {
+      return `${formattedInteger}.${parts[1]}`;
+    }
+    return formattedInteger;
+  };
+
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     if (!selectedLedgerCustomer || !paymentAmount) return;
@@ -209,9 +227,24 @@ export default function Accounts() {
 
       // 2. Sort from oldest to newest (by dueDate, then createdAt)
       unpaidInvoices.sort((a, b) => {
-        const dateA = new Date(a.dueDate || a.createdAt || a.date);
-        const dateB = new Date(b.dueDate || b.createdAt || b.date);
-        return dateA - dateB;
+        const dateA = new Date(a.dueDate || a.createdAt || a.date).getTime();
+        const dateB = new Date(b.dueDate || b.createdAt || b.date).getTime();
+        
+        if (dateA !== dateB && !isNaN(dateA) && !isNaN(dateB)) {
+          return dateA - dateB;
+        }
+
+        // Secondary fallback: createdAt timestamp
+        const createdA = new Date(a.createdAt).getTime();
+        const createdB = new Date(b.createdAt).getTime();
+        if (createdA !== createdB && !isNaN(createdA) && !isNaN(createdB)) {
+          return createdA - createdB;
+        }
+
+        // Final fallback: invoice number (e.g., INV-2026-005 vs INV-2026-006)
+        const numA = parseInt((a.invoiceNo || '').split('-').pop()) || 0;
+        const numB = parseInt((b.invoiceNo || '').split('-').pop()) || 0;
+        return numA - numB;
       });
 
       let remainingPayment = amountToPay;
@@ -251,7 +284,7 @@ export default function Accounts() {
         updatedInvoicesData.push(updatedInvoice);
       }
 
-      // 4. API Calls
+      // 4. API Calls for Invoices
       const apiPromises = updatedInvoicesData.map(inv => 
         api.put(`/invoices/${inv.id}`, inv)
       );
@@ -259,7 +292,17 @@ export default function Accounts() {
       const responses = await Promise.all(apiPromises);
       const updatedInvoicesFromServer = responses.map(res => res.data);
 
-      // 5. Update local state
+      // 5. Record Payment History
+      const paymentRecord = {
+        customerId: selectedLedgerCustomer,
+        amount: amountToPay,
+        date: paymentDate,
+        createdAt: new Date().toISOString()
+      };
+      const paymentRes = await api.post('/payments', paymentRecord);
+      setPayments(prev => [...prev, paymentRes.data]);
+
+      // 6. Update local state
       setInvoices(prev => {
         const newInvoices = [...prev];
         updatedInvoicesFromServer.forEach(updated => {
@@ -430,10 +473,10 @@ export default function Accounts() {
           onClick={() => !isProcessingPayment && setIsPaymentModalOpen(false)}
         >
           <div 
-            className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
+            className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 shrink-0">
               <h3 className="font-bold text-gray-900">Add Payment</h3>
               <button 
                 onClick={() => setIsPaymentModalOpen(false)}
@@ -468,12 +511,10 @@ export default function Accounts() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
                 <input
-                  type="number"
+                  type="text"
                   required
-                  min="1"
-                  step="0.01"
-                  value={paymentAmount}
-                  onChange={e => setPaymentAmount(e.target.value)}
+                  value={formatAmountForDisplay(paymentAmount)}
+                  onChange={handlePaymentAmountChange}
                   placeholder="Enter amount"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm transition-colors"
                   disabled={isProcessingPayment}
@@ -498,6 +539,31 @@ export default function Accounts() {
                 </button>
               </div>
             </form>
+            
+            <div className="bg-gray-50 border-t border-gray-100 p-5 flex-1 overflow-y-auto">
+              <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500" /> Payment History
+              </h4>
+              <div className="space-y-2">
+                {payments.filter(p => p.customerId === selectedLedgerCustomer)
+                  .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+                  .length > 0 ? (
+                  payments.filter(p => p.customerId === selectedLedgerCustomer)
+                    .sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt))
+                    .map((p, idx) => (
+                      <div key={p.id || idx} className="flex justify-between items-center bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">₹{parseFloat(p.amount).toLocaleString('en-IN')}</p>
+                          <p className="text-[11px] text-gray-500">{new Date(p.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                        </div>
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                      </div>
+                    ))
+                ) : (
+                  <p className="text-xs text-gray-500 text-center py-4">No payment history found.</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>,
         document.body
@@ -512,7 +578,7 @@ export default function Accounts() {
         initialViewMode={modalMode === 'view'}
         customers={customers}
         onInvoiceCreated={(newInvoice) => {
-          setInvoices(prev => [...prev, newInvoice]);
+          setInvoices(prev => [newInvoice, ...prev]);
         }}
         onInvoiceUpdated={(updatedInvoice) => {
           setInvoices(prev => prev.map(inv => inv.id === updatedInvoice.id ? updatedInvoice : inv));

@@ -65,6 +65,7 @@ export function DataProvider({ children }) {
   const [applicationsReceived, setApplicationsReceived] = useState([]);
   const [customPackages, setCustomPackages] = useState([]);
   const [paperSizes, setPaperSizes] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   const fetchAll = useCallback(async () => {
@@ -72,7 +73,7 @@ export function DataProvider({ children }) {
     try {
       const [
         custRes, prodRes, catRes, leadsRes, ordersRes, quotRes,
-        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes, customPackageRes, paperSizeRes
+        dspRes, invRes, inventoryRes, jobsRes, poRes, grnRes, supRes, artRes, notifRes, dashRes, settingsRes, jobPostedRes, appRes, customPackageRes, paperSizeRes, paymentsRes
       ] = await Promise.allSettled([
         api.get('/customers'),
         api.get('/products'),
@@ -95,6 +96,7 @@ export function DataProvider({ children }) {
         api.get('/application_received'),
         api.get('/custom_package'),
         api.get('/paperSizes'),
+        api.get('/payments'),
       ]);
 
       if (custRes.status === 'fulfilled') setCustomers(Array.isArray(custRes.value.data) ? custRes.value.data : []);
@@ -130,6 +132,7 @@ export function DataProvider({ children }) {
       if (appRes.status === 'fulfilled') setApplicationsReceived(Array.isArray(appRes.value.data) ? appRes.value.data : []);
       if (customPackageRes.status === 'fulfilled') setCustomPackages(Array.isArray(customPackageRes.value.data) ? customPackageRes.value.data : []);
       if (paperSizeRes.status === 'fulfilled') setPaperSizes(Array.isArray(paperSizeRes.value.data) ? paperSizeRes.value.data : []);
+      if (paymentsRes.status === 'fulfilled') setPayments(Array.isArray(paymentsRes.value.data) ? paymentsRes.value.data : []);
     } catch (err) {
       console.error('DataContext fetch error:', err);
     } finally {
@@ -165,6 +168,7 @@ export function DataProvider({ children }) {
       setApplicationsReceived([]);
       setCustomPackages([]);
       setPaperSizes([]);
+      setPayments([]);
     }
   }, [currentUser, isLoaded, fetchAll]);
 
@@ -266,6 +270,7 @@ export function DataProvider({ children }) {
     applicationsReceived, setApplicationsReceived,
     customPackages, setCustomPackages,
     paperSizes, setPaperSizes,
+    payments, setPayments,
     // helper maps
     customerMap,
     productMap,

@@ -666,6 +666,13 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
                   />
                 </div>
               </div>
+
+              {isViewMode && (
+                <div className="flex justify-between items-center text-lg font-bold text-[#dc2626] border-t border-gray-100 pt-4 mt-4">
+                  <span>Balance Due</span>
+                  <span>₹{Math.max(0, grandTotal - Number((formData.advancePaymentAmount || '0').toString().replace(/,/g, ''))).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              )}
             </div>
             );
           })()}

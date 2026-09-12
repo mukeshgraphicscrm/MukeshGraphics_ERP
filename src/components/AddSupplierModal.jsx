@@ -52,7 +52,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && !isDeleteModalOpen) {
         onClose();
       }
     };

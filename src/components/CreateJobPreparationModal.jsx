@@ -132,16 +132,6 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               {jobToEdit ? 'Edit Job Preparation' : 'Add Job Preparation'}
             </h2>
             <div className="flex items-center gap-2">
-              {jobToEdit && (
-                <button
-                  type="button"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="p-1.5 text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                  title="Delete Job"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
               <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <X className="w-5 h-5" />
               </button>
@@ -276,23 +266,37 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
           </form>
 
           {/* Footer */}
-          <div className="flex justify-end items-center gap-3 px-6 py-4 border-t border-gray-100 shrink-0">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              form="jobPrepForm"
-              disabled={loading}
-              className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
-            >
-              {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Add Job')}
-            </button>
+          <div className="flex justify-between items-center px-6 py-4 border-t border-gray-100 shrink-0">
+            <div>
+              {jobToEdit && (
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                  disabled={loading}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                >
+                  Delete Job
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="jobPrepForm"
+                disabled={loading}
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
+              >
+                {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Add Job')}
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, 
   TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon,
-  Clock, CheckSquare
+  Clock, CheckSquare, Plus
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -13,6 +14,7 @@ import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestor
 import { db } from '../lib/firebase';
 import toast from 'react-hot-toast';
 import KpiCard from '../components/KpiCard';
+import CustomSelect from '../components/CustomSelect';
 import api from '../lib/api';
 import { cn } from '../lib/utils';
 import { useData } from '../contexts/DataContext';
@@ -28,6 +30,16 @@ export default function Dashboard() {
   const employeeName = currentUser?.profile?.name || '';
 
   const [tasks, setTasks] = useState([]);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [taskFormData, setTaskFormData] = useState({
+    title: '',
+    description: '',
+    assignedTo: employeeName,
+    priority: 'Medium',
+    status: 'Pending',
+    dueDate: ''
+  });
+  const [taskSaving, setTaskSaving] = useState(false);
   const [realtimeOrders, setRealtimeOrders] = useState([]);
   const [realtimeJobs, setRealtimeJobs] = useState([]);
   const [realtimeLeads, setRealtimeLeads] = useState([]);
@@ -70,6 +82,49 @@ export default function Dashboard() {
       unsubLeads();
     };
   }, [isEmployee, employeeName, currentUser?.email]);
+
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.key === 'Escape' && isTaskModalOpen) {
+        setIsTaskModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [isTaskModalOpen]);
+
+  const handleOpenTaskModal = () => {
+    setTaskFormData({
+      title: '',
+      description: '',
+      assignedTo: employeeName,
+      priority: 'Medium',
+      status: 'Pending',
+      dueDate: ''
+    });
+    setIsTaskModalOpen(true);
+  };
+
+  const handleTaskSubmit = async (e) => {
+    e.preventDefault();
+    setTaskSaving(true);
+    
+    try {
+      const payload = {
+        ...taskFormData,
+        assignedBy: currentUser?.profile?.name || 'Self'
+      };
+
+      await api.post('/tasks', payload);
+      toast.success('Task created successfully');
+      setIsTaskModalOpen(false);
+    } catch (err) {
+      console.error('Error saving task:', err);
+      toast.error('Failed to create task');
+    } finally {
+      setTaskSaving(false);
+    }
+  };
 
   const handleTaskStatusChange = async (taskId, newStatus) => {
     try {
@@ -326,6 +381,13 @@ export default function Dashboard() {
               <h2 className="font-bold text-gray-900 flex items-center gap-2">
                 <CheckSquare className="w-5 h-5 text-blue-600" /> My Tasks
               </h2>
+              <button
+                onClick={handleOpenTaskModal}
+                className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center border border-blue-200"
+                title="Create Task"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
             <div className="p-4 flex-1 overflow-y-auto space-y-3">
               {pendingTasks.length === 0 ? (
@@ -483,6 +545,111 @@ export default function Dashboard() {
           </div>
 
         </div>
+        
+        {/* Task Modal */}
+        {isTaskModalOpen && createPortal(
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsTaskModalOpen(false); }}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative z-[70]">
+              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 className="text-xl font-bold text-gray-900">Create Task</h2>
+                <button onClick={() => setIsTaskModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                  &times;
+                </button>
+              </div>
+              
+              <form onSubmit={handleTaskSubmit} className="p-6 space-y-4 text-left">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={taskFormData.title}
+                    onChange={(e) => setTaskFormData({...taskFormData, title: e.target.value.toUpperCase()})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63]"
+                    placeholder="TASK TITLE"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                  <textarea
+                    rows={3}
+                    value={taskFormData.description}
+                    onChange={(e) => setTaskFormData({...taskFormData, description: e.target.value.toUpperCase()})}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
+                    placeholder="PROVIDE TASK DETAILS..."
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
+                    <input
+                      type="text"
+                      value={taskFormData.assignedTo}
+                      disabled
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                    <CustomSelect
+                      options={[
+                        { label: 'High', value: 'High' },
+                        { label: 'Medium', value: 'Medium' },
+                        { label: 'Low', value: 'Low' },
+                      ]}
+                      value={taskFormData.priority}
+                      onChange={(e) => setTaskFormData({...taskFormData, priority: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                    <input
+                      type="date"
+                      value={taskFormData.dueDate}
+                      onChange={(e) => setTaskFormData({...taskFormData, dueDate: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <CustomSelect
+                      options={[
+                        { label: 'Pending', value: 'Pending' },
+                        { label: 'In Progress', value: 'In Progress' },
+                        { label: 'Completed', value: 'Completed' },
+                      ]}
+                      value={taskFormData.status}
+                      onChange={(e) => setTaskFormData({...taskFormData, status: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setIsTaskModalOpen(false)}
+                    className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={taskSaving}
+                    className="btn-add disabled:opacity-50"
+                  >
+                    {taskSaving ? 'Saving...' : 'Create Task'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>,
+          document.body
+        )}
       </div>
     );
   }

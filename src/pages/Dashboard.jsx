@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee, 
+import {
+  ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee,
   TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon,
-  Clock, CheckSquare, Plus, Mic, MicOff, Square, Trash2
+  Clock, CheckSquare, Plus, Mic, MicOff, Square, Trash2, PenTool, Boxes
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -22,13 +22,20 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Dashboard() {
-  const { 
-    dashboardData: data, settings, orders, 
-    productionJobs, leads, productMap, customerMap 
+  const {
+    dashboardData: data, settings, orders,
+    productionJobs, leads, productMap, customerMap,
+    artworks, dispatches, inventory, invoices
   } = useData();
   const { currentUser } = useAuth();
   const isEmployee = currentUser?.profile?.designation === 'Employee';
   const employeeName = currentUser?.profile?.name || '';
+  const accessibleModules = currentUser?.profile?.accessibleModules || [];
+
+  const hasAccess = (moduleName) => {
+    if (!isEmployee) return true;
+    return accessibleModules.includes(moduleName);
+  };
 
   const [tasks, setTasks] = useState([]);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -50,7 +57,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isEmployee || !employeeName) return;
-    
+
     // Realtime Tasks
     const qTasks = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
     const unsubTasks = onSnapshot(qTasks, (snapshot) => {
@@ -115,17 +122,17 @@ export default function Dashboard() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       const chunks = [];
-      
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
-      
+
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         setAudioBlob(blob);
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
@@ -145,7 +152,7 @@ export default function Dashboard() {
   const handleTaskSubmit = async (e) => {
     e.preventDefault();
     setTaskSaving(true);
-    
+
     try {
       let audioUrl = null;
       if (audioBlob) {
@@ -184,7 +191,7 @@ export default function Dashboard() {
   const myOrders = realtimeOrders;
   const myJobs = realtimeJobs;
   const myLeads = realtimeLeads;
-  
+
   const pendingTasks = tasks.filter(t => t.status !== 'Completed');
 
   const isApproachingDeadline = (dateString) => {
@@ -195,13 +202,13 @@ export default function Dashboard() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays >= 0 && diffDays <= 5;
   };
-  
+
   const isOverdue = (dateString) => {
     if (!dateString) return false;
     const target = new Date(dateString);
     const today = new Date();
-    today.setHours(0,0,0,0);
-    target.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
     return target < today;
   };
 
@@ -209,11 +216,11 @@ export default function Dashboard() {
     if (!dateString) return '';
     const target = new Date(dateString);
     const today = new Date();
-    today.setHours(0,0,0,0);
-    target.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
+    target.setHours(0, 0, 0, 0);
     const diffTime = target.getTime() - today.getTime();
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays < 0) return `${Math.abs(diffDays)} days overdue`;
     if (diffDays === 0) return 'Due today';
     if (diffDays === 1) return 'Due tomorrow';
@@ -230,6 +237,39 @@ export default function Dashboard() {
     }
     return lead.createdAt || null;
   };
+
+  const activeDesigns = useMemo(() => {
+    return (artworks || []).filter(a => a.status === 'Active' || a.status === 'In Process');
+  }, [artworks]);
+
+  const pendingDispatches = useMemo(() => {
+    return (dispatches || []).filter(d => d.status !== 'Delivered' && d.status !== 'Cancelled');
+  }, [dispatches]);
+
+  const lowStockItems = useMemo(() => {
+    return (inventory || []).filter(i => i.status === 'Low Stock');
+  }, [inventory]);
+
+  const overdueAccounts = useMemo(() => {
+    const overdueInvoices = (invoices || []).filter(i => i.status === 'Overdue');
+    const totalAmount = overdueInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+
+    // Group by customer
+    const customerTotals = {};
+    overdueInvoices.forEach(inv => {
+      const cId = inv.customerId;
+      if (!customerTotals[cId]) customerTotals[cId] = 0;
+      customerTotals[cId] += (parseFloat(inv.amount) || 0);
+    });
+
+    const byCustomer = Object.keys(customerTotals).map(cId => ({
+      customerId: cId,
+      customerName: customerMap[cId]?.name || 'Unknown',
+      amount: customerTotals[cId]
+    })).sort((a, b) => b.amount - a.amount);
+
+    return { totalAmount, byCustomer };
+  }, [invoices, customerMap]);
 
   const goalsBoard = useMemo(() => {
     const goalSettings = settings?.find(s => s.type === 'goals');
@@ -250,13 +290,13 @@ export default function Dashboard() {
     const today = new Date();
     const endOfYear = new Date(targetYear, 11, 31);
     let daysLeft = 0;
-    
+
     if (today.getFullYear() < targetYear) {
-        // If target year is in the future
-        const startOfYear = new Date(targetYear, 0, 1);
-        daysLeft = Math.ceil((endOfYear - startOfYear) / (1000 * 60 * 60 * 24));
+      // If target year is in the future
+      const startOfYear = new Date(targetYear, 0, 1);
+      daysLeft = Math.ceil((endOfYear - startOfYear) / (1000 * 60 * 60 * 24));
     } else if (today.getFullYear() === targetYear) {
-        daysLeft = Math.ceil((endOfYear - today) / (1000 * 60 * 60 * 24)); 
+      daysLeft = Math.ceil((endOfYear - today) / (1000 * 60 * 60 * 24));
     }
 
     const amountLeft = Math.max(0, salesTarget - achieved);
@@ -316,7 +356,7 @@ export default function Dashboard() {
           <h1 className="text-2xl font-bold text-gray-900">Employee Dashboard</h1>
           <p className="text-gray-500 mt-1">Welcome back, {employeeName || currentUser?.displayName || 'User'} — here is your assigned work.</p>
         </div>
-        
+
         {/* Top section: Goals & Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 order-1 lg:order-2">
@@ -324,7 +364,7 @@ export default function Dashboard() {
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Target className="w-24 h-24" />
               </div>
-              
+
               <div className="relative z-10 flex flex-col h-full">
                 <div className="flex items-center space-x-2 mb-6">
                   <div className="p-2 bg-white/10 rounded-lg">
@@ -345,10 +385,10 @@ export default function Dashboard() {
                       <span className="text-xs font-bold text-green-400">{goalsBoard.progress}%</span>
                     </div>
                     <p className="text-xl xl:text-lg 2xl:text-2xl font-bold text-green-400 tracking-tight break-all">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
-                    
+
                     <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
-                      <div 
-                        className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out" 
+                      <div
+                        className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out"
                         style={{ width: `${goalsBoard.progress}%` }}
                       ></div>
                     </div>
@@ -374,74 +414,131 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 order-2 lg:order-1">
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Tasks</p>
-                <p className="text-4xl font-bold text-gray-900">{pendingTasks.length}</p>
+
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 order-2 lg:order-1 content-start">
+            {hasAccess('Tasks') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-blue-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Tasks</p>
+                  <p className="text-4xl font-bold text-gray-900">{pendingTasks.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner border border-blue-100">
+                  <CheckSquare className="w-7 h-7" />
+                </div>
               </div>
-              <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner border border-blue-100">
-                <CheckSquare className="w-7 h-7" />
+            )}
+
+            {hasAccess('Orders') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-orange-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Active Orders</p>
+                  <p className="text-4xl font-bold text-gray-900">{myOrders.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center shadow-inner border border-orange-100">
+                  <ShoppingCart className="w-7 h-7" />
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-orange-300 transition-colors">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Active Orders</p>
-                <p className="text-4xl font-bold text-gray-900">{myOrders.length}</p>
+            )}
+
+            {hasAccess('Production') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-green-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Production Jobs</p>
+                  <p className="text-4xl font-bold text-gray-900">{myJobs.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-inner border border-green-100">
+                  <Factory className="w-7 h-7" />
+                </div>
               </div>
-              <div className="w-14 h-14 bg-orange-50 text-orange-600 rounded-2xl flex items-center justify-center shadow-inner border border-orange-100">
-                <ShoppingCart className="w-7 h-7" />
+            )}
+
+            {hasAccess('Leads') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Open Leads</p>
+                  <p className="text-4xl font-bold text-gray-900">{myLeads.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-inner border border-purple-100">
+                  <Target className="w-7 h-7" />
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-green-300 transition-colors">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Production Jobs</p>
-                <p className="text-4xl font-bold text-gray-900">{myJobs.length}</p>
+            )}
+
+            {hasAccess('Design') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-pink-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Active Designs</p>
+                  <p className="text-4xl font-bold text-gray-900">{activeDesigns.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center shadow-inner border border-pink-100">
+                  <PenTool className="w-7 h-7" />
+                </div>
               </div>
-              <div className="w-14 h-14 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center shadow-inner border border-green-100">
-                <Factory className="w-7 h-7" />
+            )}
+
+            {hasAccess('Dispatch') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-cyan-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Pending Dispatches</p>
+                  <p className="text-4xl font-bold text-gray-900">{pendingDispatches.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-cyan-50 text-cyan-600 rounded-2xl flex items-center justify-center shadow-inner border border-cyan-100">
+                  <Truck className="w-7 h-7" />
+                </div>
               </div>
-            </div>
-            
-            <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-purple-300 transition-colors">
-              <div>
-                <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Open Leads</p>
-                <p className="text-4xl font-bold text-gray-900">{myLeads.length}</p>
+            )}
+
+            {hasAccess('Inventory') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-yellow-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Low Stock</p>
+                  <p className="text-4xl font-bold text-gray-900">{lowStockItems.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center shadow-inner border border-yellow-100">
+                  <Boxes className="w-7 h-7" />
+                </div>
               </div>
-              <div className="w-14 h-14 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center shadow-inner border border-purple-100">
-                <Target className="w-7 h-7" />
+            )}
+
+            {hasAccess('Accounts') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-red-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Overdue Amount</p>
+                  <p className="text-2xl font-bold text-red-600">₹{overdueAccounts.totalAmount.toLocaleString('en-IN')}</p>
+                </div>
+                <div className="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center shadow-inner border border-red-100">
+                  <Wallet className="w-7 h-7" />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
-        
+
         {/* Work modules grids */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tasks Panel */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                <CheckSquare className="w-5 h-5 text-blue-600" /> My Tasks
-              </h2>
-              <button
-                onClick={handleOpenTaskModal}
-                className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center border border-blue-200"
-                title="Create Task"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-              {pendingTasks.length === 0 ? (
-                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+          {hasAccess('Tasks') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <CheckSquare className="w-5 h-5 text-blue-600" /> My Tasks
+                </h2>
+                <button
+                  onClick={handleOpenTaskModal}
+                  className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors flex items-center justify-center border border-blue-200"
+                  title="Create Task"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {pendingTasks.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
                     <CheckSquare className="w-10 h-10 mb-2 opacity-50" />
                     <p>No pending tasks.</p>
-                 </div>
-              ) : pendingTasks.map(task => (
-                 <div key={task.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all bg-white">
+                  </div>
+                ) : pendingTasks.map(task => (
+                  <div key={task.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-300 hover:shadow-sm transition-all bg-white">
                     <div className="flex justify-between items-start mb-2 gap-2">
                       <h3 className="font-semibold text-gray-900 flex-1 leading-tight">{task.title}</h3>
                       <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${task.priority === 'High' ? 'bg-red-50 text-red-600 border border-red-100' : task.priority === 'Medium' ? 'bg-yellow-50 text-yellow-600 border border-yellow-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>{task.priority}</span>
@@ -460,40 +557,42 @@ export default function Dashboard() {
                       </div>
                     )}
                     <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
-                      <button 
+                      <button
                         onClick={() => handleTaskStatusChange(task.id, 'In Progress')}
                         disabled={task.status === 'In Progress'}
                         className={`flex-1 py-1.5 text-xs font-semibold rounded-lg flex justify-center items-center gap-1.5 transition-all ${task.status === 'In Progress' ? 'bg-gray-50 text-gray-400 border border-gray-100' : 'bg-white text-blue-600 hover:bg-blue-50 border border-blue-200 hover:border-blue-300'}`}
                       >
                         In Progress
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleTaskStatusChange(task.id, 'Completed')}
                         className="flex-1 py-1.5 text-xs font-semibold rounded-lg flex justify-center items-center gap-1.5 transition-all bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 hover:border-green-300"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> Complete
                       </button>
                     </div>
-                 </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          
+          )}
+
           {/* Orders Panel */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                <ShoppingCart className="w-5 h-5 text-orange-600" /> My Orders
-              </h2>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-              {myOrders.length === 0 ? (
-                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+          {hasAccess('Orders') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-orange-600" /> My Orders
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {myOrders.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
                     <ShoppingCart className="w-10 h-10 mb-2 opacity-50" />
                     <p>No active orders assigned to you.</p>
-                 </div>
-              ) : myOrders.map(order => (
-                 <div key={order.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/orders'}>
+                  </div>
+                ) : myOrders.map(order => (
+                  <div key={order.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-orange-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/orders'}>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{order.orderNo}</div>
                       <div className="text-xs font-medium text-gray-500 mt-1">{customerMap[order.customerId]?.name || 'Unknown Customer'}</div>
@@ -506,33 +605,35 @@ export default function Dashboard() {
                         {getRemainingDaysText(order.deliveryDate)}
                       </div>
                     </div>
-                 </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          
+          )}
+
           {/* Jobs Panel */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                <Factory className="w-5 h-5 text-green-600" /> My Production Jobs
-              </h2>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-              {myJobs.length === 0 ? (
-                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+          {hasAccess('Production') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Factory className="w-5 h-5 text-green-600" /> My Production Jobs
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {myJobs.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
                     <Factory className="w-10 h-10 mb-2 opacity-50" />
                     <p>No active production jobs assigned.</p>
-                 </div>
-              ) : myJobs.map(job => (
-                 <div key={job.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-green-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/production'}>
+                  </div>
+                ) : myJobs.map(job => (
+                  <div key={job.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-green-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/production'}>
                     <div>
                       <div className="font-bold text-gray-900 text-sm">{job.jobId}</div>
                       <div className="text-xs font-medium text-gray-500 mt-1">{productMap[job.productId]?.name || 'Unknown Product'}</div>
                     </div>
                     <div className="text-right flex flex-col items-end">
                       <div className={`text-xs font-bold flex items-center gap-1 ${isOverdue(job.targetDate) ? 'text-red-600' : isApproachingDeadline(job.targetDate) ? 'text-orange-500' : 'text-gray-900'}`}>
-                         {job.targetDate ? new Date(job.targetDate).toLocaleDateString() : 'No date'}
+                        {job.targetDate ? new Date(job.targetDate).toLocaleDateString() : 'No date'}
                       </div>
                       {job.targetDate && (
                         <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(job.targetDate) ? 'bg-red-100 text-red-700' : isApproachingDeadline(job.targetDate) ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600'}`}>
@@ -540,62 +641,203 @@ export default function Dashboard() {
                         </div>
                       )}
                     </div>
-                 </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-          
+          )}
+
           {/* Leads Panel */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
-              <h2 className="font-bold text-gray-900 flex items-center gap-2">
-                <Target className="w-5 h-5 text-purple-600" /> My Open Leads
-              </h2>
-            </div>
-            <div className="p-4 flex-1 overflow-y-auto space-y-3">
-              {myLeads.length === 0 ? (
-                 <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+          {hasAccess('Leads') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Target className="w-5 h-5 text-purple-600" /> My Open Leads
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {myLeads.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
                     <Target className="w-10 h-10 mb-2 opacity-50" />
                     <p>No open leads assigned to you.</p>
-                 </div>
-              ) : myLeads.map(lead => {
-                 const followUps = lead.followUps && lead.followUps.length > 0 
-                   ? lead.followUps 
-                   : (lead.notes || lead.date || lead.time 
-                       ? [{ date: lead.date || '', time: lead.time || '', notes: lead.notes || '' }] 
-                       : []);
-                 const lastFollowUp = followUps.length > 0 ? followUps[followUps.length - 1] : null;
-                 let nextFollowUpText = 'No Follow-up';
-                 let followUpDateStr = null;
-                 if (lastFollowUp && (lastFollowUp.date || lastFollowUp.time)) {
-                   nextFollowUpText = `${lastFollowUp.date || ''} ${lastFollowUp.time ? `at ${lastFollowUp.time}` : ''}`.trim();
-                   followUpDateStr = lastFollowUp.date;
-                 }
+                  </div>
+                ) : myLeads.map(lead => {
+                  const followUps = lead.followUps && lead.followUps.length > 0
+                    ? lead.followUps
+                    : (lead.notes || lead.date || lead.time
+                      ? [{ date: lead.date || '', time: lead.time || '', notes: lead.notes || '' }]
+                      : []);
+                  const lastFollowUp = followUps.length > 0 ? followUps[followUps.length - 1] : null;
+                  let nextFollowUpText = 'No Follow-up';
+                  let followUpDateStr = null;
+                  if (lastFollowUp && (lastFollowUp.date || lastFollowUp.time)) {
+                    nextFollowUpText = `${lastFollowUp.date || ''} ${lastFollowUp.time ? `at ${lastFollowUp.time}` : ''}`.trim();
+                    followUpDateStr = lastFollowUp.date;
+                  }
 
-                 return (
-                 <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = `/leads?view=my&expand=${encodeURIComponent(lead.stage)}`}>
+                  return (
+                    <div key={lead.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-purple-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = `/leads?view=my&expand=${encodeURIComponent(lead.stage)}`}>
+                      <div>
+                        <div className="font-bold text-gray-900 text-sm">{lead.company}</div>
+                        <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>
+                      </div>
+                      <div className="text-right flex flex-col items-end justify-center">
+                        <div className={`text-xs font-bold ${followUpDateStr && isOverdue(followUpDateStr) ? 'text-red-600' : followUpDateStr && isApproachingDeadline(followUpDateStr) ? 'text-orange-500' : 'text-purple-600'}`}>
+                          {nextFollowUpText}
+                        </div>
+                        {followUpDateStr && (
+                          <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(followUpDateStr) ? 'bg-red-100 text-red-700' : isApproachingDeadline(followUpDateStr) ? 'bg-orange-100 text-orange-700' : 'bg-purple-50 text-purple-600'}`}>
+                            {getRemainingDaysText(followUpDateStr)}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Design Panel */}
+          {hasAccess('Design') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <PenTool className="w-5 h-5 text-pink-600" /> Active Designs
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {activeDesigns.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <PenTool className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No active designs.</p>
+                  </div>
+                ) : activeDesigns.map(design => (
+                  <div key={design.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-pink-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/design'}>
                     <div>
-                      <div className="font-bold text-gray-900 text-sm">{lead.company}</div>
-                      <div className="text-xs font-medium text-gray-500 mt-1">{lead.contactPerson}</div>
+                      <div className="font-bold text-gray-900 text-sm">{customerMap[design.customerId]?.name || 'Unknown'}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{productMap[design.productId]?.name || 'Unknown Product'}</div>
                     </div>
                     <div className="text-right flex flex-col items-end justify-center">
-                      <div className={`text-xs font-bold ${followUpDateStr && isOverdue(followUpDateStr) ? 'text-red-600' : followUpDateStr && isApproachingDeadline(followUpDateStr) ? 'text-orange-500' : 'text-purple-600'}`}>
-                        {nextFollowUpText}
+                      <div className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-pink-50 text-pink-700`}>
+                        {design.status}
                       </div>
-                      {followUpDateStr && (
-                        <div className={`text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded ${isOverdue(followUpDateStr) ? 'bg-red-100 text-red-700' : isApproachingDeadline(followUpDateStr) ? 'bg-orange-100 text-orange-700' : 'bg-purple-50 text-purple-600'}`}>
-                          {getRemainingDaysText(followUpDateStr)}
+                      {design.deadline && (
+                        <div className={`text-xs font-bold mt-1 ${isOverdue(design.deadline) ? 'text-red-600' : isApproachingDeadline(design.deadline) ? 'text-orange-500' : 'text-gray-900'}`}>
+                          Due: {new Date(design.deadline).toLocaleDateString()}
                         </div>
                       )}
                     </div>
-                 </div>
-                 );
-              })}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Dispatch Panel */}
+          {hasAccess('Dispatch') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-cyan-600" /> Pending Dispatches
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {pendingDispatches.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <Truck className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No pending dispatches.</p>
+                  </div>
+                ) : pendingDispatches.map(dispatch => (
+                  <div key={dispatch.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-cyan-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/dispatch'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{dispatch.dispatchNo}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{dispatch.customer || customerMap[dispatch.customerId]?.name || 'Unknown'}</div>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <div className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700`}>
+                        {dispatch.status}
+                      </div>
+                      <div className="text-xs font-bold mt-1 text-gray-600">
+                        {new Date(dispatch.date).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Inventory Panel */}
+          {hasAccess('Inventory') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Boxes className="w-5 h-5 text-yellow-600" /> Low Stock Alerts
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {lowStockItems.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <Boxes className="w-10 h-10 mb-2 opacity-50" />
+                    <p>All items have sufficient stock.</p>
+                  </div>
+                ) : lowStockItems.map(item => (
+                  <div key={item.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-yellow-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/inventory'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{item.material}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{item.category}</div>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <div className="text-sm font-bold text-red-600">
+                        {item.stock} <span className="text-xs font-medium text-gray-500">{item.unit}</span>
+                      </div>
+                      <div className="text-[10px] uppercase font-bold mt-1 px-1.5 py-0.5 rounded bg-red-50 text-red-700">
+                        Min: {item.min}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Accounts Panel */}
+          {hasAccess('Accounts') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-red-600" /> Overdue by Customer
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {overdueAccounts.byCustomer.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <Wallet className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No overdue accounts.</p>
+                  </div>
+                ) : overdueAccounts.byCustomer.map(c => (
+                  <div key={c.customerId} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-red-300 hover:shadow-sm transition-all bg-white" onClick={() => window.location.href = '/accounts'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{c.customerName}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-red-600">
+                        ₹{c.amount.toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50 rounded-b-xl flex justify-between items-center shrink-0">
+                <span className="font-bold text-gray-700">Total Overdue</span>
+                <span className="font-bold text-red-600 text-lg">₹{overdueAccounts.totalAmount.toLocaleString('en-IN')}</span>
+              </div>
+            </div>
+          )}
 
         </div>
-        
+
         {/* Task Modal */}
         {isTaskModalOpen && createPortal(
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsTaskModalOpen(false); }}>
@@ -606,7 +848,7 @@ export default function Dashboard() {
                   &times;
                 </button>
               </div>
-              
+
               <form onSubmit={handleTaskSubmit} className="p-6 space-y-4 text-left">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
@@ -614,18 +856,18 @@ export default function Dashboard() {
                     type="text"
                     required
                     value={taskFormData.title}
-                    onChange={(e) => setTaskFormData({...taskFormData, title: e.target.value.toUpperCase()})}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value.toUpperCase() })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63]"
                     placeholder="TASK TITLE"
                   />
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="block text-sm font-medium text-gray-700">Description</label>
                     {!audioBlob && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={isRecording ? stopRecording : startRecording}
                         className={`text-xs flex items-center gap-1 font-medium transition-colors ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-blue-500 hover:text-blue-600'}`}
                       >
@@ -640,7 +882,7 @@ export default function Dashboard() {
                   <textarea
                     rows={3}
                     value={taskFormData.description}
-                    onChange={(e) => setTaskFormData({...taskFormData, description: e.target.value.toUpperCase()})}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value.toUpperCase() })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                     placeholder="PROVIDE TASK DETAILS..."
                   />
@@ -652,8 +894,8 @@ export default function Dashboard() {
                         </div>
                         <audio src={URL.createObjectURL(audioBlob)} controls className="h-8 max-w-[200px]" />
                       </div>
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setAudioBlob(null)}
                         className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -682,7 +924,7 @@ export default function Dashboard() {
                         { label: 'Low', value: 'Low' },
                       ]}
                       value={taskFormData.priority}
-                      onChange={(e) => setTaskFormData({...taskFormData, priority: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value })}
                     />
                   </div>
                 </div>
@@ -693,7 +935,7 @@ export default function Dashboard() {
                     <input
                       type="date"
                       value={taskFormData.dueDate}
-                      onChange={(e) => setTaskFormData({...taskFormData, dueDate: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"
                     />
                   </div>
@@ -706,7 +948,7 @@ export default function Dashboard() {
                         { label: 'Completed', value: 'Completed' },
                       ]}
                       value={taskFormData.status}
-                      onChange={(e) => setTaskFormData({...taskFormData, status: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, status: e.target.value })}
                     />
                   </div>
                 </div>
@@ -750,7 +992,7 @@ export default function Dashboard() {
           <KpiCard title="Running Jobs" value={kpi.runningJobs.value} subtitle={kpi.runningJobs.subtitle} icon={Factory} color="sky" />
           <KpiCard title="Completed (Month)" value={kpi.completedMonth.value} subtitle={kpi.completedMonth.subtitle} icon={CheckCircle} color="success" />
           <KpiCard title="Pending Dispatches" value={kpi.pendingDispatches.value} subtitle={kpi.pendingDispatches.subtitle} icon={Truck} color="warning" />
-          
+
           <KpiCard title="Pending Payments" value={kpi.pendingPayments.value} subtitle={kpi.pendingPayments.subtitle} icon={Wallet} color="danger" />
           <KpiCard title="Monthly Revenue" value={kpi.monthlyRevenue.value} subtitle={kpi.monthlyRevenue.subtitle} icon={IndianRupee} color="warning" />
           <KpiCard title="Monthly Profit" value={kpi.monthlyProfit.value} subtitle={kpi.monthlyProfit.subtitle} icon={TrendingUp} color="success" />
@@ -762,7 +1004,7 @@ export default function Dashboard() {
           <div className="absolute top-0 right-0 p-4 opacity-10">
             <Target className="w-24 h-24" />
           </div>
-          
+
           <div className="relative z-10 flex flex-col h-full">
             <div className="flex items-center space-x-2 mb-6">
               <div className="p-2 bg-white/10 rounded-lg">
@@ -783,11 +1025,11 @@ export default function Dashboard() {
                   <span className="text-xs font-bold text-green-400">{goalsBoard.progress}%</span>
                 </div>
                 <p className="text-xl xl:text-lg 2xl:text-2xl font-bold text-green-400 tracking-tight break-all">₹{goalsBoard.achieved.toLocaleString('en-IN')}</p>
-                
+
                 {/* Progress Bar */}
                 <div className="w-full bg-white/10 rounded-full h-1.5 mt-2 overflow-hidden">
-                  <div 
-                    className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out" 
+                  <div
+                    className="bg-green-400 h-1.5 rounded-full transition-all duration-1000 ease-out"
                     style={{ width: `${goalsBoard.progress}%` }}
                   ></div>
                 </div>
@@ -832,14 +1074,14 @@ export default function Dashboard() {
               <AreaChart data={charts.revenueLine} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={true} stroke="#f3f4f6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fill: '#9CA3AF', fontSize: 12}} dx={-10} domain={[0, 100]} tickFormatter={(val) => `₹${val}L`} />
-                <RechartsTooltip 
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12 }} dx={-10} domain={[0, 100]} tickFormatter={(val) => `₹${val}L`} />
+                <RechartsTooltip
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   formatter={(value) => [`₹${value}L`, 'Revenue']}
                 />
@@ -870,7 +1112,7 @@ export default function Dashboard() {
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <RechartsTooltip 
+                  <RechartsTooltip
                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   />
                 </PieChart>
@@ -880,7 +1122,7 @@ export default function Dashboard() {
               {charts.orderStatus.map((item) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center">
-                    <div className="w-2.5 h-2.5 rounded-full mr-3" style={{backgroundColor: item.color}}></div>
+                    <div className="w-2.5 h-2.5 rounded-full mr-3" style={{ backgroundColor: item.color }}></div>
                     <span className="text-[13px] text-gray-600">{item.name}</span>
                   </div>
                   <span className="text-[13px] font-bold text-gray-900">{item.value}</span>

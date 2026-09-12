@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download, X } from 'lucide-react';
@@ -17,6 +18,35 @@ export default function Accounts() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [isLedgerModalOpen, setIsLedgerModalOpen] = useState(false);
+
+  // Payment Modal State
+  const [selectedLedgerCustomer, setSelectedLedgerCustomer] = useState(null);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && isPaymentModalOpen && !isProcessingPayment) {
+        setIsPaymentModalOpen(false);
+      }
+    };
+
+    if (isPaymentModalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+      window.addEventListener('keydown', handleKeyDown);
+    } else {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPaymentModalOpen, isProcessingPayment]);
 
   // Filter invoices based on date range
   const filteredInvoices = invoices.filter(i => {
@@ -145,6 +175,113 @@ export default function Accounts() {
     }
   };
 
+  const openPaymentModal = (customerId) => {
+    setSelectedLedgerCustomer(customerId);
+    setPaymentAmount('');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedLedgerCustomer || !paymentAmount) return;
+
+    const amountToPay = parseFloat(paymentAmount);
+    if (isNaN(amountToPay) || amountToPay <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    const customerOutstanding = outstandingMap[selectedLedgerCustomer] || 0;
+    if (amountToPay > customerOutstanding) {
+      toast.error(`Amount exceeds total outstanding balance (₹${customerOutstanding.toLocaleString('en-IN')})`);
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    const toastId = toast.loading('Processing payment...');
+
+    try {
+      // 1. Get unpaid invoices for this customer
+      let unpaidInvoices = invoices.filter(
+        i => i.customerId === selectedLedgerCustomer && i.status !== 'Paid'
+      );
+
+      // 2. Sort from oldest to newest (by dueDate, then createdAt)
+      unpaidInvoices.sort((a, b) => {
+        const dateA = new Date(a.dueDate || a.createdAt || a.date);
+        const dateB = new Date(b.dueDate || b.createdAt || b.date);
+        return dateA - dateB;
+      });
+
+      let remainingPayment = amountToPay;
+      const updatedInvoicesData = [];
+
+      // 3. Distribute payment
+      for (const inv of unpaidInvoices) {
+        if (remainingPayment <= 0) break;
+
+        const invTotal = (inv.amount || 0) + (inv.gst || 0);
+        const currentAdvance = (inv.advancePaymentAmount || 0);
+        const balanceDue = invTotal - currentAdvance;
+
+        if (balanceDue <= 0) continue;
+
+        let amountAppliedToThisInvoice = 0;
+        let newStatus = inv.status;
+
+        if (remainingPayment >= balanceDue) {
+          // Pay this invoice in full
+          amountAppliedToThisInvoice = balanceDue;
+          newStatus = 'Paid';
+        } else {
+          // Pay partially
+          amountAppliedToThisInvoice = remainingPayment;
+        }
+
+        const newAdvance = currentAdvance + amountAppliedToThisInvoice;
+        remainingPayment -= amountAppliedToThisInvoice;
+
+        // Prepare updated invoice data
+        const updatedInvoice = {
+          ...inv,
+          advancePaymentAmount: newAdvance,
+          status: newStatus
+        };
+        updatedInvoicesData.push(updatedInvoice);
+      }
+
+      // 4. API Calls
+      const apiPromises = updatedInvoicesData.map(inv => 
+        api.put(`/invoices/${inv.id}`, inv)
+      );
+      
+      const responses = await Promise.all(apiPromises);
+      const updatedInvoicesFromServer = responses.map(res => res.data);
+
+      // 5. Update local state
+      setInvoices(prev => {
+        const newInvoices = [...prev];
+        updatedInvoicesFromServer.forEach(updated => {
+          const index = newInvoices.findIndex(i => i.id === updated.id);
+          if (index !== -1) {
+            newInvoices[index] = updated;
+          }
+        });
+        return newInvoices;
+      });
+
+      toast.success('Payment applied successfully', { id: toastId });
+      setIsPaymentModalOpen(false);
+      setSelectedLedgerCustomer(null);
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast.error('Failed to process payment', { id: toastId });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
 
 
   return (
@@ -263,7 +400,12 @@ export default function Accounts() {
 
             <div className="space-y-5 overflow-y-auto pr-2 flex-grow">
               {ledgerEntries.length > 0 ? ledgerEntries.map(entry => (
-                <div key={entry.customerId} className="flex justify-between items-start">
+                <div 
+                  key={entry.customerId} 
+                  className="flex justify-between items-start cursor-pointer hover:bg-gray-50 p-2 -mx-2 rounded-lg transition-colors"
+                  onClick={() => openPaymentModal(entry.customerId)}
+                  title="Click to add payment"
+                >
                   <div>
                     <p className="text-[13px] font-bold text-gray-900">{entry.customerName}</p>
                     <p className="text-[11px] text-gray-500 uppercase">{entry.contactCity}</p>
@@ -280,6 +422,86 @@ export default function Accounts() {
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      {isPaymentModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4"
+          onClick={() => !isProcessingPayment && setIsPaymentModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h3 className="font-bold text-gray-900">Add Payment</h3>
+              <button 
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isProcessingPayment}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handlePaymentSubmit} className="p-5 space-y-4">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Customer</p>
+                <p className="font-bold text-gray-900">{customers[selectedLedgerCustomer]?.name}</p>
+                <p className="text-xs text-[#dc2626] mt-1 font-medium">
+                  Outstanding: ₹{(outstandingMap[selectedLedgerCustomer] || 0).toLocaleString('en-IN')}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Payment Date</label>
+                <input
+                  type="date"
+                  required
+                  value={paymentDate}
+                  onChange={e => setPaymentDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm transition-colors"
+                  disabled={isProcessingPayment}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
+                <input
+                  type="number"
+                  required
+                  min="1"
+                  step="0.01"
+                  value={paymentAmount}
+                  onChange={e => setPaymentAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm transition-colors"
+                  disabled={isProcessingPayment}
+                />
+              </div>
+
+              <div className="pt-2 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  disabled={isProcessingPayment}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isProcessingPayment || !paymentAmount}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] rounded-lg hover:bg-opacity-90 disabled:opacity-50"
+                >
+                  {isProcessingPayment ? 'Processing...' : 'Apply Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <CreateInvoiceModal
         isOpen={isModalOpen}

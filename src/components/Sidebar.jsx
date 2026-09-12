@@ -45,12 +45,28 @@ export default function Sidebar({ collapsed, setCollapsed, mobileMenuOpen, setMo
   
   const isEmployee = currentUser?.profile?.designation === 'Employee';
   const isAdministrator = !currentUser?.profile || currentUser?.profile?.designation === 'Administrator';
-  const visibleNavItems = navItems.filter(item => {
-    if (item.name === 'Settings' && isEmployee) return false;
-    if (item.name === 'Logs' && !isAdministrator) return false;
-    if (item.name === 'Daily Work' && !isAdministrator) return false;
-    return true;
-  });
+  const accessibleModules = currentUser?.profile?.accessibleModules || [];
+  
+  const visibleNavItems = navItems.map(item => {
+    if (isAdministrator) return item;
+    
+    // Hardcode restrictions for employees even if accidentally granted
+    if (item.name === 'Settings' || item.name === 'Logs') return null;
+    
+    if (item.subItems) {
+      const filteredSubItems = item.subItems.filter(sub => accessibleModules.includes(sub.name));
+      if (filteredSubItems.length > 0) {
+        return { ...item, subItems: filteredSubItems };
+      }
+      return null;
+    }
+    
+    if (accessibleModules.includes(item.name)) {
+      return item;
+    }
+    
+    return null;
+  }).filter(Boolean);
 
   const toggleSubmenu = (name) => {
     setOpenSubmenus(prev => ({

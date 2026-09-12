@@ -8,6 +8,13 @@ import CustomSelect from '../components/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
+const AVAILABLE_MODULES = [
+  'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations', 
+  'Orders', 'Design', 'Production', 'Dispatch', 'Inventory', 
+  'Purchase', 'Accounts', 'Job Data', 'Tasks', 'Daily Work', 
+  'Customize Packaging Request', 'Job Inquiry'
+];
+
 export default function Settings() {
   const { currentUser, changePassword } = useAuth();
   const { settings, setSettings } = useData();
@@ -38,7 +45,8 @@ export default function Settings() {
     mobile: '',
     email: '',
     password: '',
-    designation: 'Employee'
+    designation: 'Employee',
+    accessibleModules: []
   });
 
   const handleAdminPasswordChange = async (e) => {
@@ -111,7 +119,8 @@ export default function Settings() {
         mobile: '',
         email: '',
         password: '',
-        designation: 'Employee'
+        designation: 'Employee',
+        accessibleModules: []
       });
       setUserToEdit(null);
       fetchUsers();
@@ -130,7 +139,8 @@ export default function Settings() {
       mobile: user.mobile || '',
       email: user.email || '',
       password: '', // Leave blank when editing
-      designation: user.designation || 'Employee'
+      designation: user.designation || 'Employee',
+      accessibleModules: user.accessibleModules || []
     });
   };
 
@@ -199,7 +209,7 @@ export default function Settings() {
                 <button 
                   onClick={() => {
                     setUserToEdit(null);
-                    setFormData({ name: '', mobile: '', email: '', password: '', designation: 'Employee' });
+                    setFormData({ name: '', mobile: '', email: '', password: '', designation: 'Employee', accessibleModules: [] });
                   }}
                   className="ml-auto text-xs text-blue-600 hover:text-blue-800"
                 >
@@ -295,6 +305,31 @@ export default function Settings() {
                   placeholder="Select designation"
                 />
               </div>
+
+              {formData.designation === 'Employee' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Module Access</label>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-64 overflow-y-auto space-y-2">
+                    {AVAILABLE_MODULES.map(mod => (
+                      <label key={mod} className="flex items-center space-x-3 cursor-pointer p-1 hover:bg-gray-100 rounded">
+                        <input
+                          type="checkbox"
+                          checked={formData.accessibleModules?.includes(mod) || false}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData(prev => ({ ...prev, accessibleModules: [...(prev.accessibleModules || []), mod] }));
+                            } else {
+                              setFormData(prev => ({ ...prev, accessibleModules: (prev.accessibleModules || []).filter(m => m !== mod) }));
+                            }
+                          }}
+                          className="w-4 h-4 text-[#1b2f63] rounded border-gray-300 focus:ring-[#1b2f63]"
+                        />
+                        <span className="text-sm text-gray-700">{mod}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="pt-2">
                 <button

@@ -266,8 +266,11 @@ export default function Dashboard() {
   };
 
   const activeDesigns = useMemo(() => {
-    return (artworks || []).filter(a => a.status === 'Active' || a.status === 'In Process');
-  }, [artworks]);
+    return (artworks || []).filter(a => {
+      const isMyDesign = !isEmployee || a.employee === employeeName || a.designer === employeeName;
+      return isMyDesign && (a.status === 'Active' || a.status === 'In Process');
+    });
+  }, [artworks, isEmployee, employeeName]);
 
   const pendingDispatches = useMemo(() => {
     return (dispatches || []).filter(d => d.status !== 'Delivered' && d.status !== 'Cancelled');

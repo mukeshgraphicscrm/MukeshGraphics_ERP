@@ -119,6 +119,36 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.company.trim()) {
+      toast.error('Company Name is required');
+      return;
+    }
+    if (!formData.contactPerson.trim()) {
+      toast.error('Contact Person is required');
+      return;
+    }
+    if (formData.mobile && formData.mobile.length !== 10) {
+      toast.error('Please enter a valid 10-digit mobile number');
+      return;
+    }
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    if (!formData.leadSource) {
+      toast.error('Lead Source is required');
+      return;
+    }
+    if (!formData.stage) {
+      toast.error('Stage is required');
+      return;
+    }
+    if (formData.stage === 'Lost' && !formData.lostReason.trim()) {
+      toast.error('Reason for Loss is required');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
@@ -169,7 +199,7 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+        <form onSubmit={handleSubmit} noValidate className="p-6 flex-1 overflow-y-auto custom-scrollbar">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
           <div className="space-y-4">

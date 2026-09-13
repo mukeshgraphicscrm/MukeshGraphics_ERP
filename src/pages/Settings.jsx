@@ -10,7 +10,7 @@ import { useData } from '../contexts/DataContext';
 
 const AVAILABLE_MODULES = [
   'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations',
-  'Orders', 'Design', 'Production', 'Dispatch', 'Inventory',
+  'Orders', 'Design', 'Job Preparation', 'Production', 'Dispatch', 'Inventory',
   'Purchase', 'Accounts', 'Job Data', 'Tasks', 'Daily Work',
   'Customize Packaging Request', 'Job Inquiry'
 ];

@@ -217,7 +217,18 @@ export default function Design() {
   };
 
   const columns = [
-    { header: 'Customer', accessor: row => customers[row.customerId]?.name || row.customerId || 'UNKNOWN CUSTOMER' },
+    { 
+      header: 'Customer', 
+      accessor: row => (
+        <div className="flex flex-col">
+          <span>{customers[row.customerId]?.name || row.customerId || 'UNKNOWN CUSTOMER'}</span>
+          {row.delayReason && (
+            <span className="text-[11px] text-red-600 font-medium mt-0.5">Reason: {row.delayReason}</span>
+          )}
+        </div>
+      ),
+      exportAccessor: row => customers[row.customerId]?.name || row.customerId || 'UNKNOWN CUSTOMER'
+    },
     { header: 'Design', accessor: row => row.designType || '-' },
     { 
       header: 'Product', 

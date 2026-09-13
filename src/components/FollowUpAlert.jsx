@@ -56,8 +56,8 @@ export default function FollowUpAlert() {
           const targetDate = new Date(targetDateStr);
           
           if (!isNaN(targetDate.getTime())) {
-            // Check if it's within 2 hours or overdue
-            if (targetDate <= twoHoursFromNow) {
+            // Check if it's within 2 hours but not overdue
+            if (targetDate <= twoHoursFromNow && targetDate >= now) {
               urgent.push({
                 ...lead,
                 targetDate,
@@ -107,7 +107,7 @@ export default function FollowUpAlert() {
         
         <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
           <p className="text-gray-600 mb-4 font-medium">
-            You have {urgentLeads.length} lead{urgentLeads.length > 1 ? 's' : ''} requiring immediate attention (due within 2 hours or overdue).
+            You have {urgentLeads.length} lead{urgentLeads.length > 1 ? 's' : ''} requiring immediate attention (due within 2 hours).
           </p>
           
           <div className="space-y-3">

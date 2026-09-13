@@ -262,7 +262,7 @@ export default function Leads() {
       <AddLeadModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onLeadAdded={(newLead) => setLeads(prev => [newLead, ...prev])}
+        onLeadAdded={() => {}}
       />
       <EditLeadModal
         isOpen={isEditModalOpen}

@@ -142,10 +142,11 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
           position: 'absolute',
           opacity: 0,
           pointerEvents: 'none',
-          height: 0,
-          width: 0,
-          left: '50%',
-          bottom: 0,
+          height: '100%',
+          width: '100%',
+          left: 0,
+          top: 0,
+          zIndex: -1
         }}
         tabIndex={-1} 
       />

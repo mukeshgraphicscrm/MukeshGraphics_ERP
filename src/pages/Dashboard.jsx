@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
   ShoppingCart, Factory, CheckCircle, Truck, Wallet, IndianRupee,
   TrendingUp, Activity, Target, CalendarDays, TrendingUp as TrendingUpIcon,
-  Clock, CheckSquare, Plus, Mic, MicOff, Square, Trash2, PenTool, Boxes
+  Clock, CheckSquare, Plus, Mic, MicOff, Square, Trash2, PenTool, Boxes, FilePlus
 } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -25,7 +25,7 @@ export default function Dashboard() {
   const {
     dashboardData: data, settings, orders,
     productionJobs, leads, productMap, customerMap,
-    artworks, dispatches, inventory, invoices
+    artworks, dispatches, inventory, invoices, jobPreparations
   } = useData();
   const { currentUser } = useAuth();
   const isEmployee = currentUser?.profile?.designation === 'Employee';
@@ -272,6 +272,10 @@ export default function Dashboard() {
     });
   }, [artworks, isEmployee, employeeName]);
 
+  const activeJobPreparations = useMemo(() => {
+    return (jobPreparations || []).filter(jp => jp.status !== 'Done');
+  }, [jobPreparations]);
+
   const pendingDispatches = useMemo(() => {
     return (dispatches || []).filter(d => d.status !== 'Delivered' && d.status !== 'Cancelled');
   }, [dispatches]);
@@ -502,6 +506,18 @@ export default function Dashboard() {
                 </div>
                 <div className="w-14 h-14 bg-pink-50 text-pink-600 rounded-2xl flex items-center justify-center shadow-inner border border-pink-100">
                   <PenTool className="w-7 h-7" />
+                </div>
+              </div>
+            )}
+
+            {hasAccess('Job Preparation') && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm flex items-center justify-between hover:border-indigo-300 transition-colors">
+                <div>
+                  <p className="text-sm font-semibold text-gray-500 mb-1 uppercase tracking-wider">Job Preps</p>
+                  <p className="text-4xl font-bold text-gray-900">{activeJobPreparations.length}</p>
+                </div>
+                <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center shadow-inner border border-indigo-100">
+                  <FilePlus className="w-7 h-7" />
                 </div>
               </div>
             )}
@@ -762,6 +778,37 @@ export default function Dashboard() {
                           Due: {new Date(design.deadline).toLocaleDateString()}
                         </div>
                       )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Job Preparation Panel */}
+          {hasAccess('Job Preparation') && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-[400px]">
+              <div className="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                <h2 className="font-bold text-gray-900 flex items-center gap-2">
+                  <FilePlus className="w-5 h-5 text-indigo-600" /> Job Preparations
+                </h2>
+              </div>
+              <div className="p-4 flex-1 overflow-y-auto space-y-3">
+                {activeJobPreparations.length === 0 ? (
+                  <div className="text-center text-gray-400 py-12 flex flex-col items-center">
+                    <FilePlus className="w-10 h-10 mb-2 opacity-50" />
+                    <p>No active job preparations.</p>
+                  </div>
+                ) : activeJobPreparations.map(jp => (
+                  <div key={jp.id} className="border border-gray-100 rounded-xl p-4 flex items-center justify-between hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer bg-white" onClick={() => window.location.href = '/job-preparation'}>
+                    <div>
+                      <div className="font-bold text-gray-900 text-sm">{jp.jobNo || jp.orderNo || 'Unknown'}</div>
+                      <div className="text-xs font-medium text-gray-500 mt-1">{jp.party || customerMap[jp.party]?.name || 'Unknown'}</div>
+                    </div>
+                    <div className="text-right flex flex-col items-end justify-center">
+                      <div className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700`}>
+                        {jp.status || 'Active'}
+                      </div>
                     </div>
                   </div>
                 ))}

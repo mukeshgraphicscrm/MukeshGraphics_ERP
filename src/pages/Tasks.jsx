@@ -93,7 +93,8 @@ export default function Tasks() {
         assignedTo: task.assignedTo || '',
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ''
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+        audioUrl: task.audioUrl || null
       });
       setEditingId(task.id);
     } else {
@@ -103,7 +104,8 @@ export default function Tasks() {
         assignedTo: isAdmin ? '' : (currentUser?.profile?.name || ''),
         priority: 'Medium',
         status: 'Pending',
-        dueDate: ''
+        dueDate: '',
+        audioUrl: null
       });
       setEditingId(null);
     }
@@ -148,17 +150,17 @@ export default function Tasks() {
     setSaving(true);
     
     try {
-      let audioUrl = null;
+      let finalAudioUrl = formData.audioUrl;
       if (audioBlob) {
         const audioRef = ref(storage, `task-audio/${Date.now()}.webm`);
         await uploadBytes(audioRef, audioBlob);
-        audioUrl = await getDownloadURL(audioRef);
+        finalAudioUrl = await getDownloadURL(audioRef);
       }
 
       const payload = {
         ...formData,
-        assignedBy: currentUser?.profile?.name || 'Admin',
-        ...(audioUrl && { audioUrl })
+        audioUrl: finalAudioUrl,
+        assignedBy: currentUser?.profile?.name || 'Admin'
       };
 
       if (editingId) {
@@ -414,7 +416,7 @@ export default function Tasks() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-sm font-medium text-gray-700">Description</label>
-                  {!audioBlob && (
+                  {(!audioBlob && !formData.audioUrl) && (
                     <button 
                       type="button" 
                       onClick={isRecording ? stopRecording : startRecording}
@@ -435,17 +437,20 @@ export default function Tasks() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                   placeholder="PROVIDE TASK DETAILS..."
                 />
-                {audioBlob && (
+                {(audioBlob || formData.audioUrl) && (
                   <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
                         <Mic className="w-4 h-4" />
                       </div>
-                      <audio src={URL.createObjectURL(audioBlob)} controls className="h-8 max-w-[200px]" />
+                      <audio src={audioBlob ? URL.createObjectURL(audioBlob) : formData.audioUrl} controls className="h-8 max-w-[200px]" />
                     </div>
                     <button 
                       type="button" 
-                      onClick={() => setAudioBlob(null)}
+                      onClick={() => {
+                        setAudioBlob(null);
+                        setFormData({...formData, audioUrl: null});
+                      }}
                       className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />

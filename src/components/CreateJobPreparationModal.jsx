@@ -69,6 +69,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
   const set = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value.toUpperCase() }));
   const setDirect = (field) => (e) => setFormData(prev => ({ ...prev, [field]: (e.target.value || '').toUpperCase() }));
+  const setPreserveCase = (field) => (e) => setFormData(prev => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -162,7 +163,25 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 <CustomSelect
                   name="orderNo"
                   value={formData.orderNo}
-                  onChange={(e) => setFormData(prev => ({ ...prev, orderNo: e.target.value }))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const order = orders?.find(o => o.orderNo === val);
+                    if (order) {
+                      const customer = customers?.find(c => c.id === order.customerId);
+                      setFormData(prev => ({
+                        ...prev,
+                        orderNo: val,
+                        party: customer?.name || prev.party,
+                        poNo: order.poNo || prev.poNo,
+                        paper: order.paper || prev.paper,
+                        gsm: order.gsm || prev.gsm,
+                        paperSize: order.paperSize || prev.paperSize,
+                        jobSize: order.jobSize || prev.jobSize
+                      }));
+                    } else {
+                      setFormData(prev => ({ ...prev, orderNo: val }));
+                    }
+                  }}
                   options={orderOptions}
                   placeholder="Select Order..."
                   required
@@ -245,7 +264,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 <input
                   type="text"
                   value={formData.paperSize}
-                  onChange={set('paperSize')}
+                  onChange={setPreserveCase('paperSize')}
                   disabled={isViewMode}
                   className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 24x36 inch"
@@ -258,7 +277,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 <input
                   type="text"
                   value={formData.jobSize}
-                  onChange={set('jobSize')}
+                  onChange={setPreserveCase('jobSize')}
                   disabled={isViewMode}
                   className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 10x15 cm"

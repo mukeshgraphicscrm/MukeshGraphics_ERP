@@ -4,7 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-white text-gray-800 font-sans;
+    @apply bg-white text-gray-800 font-sans uppercase;
+  }
+  input:not([type="password"]), textarea, select, button {
+    @apply uppercase;
   }
 }
 

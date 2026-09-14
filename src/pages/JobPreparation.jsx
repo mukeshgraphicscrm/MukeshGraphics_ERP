@@ -18,11 +18,13 @@ export default function JobPreparation() {
 
   const columns = [
     { header: 'O.No', accessor: row => row.orderNo || '-', render: row => <span className="font-medium text-brand-accent">{row.orderNo || '-'}</span> },
+    { header: 'PO No', accessor: row => row.poNo || '-' },
     { header: 'Party', accessor: row => row.party || '-' },
     { header: 'JOB NO', accessor: row => row.jobNo || '-', render: row => <span className="font-medium text-gray-900">{row.jobNo || '-'}</span> },
     { header: 'Paper', accessor: row => row.paper || '-' },
     { header: 'GSM', accessor: row => row.gsm || '-' },
-    { header: 'Size', accessor: row => row.size || '-' },
+    { header: 'Paper Size', accessor: row => row.paperSize || '-' },
+    { header: 'Job Size', accessor: row => row.jobSize || '-' },
     { header: 'Supplier', accessor: row => row.supplier || '-' },
     {
       header: 'Status',

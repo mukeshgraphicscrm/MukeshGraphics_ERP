@@ -18,11 +18,13 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     orderNo: '',
+    poNo: '',
     party: '',
     jobNo: '',
     paper: '',
     gsm: '',
-    size: '',
+    paperSize: '',
+    jobSize: '',
     supplier: '',
     status: 'Active',
     note: '',
@@ -33,17 +35,19 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     if (jobToEdit) {
       setFormData({
         orderNo: jobToEdit.orderNo || '',
+        poNo: jobToEdit.poNo || '',
         party: jobToEdit.party || '',
         jobNo: jobToEdit.jobNo || '',
         paper: jobToEdit.paper || '',
         gsm: jobToEdit.gsm || '',
-        size: jobToEdit.size || '',
+        paperSize: jobToEdit.paperSize || '',
+        jobSize: jobToEdit.jobSize || '',
         supplier: jobToEdit.supplier || '',
         status: jobToEdit.status || 'Active',
         note: jobToEdit.note || '',
       });
     } else {
-      setFormData({ orderNo: '', party: '', jobNo: '', paper: '', gsm: '', size: '', supplier: '', status: 'Active', note: '' });
+      setFormData({ orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', status: 'Active', note: '' });
     }
   }, [jobToEdit, isOpen]);
 
@@ -68,6 +72,10 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isNoteVisible && !formData.note.trim()) {
+      toast.error('Reason (Note) is required for Delay or Hold status.');
+      return;
+    }
     setLoading(true);
     try {
       if (jobToEdit) {
@@ -158,6 +166,19 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 />
               </div>
 
+              {/* PO No. */}
+              <div>
+                <label className={LABEL_CLS}>PO No.</label>
+                <input
+                  type="text"
+                  value={formData.poNo}
+                  onChange={set('poNo')}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
+                  placeholder="e.g. PO-123"
+                />
+              </div>
+
               {/* Customer (was Party) */}
               <div>
                 <label className={LABEL_CLS}>Customer</label>
@@ -213,16 +234,29 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 />
               </div>
 
-              {/* Size */}
+              {/* Paper Size */}
               <div>
-                <label className={LABEL_CLS}>Size</label>
+                <label className={LABEL_CLS}>Paper Size</label>
                 <input
                   type="text"
-                  value={formData.size}
-                  onChange={set('size')}
+                  value={formData.paperSize}
+                  onChange={set('paperSize')}
                   disabled={isViewMode}
                   className={INPUT_CLS_FN(isViewMode)}
-                  placeholder="e.g. 91×56"
+                  placeholder="e.g. 24x36 inch"
+                />
+              </div>
+
+              {/* Job Size */}
+              <div>
+                <label className={LABEL_CLS}>Job Size</label>
+                <input
+                  type="text"
+                  value={formData.jobSize}
+                  onChange={set('jobSize')}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
+                  placeholder="e.g. 10x15 cm"
                 />
               </div>
 

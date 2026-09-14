@@ -11,6 +11,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
     contactPerson: '',
     mobile: '',
     city: '',
+    notes: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -35,9 +36,10 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
         contactPerson: activeSupplierToEdit.contactPerson || '',
         mobile: activeSupplierToEdit.mobile || '',
         city: activeSupplierToEdit.city || '',
+        notes: activeSupplierToEdit.notes || '',
       });
     } else {
-      setFormData({ name: '', contactPerson: '', mobile: '', city: '' });
+      setFormData({ name: '', contactPerson: '', mobile: '', city: '', notes: '' });
     }
   }, [activeSupplierToEdit, isOpen]);
 
@@ -91,7 +93,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
         if (onSupplierUpdated) onSupplierUpdated(res.data);
         setSuppliers(prev => prev.map(s => (s.id || s._id) === (activeSupplierToEdit.id || activeSupplierToEdit._id) ? res.data : s));
         setInternalSupplierToEdit(null);
-        setFormData({ name: '', contactPerson: '', mobile: '', city: '' });
+        setFormData({ name: '', contactPerson: '', mobile: '', city: '', notes: '' });
         toast.success('Supplier updated successfully!');
       } else {
         const payload = {
@@ -101,7 +103,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
         const res = await api.post('/suppliers', payload);
         if (onSupplierAdded) onSupplierAdded(res.data);
         setSuppliers(prev => [res.data, ...prev]);
-        setFormData({ name: '', contactPerson: '', mobile: '', city: '' });
+        setFormData({ name: '', contactPerson: '', mobile: '', city: '', notes: '' });
         toast.success('Supplier added successfully!');
       }
       if (supplierToEdit) {
@@ -127,7 +129,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
       setSuppliers(prev => prev.filter(s => (s.id || s._id) !== targetId));
       if (activeSupplierToEdit && (activeSupplierToEdit.id || activeSupplierToEdit._id) === targetId) {
         setInternalSupplierToEdit(null);
-        setFormData({ name: '', contactPerson: '', mobile: '', city: '' });
+        setFormData({ name: '', contactPerson: '', mobile: '', city: '', notes: '' });
       }
       toast.success('Supplier deleted successfully!');
       setIsDeleteModalOpen(false);
@@ -213,6 +215,18 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
                 />
               </div>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+              <textarea
+                name="notes"
+                value={formData.notes}
+                onChange={handleChange}
+                rows="2"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] transition-colors"
+                placeholder="Any additional notes..."
+              ></textarea>
+            </div>
           </div>
 
           {suppliers.length > 0 && !supplierToEdit && (
@@ -257,7 +271,7 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
               {activeSupplierToEdit && !supplierToEdit && (
                 <button
                   type="button"
-                  onClick={() => { setInternalSupplierToEdit(null); setFormData({ name: '', contactPerson: '', mobile: '', city: '' }); }}
+                  onClick={() => { setInternalSupplierToEdit(null); setFormData({ name: '', contactPerson: '', mobile: '', city: '', notes: '' }); }}
                   disabled={loading}
                   className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 border border-gray-200 rounded-md hover:bg-gray-200 transition-colors mr-auto"
                 >

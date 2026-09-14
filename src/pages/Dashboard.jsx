@@ -38,6 +38,20 @@ export default function Dashboard() {
   };
 
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
+  
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await api.get('/users');
+        setUsers(res.data);
+      } catch (err) {
+        console.error('Error fetching users:', err);
+      }
+    };
+    fetchUsers();
+  }, []);
+
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskFormData, setTaskFormData] = useState({
     title: '',
@@ -597,6 +611,11 @@ export default function Dashboard() {
                         </span>
                       </div>
                     )}
+                    {task.description && (
+                      <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                        {task.description}
+                      </p>
+                    )}
                     {task.audioUrl && (
                       <div className="mb-3">
                         <audio src={task.audioUrl} controls className="w-full h-8" />
@@ -990,11 +1009,12 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                    <input
-                      type="text"
+                    <CustomSelect
+                      options={users.map(u => ({ label: u.name, value: u.name }))}
                       value={taskFormData.assignedTo}
-                      disabled
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                      onChange={(e) => setTaskFormData({...taskFormData, assignedTo: e.target.value})}
+                      placeholder="Select User"
+                      required
                     />
                   </div>
                   <div>

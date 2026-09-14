@@ -61,9 +61,7 @@ export default function Tasks() {
       toast.error('Failed to load tasks');
     });
 
-    if (isAdmin) {
-      fetchUsers();
-    }
+    fetchUsers();
 
     return () => unsubscribe();
   }, [isAdmin, currentUser]);
@@ -459,7 +457,6 @@ export default function Tasks() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                  {isAdmin ? (
                     <CustomSelect
                       options={users.map(u => ({ label: u.name, value: u.name }))}
                       value={formData.assignedTo}
@@ -467,14 +464,6 @@ export default function Tasks() {
                       placeholder="Select User"
                       required
                     />
-                  ) : (
-                    <input
-                      type="text"
-                      value={formData.assignedTo}
-                      disabled
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-                    />
-                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>

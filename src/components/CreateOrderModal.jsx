@@ -3,7 +3,6 @@ import { X, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
-import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrderUpdated, orders = [], orderToEdit, initialData }) {
@@ -28,7 +27,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showWhatsappPrompt, setShowWhatsappPrompt] = useState(false);
   const [whatsappInfo, setWhatsappInfo] = useState({ phone: '', message: '' });
 
@@ -63,13 +61,13 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen && !isDeleteModalOpen) {
+      if (e.key === 'Escape' && isOpen) {
         onClose();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, isDeleteModalOpen]);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -680,8 +678,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     value={formData.orderDate}
                     onChange={handleChange}
                     disabled={loading}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                      }`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                   />
                 </div>
 
@@ -694,8 +691,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     value={formData.deliveryDate}
                     onChange={handleChange}
                     disabled={loading}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                      }`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                   />
                 </div>
 
@@ -705,7 +701,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     name="employee"
                     value={formData.employee}
                     onChange={handleChange}
-                    disabled={isViewMode || (!!orderToEdit && currentUser?.profile?.designation === 'Employee')}
+                    disabled={!!orderToEdit && currentUser?.profile?.designation === 'Employee'}
                     options={[
                       { label: 'Select Employee', value: '' },
                       ...users.map(user => ({ label: user.name, value: user.name }))
@@ -721,26 +717,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     onChange={handleChange}
                     disabled={loading}
                     rows={3}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
-                      }`}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none"
                     placeholder="Enter any additional notes or instructions..."
                   />
                 </div>
               </div>
             </div>
 
-            <div className={`px-6 py-4 flex flex-col-reverse sm:flex-row ${orderToEdit ? 'sm:justify-between' : 'sm:justify-end'} items-stretch sm:items-center gap-3 border-t border-gray-100 bg-gray-50 flex-shrink-0`}>
-              {orderToEdit && (
-                <button
-                  type="button"
-                  onClick={handleDeleteClick}
-                  disabled={loading}
-                  className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 w-full sm:w-auto"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  <span className="whitespace-nowrap">Delete Order</span>
-                </button>
-              )}
+            <div className="px-6 py-4 flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-3 border-t border-gray-100 bg-gray-50 flex-shrink-0">
               <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center sm:justify-end">
                 <button
                   type="button"
@@ -790,15 +774,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           </div>
         </div>
       )}
-
-      <ConfirmDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Delete Order"
-        message="Are you sure you want to delete this order? This action cannot be undone and it will be permanently removed from the system."
-        isLoading={loading}
-      />
     </div>
   );
 }

@@ -2,12 +2,12 @@ import React, { useEffect } from 'react';
 import { X, Edit2, Trash2 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
 
-export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, onDeleteClick, onWhatsappClick }) {
+export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, onDeleteClick, onWhatsappClick, preventClose }) {
   const { customerMap, productMap } = useData();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen) {
+      if (e.key === 'Escape' && isOpen && !preventClose) {
         onClose();
       }
     };
@@ -26,14 +26,14 @@ export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, on
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, preventClose]);
 
   if (!isOpen || !order) return null;
 
   const customerName = customerMap?.[order.customerId]?.name || order.customerId || 'Unknown Customer';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && !preventClose) onClose(); }}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-6 py-4 border-b border-gray-100 bg-white shrink-0">

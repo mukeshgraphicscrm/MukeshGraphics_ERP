@@ -8,6 +8,7 @@ import ViewOrderModal from '../components/ViewOrderModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
+import toast from 'react-hot-toast';
 
 export default function Orders() {
   const { orders: data, setOrders: setData, customerMap: customers, productMap: products, isLoaded } = useData();
@@ -270,13 +271,34 @@ export default function Orders() {
           const customer = customers[order.customerId];
           if (customer && (customer.mobile || customer.phone)) {
             const phone = customer.mobile || customer.phone;
-            const message = `Hello ${customer.name}, your order ${order.orderNo} for ${Array.isArray(order.productId) ? order.productId.map(id => products[id]?.name).join(', ') : products[order.productId]?.name} is currently ${order.status}. Total amount is ₹${order.amount.toLocaleString('en-IN')}.`;
+            let productsText = "";
+            if (Array.isArray(order.productId)) {
+              productsText = order.productId.map((id, index) => {
+                const productName = products[id]?.name || id;
+                const qty = order.quantities?.[id] || 0;
+                const amt = order.amounts?.[id] || 0;
+                return `${index + 1}. ${productName}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+              }).join('\n\n');
+            } else {
+              const productName = products[order.productId]?.name || order.productId;
+              const qty = order.quantity || 0;
+              const amt = order.amount || 0;
+              productsText = `1. ${productName}\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+            }
+
+            const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-GB') : '-';
+            const customerName = customer.contactPerson || customer.name || 'Customer';
+            const companyName = customer.name || 'your company';
+
+            const message = `Dear ${customerName},\n\nThank you for choosing Mukesh Graphics! We are pleased to confirm your order for ${companyName}.\n\nOrder Details:\nOrder No: ${order.orderNo}\nOrder Date: ${orderDate}\n\nProducts:\n${productsText}\n\nTotal Amount: ₹${order.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n\nWe will keep you updated on the production status. Please feel free to reach out if you have any questions.\n\nBest Regards,\nMukesh Graphics`;
+
             const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');
           } else {
             alert('No phone number found for this customer.');
           }
         }}
+        preventClose={isDeleteModalOpen}
       />
       <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
@@ -293,8 +315,10 @@ export default function Orders() {
             setIsDeleteModalOpen(false);
             setOrderToDelete(null);
             setIsViewModalOpen(false);
+            toast.success('Order deleted successfully!');
           } catch (err) {
             console.error('Error deleting order:', err);
+            toast.error('Failed to delete order. Please try again.');
           } finally {
             setIsDeleting(false);
           }

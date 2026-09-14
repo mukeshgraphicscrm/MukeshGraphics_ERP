@@ -274,23 +274,23 @@ export default function Orders() {
             let productsText = "";
             if (Array.isArray(order.productId)) {
               productsText = order.productId.map((id, index) => {
-                const productName = products[id]?.name || id;
+                const productName = (products[id]?.name || id).toString().trim();
                 const qty = order.quantities?.[id] || 0;
                 const amt = order.amounts?.[id] || 0;
                 return `${index + 1}. *${productName}*\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
               }).join('\n\n');
             } else {
-              const productName = products[order.productId]?.name || order.productId;
+              const productName = (products[order.productId]?.name || order.productId).toString().trim();
               const qty = order.quantity || 0;
               const amt = order.amount || 0;
               productsText = `1. *${productName}*\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
             }
 
             const orderDate = order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-GB') : '-';
-            const customerName = customer.contactPerson || customer.name || 'Customer';
-            const companyName = customer.name || 'your company';
+            const customerName = (customer.contactPerson || customer.name || 'Customer').toString().trim();
+            const companyName = (customer.name || 'your company').toString().trim();
 
-            const message = `Dear ${customerName},\n\nThank you for choosing Mukesh Graphics! We are pleased to confirm your order for *${companyName}*.\n\n*Order Details:*\n*Order No:* ${order.orderNo}\n*Order Date:* ${orderDate}\n\n*Products:*\n${productsText}\n\n*Total Amount:* ₹${order.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n\nWe will keep you updated on the production status. Please feel free to reach out if you have any questions.\n\nBest Regards,\n*Mukesh Graphics*`;
+            const message = `Dear *${customerName}*,\n\nThank you for choosing Mukesh Graphics! We are pleased to confirm your order for *${companyName}*.\n\n*Order Details:*\n*Order No:* ${order.orderNo}\n*Order Date:* ${orderDate}\n\n*Products:*\n${productsText}\n\n*Total Amount:* ₹${order.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\n\nWe will keep you updated on the production status. Please feel free to reach out if you have any questions.\n\nBest Regards,\n*Mukesh Graphics*`;
 
             const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');

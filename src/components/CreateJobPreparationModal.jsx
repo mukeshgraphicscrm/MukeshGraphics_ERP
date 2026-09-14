@@ -12,7 +12,7 @@ const LABEL_CLS = 'block text-sm font-medium text-gray-700 mb-1';
 
 export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, onUpdated, onDeleted, jobToEdit }) {
   const { currentUser } = useAuth();
-  const { customers, suppliers } = useData();
+  const { customers, suppliers, orders } = useData();
   const [loading, setLoading] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -119,6 +119,10 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     ...(suppliers || []).map(s => ({ label: s.name, value: s.name }))
   ];
 
+  const orderOptions = [
+    ...(orders || []).map(o => ({ label: o.orderNo, value: o.orderNo }))
+  ];
+
   const statusOptions = [
     { label: 'Active', value: 'Active' },
     { label: 'Delay', value: 'Delay' },
@@ -155,14 +159,15 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               {/* Order No. */}
               <div>
                 <label className={LABEL_CLS}>Order No.</label>
-                <input
-                  type="text"
-                  required
+                <CustomSelect
+                  name="orderNo"
                   value={formData.orderNo}
-                  onChange={set('orderNo')}
+                  onChange={(e) => setFormData(prev => ({ ...prev, orderNo: e.target.value }))}
+                  options={orderOptions}
+                  placeholder="Select Order..."
+                  required
+                  searchable={true}
                   disabled={isViewMode}
-                  className={INPUT_CLS_FN(isViewMode)}
-                  placeholder="e.g. 008"
                 />
               </div>
 

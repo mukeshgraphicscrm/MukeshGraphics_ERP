@@ -35,7 +35,7 @@ export default function Tasks() {
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioBlobs, setAudioBlobs] = useState([]);
   const [mediaRecorder, setMediaRecorder] = useState(null);
 
   useEffect(() => {
@@ -87,6 +87,10 @@ export default function Tasks() {
 
   const handleOpenModal = (task = null) => {
     if (task) {
+      let urls = [];
+      if (task.audioUrls && Array.isArray(task.audioUrls)) urls = [...task.audioUrls];
+      else if (task.audioUrl) urls = [task.audioUrl];
+
       setFormData({
         title: task.title || '',
         description: task.description || '',
@@ -94,6 +98,7 @@ export default function Tasks() {
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
         dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+        audioUrls: urls,
         audioUrl: task.audioUrl || null
       });
       setEditingId(task.id);
@@ -105,11 +110,12 @@ export default function Tasks() {
         priority: 'Medium',
         status: 'Pending',
         dueDate: '',
+        audioUrls: [],
         audioUrl: null
       });
       setEditingId(null);
     }
-    setAudioBlob(null);
+    setAudioBlobs([]);
     setIsModalOpen(true);
   };
 
@@ -125,7 +131,7 @@ export default function Tasks() {
       
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
+        setAudioBlobs(prev => [...prev, blob]);
         stream.getTracks().forEach(track => track.stop());
       };
       
@@ -150,16 +156,22 @@ export default function Tasks() {
     setSaving(true);
     
     try {
-      let finalAudioUrl = formData.audioUrl;
-      if (audioBlob) {
-        const audioRef = ref(storage, `task-audio/${Date.now()}.webm`);
-        await uploadBytes(audioRef, audioBlob);
-        finalAudioUrl = await getDownloadURL(audioRef);
+      let newUrls = [];
+      if (audioBlobs.length > 0) {
+        for (const blob of audioBlobs) {
+          const audioRef = ref(storage, `task-audio/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webm`);
+          await uploadBytes(audioRef, blob);
+          const url = await getDownloadURL(audioRef);
+          newUrls.push(url);
+        }
       }
+
+      const finalAudioUrls = [...(formData.audioUrls || []), ...newUrls];
 
       const payload = {
         ...formData,
-        audioUrl: finalAudioUrl,
+        audioUrls: finalAudioUrls,
+        audioUrl: finalAudioUrls.length > 0 ? finalAudioUrls[0] : null,
         assignedBy: currentUser?.profile?.name || 'Admin'
       };
 
@@ -333,11 +345,17 @@ export default function Tasks() {
                 {task.description}
               </p>
               
-              {task.audioUrl && (
-                <div className="mb-3">
+              {task.audioUrls && task.audioUrls.length > 0 ? (
+                <div className="mb-3 space-y-2">
+                  {task.audioUrls.map((url, idx) => (
+                    <audio key={idx} src={url} controls className="w-full h-8" />
+                  ))}
+                </div>
+              ) : task.audioUrl ? (
+                <div className="mb-3 space-y-2">
                   <audio src={task.audioUrl} controls className="w-full h-8" />
                 </div>
-              )}
+              ) : null}
               
               <div className="space-y-2 mt-auto pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center text-sm">
@@ -416,17 +434,22 @@ export default function Tasks() {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-sm font-medium text-gray-700">Description</label>
-                  {(!audioBlob && !formData.audioUrl) && (
+                  {!isRecording && (
                     <button 
                       type="button" 
-                      onClick={isRecording ? stopRecording : startRecording}
-                      className={`text-xs flex items-center gap-1 font-medium transition-colors ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-blue-500 hover:text-blue-600'}`}
+                      onClick={startRecording}
+                      className="text-xs flex items-center gap-1 font-medium transition-colors text-blue-500 hover:text-blue-600"
                     >
-                      {isRecording ? (
-                        <><Square className="w-3.5 h-3.5 fill-current" /> Stop Recording</>
-                      ) : (
-                        <><Mic className="w-3.5 h-3.5" /> Add Voice Note</>
-                      )}
+                      <Mic className="w-3.5 h-3.5" /> Add Voice Note
+                    </button>
+                  )}
+                  {isRecording && (
+                    <button 
+                      type="button" 
+                      onClick={stopRecording}
+                      className="text-xs flex items-center gap-1 font-medium transition-colors text-red-500 hover:text-red-600 animate-pulse"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-current" /> Stop Recording
                     </button>
                   )}
                 </div>
@@ -437,24 +460,54 @@ export default function Tasks() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                   placeholder="PROVIDE TASK DETAILS..."
                 />
-                {(audioBlob || formData.audioUrl) && (
-                  <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                        <Mic className="w-4 h-4" />
+                
+                {/* Render Audio Notes */}
+                {((formData.audioUrls && formData.audioUrls.length > 0) || audioBlobs.length > 0) && (
+                  <div className="space-y-2 mt-2">
+                    {/* Existing Notes */}
+                    {formData.audioUrls && formData.audioUrls.map((url, idx) => (
+                      <div key={`url-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <Mic className="w-4 h-4" />
+                          </div>
+                          <audio src={url} controls className="h-8 max-w-[200px]" />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setFormData(prev => ({
+                              ...prev,
+                              audioUrls: prev.audioUrls.filter((_, i) => i !== idx)
+                            }));
+                          }}
+                          className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-                      <audio src={audioBlob ? URL.createObjectURL(audioBlob) : formData.audioUrl} controls className="h-8 max-w-[200px]" />
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setAudioBlob(null);
-                        setFormData({...formData, audioUrl: null});
-                      }}
-                      className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    ))}
+                    
+                    {/* New Notes */}
+                    {audioBlobs.map((blob, idx) => (
+                      <div key={`blob-${idx}`} className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <Mic className="w-4 h-4" />
+                          </div>
+                          <audio src={URL.createObjectURL(blob)} controls className="h-8 max-w-[200px]" />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            setAudioBlobs(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

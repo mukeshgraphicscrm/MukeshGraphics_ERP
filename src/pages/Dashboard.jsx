@@ -616,11 +616,17 @@ export default function Dashboard() {
                         {task.description}
                       </p>
                     )}
-                    {task.audioUrl && (
-                      <div className="mb-3">
+                    {task.audioUrls && task.audioUrls.length > 0 ? (
+                      <div className="mb-3 space-y-2">
+                        {task.audioUrls.map((url, idx) => (
+                          <audio key={idx} src={url} controls className="w-full h-8" />
+                        ))}
+                      </div>
+                    ) : task.audioUrl ? (
+                      <div className="mb-3 space-y-2">
                         <audio src={task.audioUrl} controls className="w-full h-8" />
                       </div>
-                    )}
+                    ) : null}
                     <div className="flex gap-2 mt-3 pt-3 border-t border-gray-50">
                       <button
                         onClick={() => handleTaskStatusChange(task.id, 'In Progress')}

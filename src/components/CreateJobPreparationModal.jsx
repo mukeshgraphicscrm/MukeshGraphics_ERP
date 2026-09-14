@@ -7,13 +7,14 @@ import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 
-const INPUT_CLS = 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors';
+const INPUT_CLS_FN = (disabled) => `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${disabled ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`;
 const LABEL_CLS = 'block text-sm font-medium text-gray-700 mb-1';
 
 export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, onUpdated, onDeleted, jobToEdit }) {
   const { currentUser } = useAuth();
   const { customers, suppliers } = useData();
   const [loading, setLoading] = useState(false);
+  const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     orderNo: '',
@@ -28,6 +29,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   });
 
   useEffect(() => {
+    setIsViewMode(!!jobToEdit);
     if (jobToEdit) {
       setFormData({
         orderNo: jobToEdit.orderNo || '',
@@ -129,7 +131,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
           {/* Header */}
           <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
             <h2 className="text-lg font-bold text-gray-900">
-              {jobToEdit ? 'Edit Job Preparation' : 'Add Job Preparation'}
+              {isViewMode ? 'View Job Preparation' : (jobToEdit ? 'Edit Job Preparation' : 'Add Job Preparation')}
             </h2>
             <div className="flex items-center gap-2">
               <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -150,7 +152,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   required
                   value={formData.orderNo}
                   onChange={set('orderNo')}
-                  className={INPUT_CLS}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 008"
                 />
               </div>
@@ -166,6 +169,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   placeholder="Select Customer..."
                   required
                   searchable={true}
+                  disabled={isViewMode}
                 />
               </div>
 
@@ -177,7 +181,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   required
                   value={formData.jobNo}
                   onChange={set('jobNo')}
-                  className={INPUT_CLS}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 2025"
                 />
               </div>
@@ -189,7 +194,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   type="text"
                   value={formData.paper}
                   onChange={set('paper')}
-                  className={INPUT_CLS}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. FBB"
                 />
               </div>
@@ -201,7 +207,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   type="text"
                   value={formData.gsm}
                   onChange={set('gsm')}
-                  className={INPUT_CLS}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 210"
                 />
               </div>
@@ -213,7 +220,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   type="text"
                   value={formData.size}
                   onChange={set('size')}
-                  className={INPUT_CLS}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 91×56"
                 />
               </div>
@@ -228,6 +236,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   options={supplierOptions}
                   placeholder="Select Supplier..."
                   searchable={true}
+                  disabled={isViewMode}
                 />
               </div>
 
@@ -240,6 +249,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                   options={statusOptions}
                   placeholder="Select Status..."
+                  disabled={isViewMode}
                 />
               </div>
 
@@ -257,8 +267,9 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   rows={2}
                   value={formData.note}
                   onChange={set('note')}
-                  className={`${INPUT_CLS} resize-none`}
-                  placeholder={isNoteVisible ? `Reason for ${formData.status}... (e.g. Paper not received)` : 'Optional remarks...'}
+                  disabled={isViewMode}
+                  className={`${INPUT_CLS_FN(isViewMode)} resize-none`}
+                  placeholder={isViewMode ? '' : (isNoteVisible ? `Reason for ${formData.status}... (e.g. Paper not received)` : 'Optional remarks...')}
                 />
               </div>
 
@@ -280,22 +291,46 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               )}
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={loading}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                form="jobPrepForm"
-                disabled={loading}
-                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
-              >
-                {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Add Job')}
-              </button>
+              {isViewMode ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setIsViewMode(false);
+                    }}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors whitespace-nowrap"
+                  >
+                    Edit Job
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={loading}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    form="jobPrepForm"
+                    disabled={loading}
+                    className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {loading ? 'Saving...' : (jobToEdit ? 'Save Changes' : 'Add Job')}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

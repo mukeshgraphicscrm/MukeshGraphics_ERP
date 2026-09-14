@@ -105,17 +105,27 @@ export default function JobPreparation() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentArtworks.map((art, idx) => (
-                    <tr key={art.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
-                      <td className="px-5 py-3.5 font-bold text-brand-accent whitespace-nowrap">{String(idx + 1).padStart(3, '0')}</td>
-                      <td className="px-5 py-3.5 text-gray-700 font-medium max-w-[160px] truncate">{customerMap[art.customerId]?.name || art.customerId || '-'}</td>
-                      <td className="px-5 py-3.5 whitespace-nowrap"><StatusBadge status={art.status || 'Active'} /></td>
-                      <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
-                        {art.deadline ? new Date(art.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
-                      </td>
-                    </tr>
-                  ))}
-                  {recentArtworks.length === 0 && (
+                  {!isLoaded ? (
+                    [...Array(4)].map((_, i) => (
+                      <tr key={`skel-${i}`} className="border-b border-gray-50">
+                        <td className="px-5 py-4"><div className="h-4 bg-gray-200 animate-pulse rounded w-10"></div></td>
+                        <td className="px-5 py-4"><div className="h-4 bg-gray-200 animate-pulse rounded w-32"></div></td>
+                        <td className="px-5 py-4"><div className="h-5 bg-gray-200 animate-pulse rounded-full w-20"></div></td>
+                        <td className="px-5 py-4"><div className="h-4 bg-gray-200 animate-pulse rounded w-16"></div></td>
+                      </tr>
+                    ))
+                  ) : recentArtworks.length > 0 ? (
+                    recentArtworks.map((art, idx) => (
+                      <tr key={art.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                        <td className="px-5 py-3.5 font-bold text-brand-accent whitespace-nowrap">{String(idx + 1).padStart(3, '0')}</td>
+                        <td className="px-5 py-3.5 text-gray-700 font-medium max-w-[160px] truncate">{customerMap[art.customerId]?.name || art.customerId || '-'}</td>
+                        <td className="px-5 py-3.5 whitespace-nowrap"><StatusBadge status={art.status || 'Active'} /></td>
+                        <td className="px-5 py-3.5 text-gray-500 whitespace-nowrap">
+                          {art.deadline ? new Date(art.deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '-'}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-400 text-sm">No recent designs found</td></tr>
                   )}
                 </tbody>

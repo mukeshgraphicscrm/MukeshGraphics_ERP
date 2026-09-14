@@ -6,11 +6,9 @@ import CustomSelect from './CustomSelect';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrderUpdated, onOrderDeleted, orders = [], orderToEdit, startInEditMode, initialData }) {
+export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrderUpdated, orders = [], orderToEdit, initialData }) {
   const { currentUser } = useAuth();
-  const [isViewMode, setIsViewMode] = useState(false);
   const [formData, setFormData] = useState({
-    orderNo: '',
     orderNo: '',
     customerId: '',
     productId: [],
@@ -90,7 +88,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
         toast.error('Failed to load customers and products.');
         setFetching(false);
       });
-      setIsViewMode(!startInEditMode && !!orderToEdit);
 
       if (orderToEdit) {
         const pIds = Array.isArray(orderToEdit.productId) ? orderToEdit.productId : (orderToEdit.productId ? [orderToEdit.productId] : []);
@@ -171,11 +168,9 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
           status: 'Approved',
           employee: currentUser?.profile?.name || '',
         });
-
-        setIsViewMode(false);
       }
     }
-  }, [isOpen, orders, orderToEdit, startInEditMode, initialData, currentUser]);
+  }, [isOpen, orders, orderToEdit, initialData, currentUser]);
 
   useEffect(() => {
     if (formData.customerId && formData.productId && formData.productId.length > 0) {
@@ -357,39 +352,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     }
   };
 
-  const handleOpenWhatsappFromView = () => {
-    const customer = customers.find(c => c.id === formData.customerId);
-    let phone = customer?.mobile || customer?.phone || '';
-    
-    if (phone) {
-      const customerName = customer?.name || 'Customer';
-      const contactPerson = customer?.contactPerson || 'Sir/Madam';
-
-      let message = `Dear ${contactPerson},\n\nThank you for choosing Mukesh Graphics! We are pleased to confirm your order for *${customerName}*.\n\n*Order Details:*\n*Order No:* ${formData.orderNo}\n*Order Date:* ${new Date(formData.orderDate).toLocaleDateString('en-IN')}\n\n*Products:*\n`;
-      let totalAmt = 0;
-      (formData.productId || []).forEach((prodId, index) => {
-        const product = products.find(p => p.id === prodId);
-        const productName = product?.name || 'Product';
-        const qty = Number((formData.quantities?.[prodId] || '0').toString().replace(/,/g, ''));
-        const amount = Number((formData.amounts?.[prodId] || '0').toString().replace(/,/g, ''));
-        totalAmt += amount;
-        message += `${index + 1}. *${productName}*\n   Qty: ${qty.toLocaleString('en-IN')}\n   Amount: ₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n`;
-      });
-      message += `\n*Total Amount:* ₹${totalAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nWe will keep you updated on the production status. Please feel free to reach out if you have any questions.\n\nBest Regards,\n*Mukesh Graphics*`;
-      
-      let formattedPhone = phone.replace(/\D/g, '');
-      if (formattedPhone.length === 10) {
-        formattedPhone = '91' + formattedPhone;
-      } else if (formattedPhone.startsWith('0')) {
-         formattedPhone = '91' + formattedPhone.substring(1);
-      }
-      setWhatsappInfo({ phone: formattedPhone, message });
-      setShowWhatsappPrompt(true);
-    } else {
-      toast.error('Customer phone number not found.');
-    }
-  };
-
   const handleSendWhatsappHistory = (order) => {
     let phone = customers.find(c => c.id === order.customerId)?.mobile || customers.find(c => c.id === order.customerId)?.phone || '';
     if (!phone) {
@@ -427,26 +389,6 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     window.open(url, '_blank');
   };
 
-  const handleDeleteClick = () => {
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    setLoading(true);
-    try {
-      await api.delete(`/orders/${orderToEdit.id}`);
-      if (onOrderDeleted) onOrderDeleted(orderToEdit.id);
-      toast.success('Order deleted successfully!');
-      setIsDeleteModalOpen(false);
-      onClose();
-    } catch (err) {
-      console.error('Error deleting order:', err);
-      toast.error('Failed to delete order.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const statusOptions = [
     { value: 'Approved', label: 'Approved' },
     { value: 'Job Preparation', label: 'Job Preparation' },
@@ -468,11 +410,17 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
       <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-lg font-bold text-gray-900">
-            {isViewMode ? 'View Order' : (orderToEdit ? 'Edit Order' : 'Create Order')}
-          </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+        {/* Header */}
+        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 bg-white shrink-0">
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 leading-tight">
+              {orderToEdit ? 'Edit Order' : 'Create New Order'}
+            </h2>
+            <p className="text-xs text-gray-500">
+              {orderToEdit ? 'Modify order details and products' : 'Enter details to generate a new order'}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -502,7 +450,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     value={formData.status}
                     onChange={handleChange}
                     options={statusOptions}
-                    disabled={isViewMode}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -515,7 +463,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     onChange={handleChange}
                     options={customerOptions}
                     placeholder="Select Customer"
-                    disabled={isViewMode}
+                    disabled={loading}
                     required
                   />
                 </div>
@@ -528,7 +476,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     onChange={handleChange}
                     options={productOptions}
                     placeholder="Select Product"
-                    disabled={isViewMode || !formData.customerId}
+                    disabled={!formData.customerId}
                     isMulti={true}
                     required
                   />
@@ -617,9 +565,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                               return { ...prev, quantities: newQuantities, amounts: newAmounts, ...(isEmployeeEditing && { employee: autoEmployee }) };
                             });
                           }}
-                          disabled={isViewMode}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
-                            }`}
+                          disabled={loading}
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors border-gray-300 bg-white"
                           placeholder="e.g. 50,000"
                         />
                       </div>
@@ -638,9 +585,8 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                               return { ...prev, amounts: { ...prev.amounts, [id]: formatted }, ...(isEmployeeEditing && { employee: autoEmployee }) };
                             });
                           }}
-                          disabled={isViewMode}
-                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300 bg-white'
-                            }`}
+                          disabled={loading}
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors border-gray-300 bg-white"
                           placeholder="e.g. 25,000"
                         />
                       </div>
@@ -664,14 +610,14 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                                   <td className="px-3 py-2">
                                     <input
                                       type="text"
-                                      className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-brand-accent focus:ring-1 focus:ring-brand-accent uppercase"
+                                      className="w-full px-2 py-1.5 text-sm border-gray-300 rounded focus:ring-brand-accent focus:border-brand-accent uppercase"
                                       value={variety.name}
                                       onChange={(e) => {
                                         const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
                                         newVarieties[vIndex].name = e.target.value.toUpperCase();
                                         setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
                                       }}
-                                      disabled={isViewMode}
+                                      disabled={loading}
                                     />
                                   </td>
                                   <td className="px-3 py-2">
@@ -684,11 +630,11 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                                         newVarieties[vIndex].quantity = formatIndianNumber(e.target.value);
                                         setFormData(prev => ({ ...prev, varieties: { ...prev.varieties, [id]: newVarieties } }));
                                       }}
-                                      disabled={isViewMode}
+                                      disabled={loading}
                                     />
                                   </td>
                                   <td className="px-3 py-2 text-center">
-                                    {vIndex > 0 && !isViewMode && (
+                                    {vIndex > 0 && (
                                       <button
                                         type="button"
                                         className="text-red-500 hover:text-red-700 transition-colors"
@@ -707,10 +653,10 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                             </tbody>
                           </table>
                         </div>
-                        {!isViewMode && (
+                        <div className="mt-2">
                           <button
                             type="button"
-                            className="mt-2 text-xs font-semibold text-brand-primary hover:text-brand-secondary flex items-center"
+                            className="text-xs font-semibold text-brand-primary hover:text-brand-secondary flex items-center"
                             onClick={() => {
                               const newVarieties = [...(formData.varieties[id] || [{ name: '', quantity: '' }])];
                               newVarieties.push({ name: '', quantity: '' });
@@ -719,7 +665,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                           >
                             + Add Extra Row
                           </button>
-                        )}
+                        </div>
                       </div>
                     </div>
                   );
@@ -733,7 +679,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     required
                     value={formData.orderDate}
                     onChange={handleChange}
-                    disabled={isViewMode}
+                    disabled={loading}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
                       }`}
                   />
@@ -747,7 +693,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     required
                     value={formData.deliveryDate}
                     onChange={handleChange}
-                    disabled={isViewMode}
+                    disabled={loading}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
                       }`}
                   />
@@ -773,7 +719,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                     name="notes"
                     value={formData.notes}
                     onChange={handleChange}
-                    disabled={isViewMode}
+                    disabled={loading}
                     rows={3}
                     className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none ${isViewMode ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'
                       }`}
@@ -796,55 +742,21 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
                 </button>
               )}
               <div className="flex flex-wrap sm:flex-nowrap gap-3 w-full sm:w-auto justify-center sm:justify-end">
-                {isViewMode ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handleOpenWhatsappFromView}
-                      className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#25D366] rounded-md hover:bg-[#20b858] transition-colors whitespace-nowrap"
-                    >
-                      <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-                      </svg>
-                      WhatsApp
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setIsViewMode(false);
-                      }}
-                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors whitespace-nowrap"
-                    >
-                      Edit Order
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      onClick={onClose}
-                      disabled={loading}
-                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
-                    >
-                      {loading ? 'Saving...' : (orderToEdit ? 'Save Changes' : 'Create Order')}
-                    </button>
-                  </>
-                )}
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors whitespace-nowrap"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-white bg-brand-primary rounded-md hover:bg-brand-primarydark transition-colors disabled:opacity-50 whitespace-nowrap"
+                >
+                  {loading ? 'Saving...' : (orderToEdit ? 'Save Changes' : 'Create Order')}
+                </button>
               </div>
             </div>
           </form>

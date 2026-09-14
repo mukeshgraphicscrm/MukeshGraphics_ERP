@@ -4,6 +4,8 @@ import { Plus } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreateOrderModal from '../components/CreateOrderModal';
+import ViewOrderModal from '../components/ViewOrderModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
@@ -11,7 +13,12 @@ export default function Orders() {
   const { orders: data, setOrders: setData, customerMap: customers, productMap: products, isLoaded } = useData();
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [orderToEdit, setOrderToEdit] = useState(null);
+  const [orderToView, setOrderToView] = useState(null);
+  const [orderToDelete, setOrderToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [startInEditMode, setStartInEditMode] = useState(false);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
@@ -225,9 +232,8 @@ export default function Orders() {
         columns={columns}
         data={filteredOrders}
         onRowClick={(row) => {
-          setStartInEditMode(false);
-          setOrderToEdit(row);
-          setIsModalOpen(true);
+          setOrderToView(row);
+          setIsViewModalOpen(true);
         }}
       />
       <CreateOrderModal
@@ -244,6 +250,58 @@ export default function Orders() {
         orders={data} 
         orderToEdit={orderToEdit}
         startInEditMode={startInEditMode}
+      />
+      <ViewOrderModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setOrderToView(null);
+        }}
+        order={orderToView}
+        onEditClick={(order) => {
+          setOrderToEdit(order);
+          setIsModalOpen(true);
+        }}
+        onDeleteClick={(order) => {
+          setOrderToDelete(order);
+          setIsDeleteModalOpen(true);
+        }}
+        onWhatsappClick={(order) => {
+          const customer = customers[order.customerId];
+          if (customer && (customer.mobile || customer.phone)) {
+            const phone = customer.mobile || customer.phone;
+            const message = `Hello ${customer.name}, your order ${order.orderNo} for ${Array.isArray(order.productId) ? order.productId.map(id => products[id]?.name).join(', ') : products[order.productId]?.name} is currently ${order.status}. Total amount is ₹${order.amount.toLocaleString('en-IN')}.`;
+            const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+          } else {
+            alert('No phone number found for this customer.');
+          }
+        }}
+      />
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setOrderToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (!orderToDelete) return;
+          setIsDeleting(true);
+          try {
+            await api.delete(`/orders/${orderToDelete.id}`);
+            setData(prev => prev.filter(o => o.id !== orderToDelete.id));
+            setIsDeleteModalOpen(false);
+            setOrderToDelete(null);
+            setIsViewModalOpen(false);
+          } catch (err) {
+            console.error('Error deleting order:', err);
+          } finally {
+            setIsDeleting(false);
+          }
+        }}
+        title="Delete Order"
+        message="Are you sure you want to delete this order? This action cannot be undone."
+        isLoading={isDeleting}
       />
     </div>
   );

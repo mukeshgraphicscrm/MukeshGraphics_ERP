@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
-export default function CustomSelect({ options, value, onChange, placeholder = "Select...", name, required, placement = "bottom", icon: Icon, triggerClassName, disabled, isMulti = false, searchable = false }) {
+export default function CustomSelect({ options, value, onChange, placeholder = "Select...", name, required, placement = "bottom", icon: Icon, triggerClassName, disabled, isMulti = false, searchable = true }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef(null);

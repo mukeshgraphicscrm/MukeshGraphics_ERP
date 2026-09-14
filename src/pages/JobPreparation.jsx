@@ -12,7 +12,7 @@ export default function JobPreparation() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
   const [jobToEdit, setJobToEdit] = useState(null);
-  const [statusFilter, setStatusFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('Active');
 
   const data = jobPreparations || [];
 
@@ -58,6 +58,26 @@ export default function JobPreparation() {
     return data.filter(d => d.status === statusFilter);
   }, [data, statusFilter]);
 
+  const recentArtworks = useMemo(() => {
+    if (!artworks || !customerMap) return [];
+    
+    const filtered = artworks.filter(art => {
+      const customerName = customerMap[art.customerId]?.name || art.customerId;
+      if (!customerName) return true;
+      
+      const customerJobs = (jobPreparations || []).filter(j => j.party === customerName);
+      if (customerJobs.length === 0) return true;
+      
+      // Assuming jobs are prepended, the first one is the most recent
+      const newestJob = customerJobs[0];
+      if (newestJob.status === 'Done') return false;
+      
+      return true;
+    });
+
+    return filtered.slice(0, 20);
+  }, [artworks, customerMap, jobPreparations]);
+
   return (
     <>
       <div className="space-y-6">
@@ -85,7 +105,7 @@ export default function JobPreparation() {
                   </tr>
                 </thead>
                 <tbody>
-                  {artworks && artworks.slice(0, 20).map((art, idx) => (
+                  {recentArtworks.map((art, idx) => (
                     <tr key={art.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
                       <td className="px-5 py-3.5 font-bold text-brand-accent whitespace-nowrap">{String(idx + 1).padStart(3, '0')}</td>
                       <td className="px-5 py-3.5 text-gray-700 font-medium max-w-[160px] truncate">{customerMap[art.customerId]?.name || art.customerId || '-'}</td>
@@ -95,7 +115,7 @@ export default function JobPreparation() {
                       </td>
                     </tr>
                   ))}
-                  {(!artworks || artworks.length === 0) && (
+                  {recentArtworks.length === 0 && (
                     <tr><td colSpan={4} className="px-5 py-10 text-center text-gray-400 text-sm">No recent designs found</td></tr>
                   )}
                 </tbody>

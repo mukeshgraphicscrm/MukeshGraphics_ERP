@@ -3,6 +3,8 @@ import { Layers, AlertTriangle, FileText, Droplet, Plus, Download, Upload, Packa
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import AddMaterialModal from '../components/AddMaterialModal';
+import ViewMaterialModal from '../components/ViewMaterialModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 
@@ -10,7 +12,12 @@ import { useData } from '../contexts/DataContext';
 export default function Inventory() {
   const { inventory: data, setInventory: setData, isLoaded } = useData();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState(null);
+  const [materialToView, setMaterialToView] = useState(null);
+  const [materialToDelete, setMaterialToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
 
   const [filterType, setFilterType] = useState('all');
@@ -34,6 +41,22 @@ export default function Inventory() {
     { header: 'MIN', accessor: row => row.min, render: row => <span className="text-gray-500 text-[13px]">{row.min.toLocaleString('en-IN')}</span> },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
   ];
+
+  const handleDelete = async () => {
+    if (!materialToDelete) return;
+    setIsDeleting(true);
+    try {
+      await api.delete(`/inventory/${materialToDelete.id}`);
+      setData(prev => prev.filter(m => m.id !== materialToDelete.id));
+      setIsDeleteModalOpen(false);
+      setMaterialToDelete(null);
+      setIsViewModalOpen(false); // Close view modal as well if open
+    } catch (err) {
+      console.error('Error deleting material:', err);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
 
 
@@ -145,8 +168,8 @@ export default function Inventory() {
             columns={columns}
             data={filteredData}
             onRowClick={(row) => {
-              setMaterialToEdit(row);
-              setIsAddModalOpen(true);
+              setMaterialToView(row);
+              setIsViewModalOpen(true);
             }}
           />
         </div>
@@ -164,6 +187,35 @@ export default function Inventory() {
           setData(data.map(m => m.id === updatedMaterial.id ? updatedMaterial : m));
         }}
         materialToEdit={materialToEdit}
+      />
+
+      <ViewMaterialModal
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setMaterialToView(null);
+        }}
+        material={materialToView}
+        onEditClick={() => {
+          setMaterialToEdit(materialToView);
+          setIsAddModalOpen(true);
+        }}
+        onDeleteClick={(material) => {
+          setMaterialToDelete(material);
+          setIsDeleteModalOpen(true);
+        }}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setMaterialToDelete(null);
+        }}
+        onConfirm={handleDelete}
+        title="Delete Material"
+        message="Are you sure you want to delete this material? This action cannot be undone and may affect associated job preparations."
+        isLoading={isDeleting}
       />
     </>
   );

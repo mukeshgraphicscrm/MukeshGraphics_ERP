@@ -952,7 +952,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const supplierName = supplier.name || po.supplierId || 'Supplier';
   const supplierCity = supplier.city || '';
   const supplierGst = supplier.gstNumber || '';
-  const placeOfSupply = supplierCity ? supplierCity.toUpperCase() : '24-GUJARAT';
+  const placeOfSupply = supplierCity ? supplierCity.toUpperCase() : '';
 
   const startY = 48;
   const cardW = (pageW - margin * 2 - 12) / 2;

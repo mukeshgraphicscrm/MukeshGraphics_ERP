@@ -322,7 +322,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                 type="number"
                 name="quantity"
                 required
-                min="1"
+                min="0"
+                step="any"
                 value={formData.quantity}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
-import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download, X } from 'lucide-react';
+import { Wallet, AlertCircle, TrendingUp, Plus, MoreVertical, Edit2, Eye, CheckCircle, Clock, AlertTriangle, Download, X, FileText, Image } from 'lucide-react';
 import CreateInvoiceModal from '../components/CreateInvoiceModal';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -697,7 +697,15 @@ const AccountActions = ({ row, onEdit, onView, onDownload }) => {
   const toggleMenu = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setMenuPos({ top: rect.bottom + 4, left: rect.right - 128 });
+      const menuHeight = 160; // Approx height for 4 items
+      let top = rect.bottom + 4;
+      
+      // If menu would go off the bottom of the screen, open it upwards
+      if (top + menuHeight > window.innerHeight) {
+        top = rect.top - menuHeight - 4;
+      }
+      
+      setMenuPos({ top, left: rect.right - 176 }); // Adjusted for w-44 (176px)
     }
     setIsOpen(!isOpen);
   };
@@ -717,31 +725,31 @@ const AccountActions = ({ row, onEdit, onView, onDownload }) => {
         <div
           ref={menuRef}
           style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
-          className="w-32 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1"
+          className="w-44 bg-white rounded-md shadow-lg border border-gray-100 z-50 py-1"
         >
           <button
             onClick={() => { setIsOpen(false); onEdit(row); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center uppercase"
           >
-            <Edit2 className="w-4 h-4 mr-2" /> Edit
+            <Edit2 className="w-4 h-4 mr-2" /> EDIT
           </button>
           <button
             onClick={() => { setIsOpen(false); onView(row); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center uppercase"
           >
-            <Eye className="w-4 h-4 mr-2" /> View
+            <Eye className="w-4 h-4 mr-2" /> VIEW
           </button>
           <button
             onClick={() => { setIsOpen(false); if (onDownload) onDownload(row, 'pdf'); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center uppercase"
           >
-            <Download className="w-4 h-4 mr-2" /> Download PDF
+            <FileText className="w-4 h-4 mr-2 text-red-500" /> GENERATE PDF
           </button>
           <button
             onClick={() => { setIsOpen(false); if (onDownload) onDownload(row, 'jpg'); }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center uppercase"
           >
-            <Download className="w-4 h-4 mr-2" /> Download JPG
+            <Image className="w-4 h-4 mr-2 text-blue-500" /> GENERATE JPG
           </button>
         </div>
       )}

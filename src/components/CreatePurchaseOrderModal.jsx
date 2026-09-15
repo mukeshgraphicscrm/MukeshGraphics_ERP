@@ -244,43 +244,55 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     });
   };
 
+  const handleSaveNewMaterial = async () => {
+    if (!newMaterialData.material) {
+      toast.error("Please enter the material name");
+      return;
+    }
+    setLoading(true);
+    try {
+      const stockVal = Number(newMaterialData.stock.toString().replace(/,/g, '')) || 0;
+      const minVal = Number(newMaterialData.min.toString().replace(/,/g, '')) || 0;
+      const matPayload = {
+        ...newMaterialData,
+        stock: stockVal,
+        min: minVal,
+        status: stockVal <= minVal ? 'Low Stock' : 'In Stock'
+      };
+      const matRes = await api.post('/inventory', matPayload);
+      if (onMaterialAdded) onMaterialAdded(matRes.data);
+      setFormData(prev => ({ ...prev, material: matRes.data.material }));
+      setIsAddingNewMaterial(false);
+      setNewMaterialData({
+        material: '',
+        paperSize: '',
+        category: 'Paper',
+        stock: '',
+        unit: 'Sheets',
+        min: '',
+      });
+      toast.success('Material saved successfully!');
+    } catch (err) {
+      console.error('Error creating material:', err);
+      toast.error('Failed to create new material.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isAddingNewMaterial) {
+      toast.error("Please save or cancel the new material first.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      let actualMaterialName = formData.material;
-
-      if (isAddingNewMaterial) {
-        if (!newMaterialData.material) {
-          toast.error("Please enter the material name");
-          setLoading(false);
-          return;
-        }
-        try {
-          const stockVal = Number(newMaterialData.stock) || 0;
-          const minVal = Number(newMaterialData.min) || 0;
-          const matPayload = {
-            ...newMaterialData,
-            stock: stockVal,
-            min: minVal,
-            status: stockVal <= minVal ? 'Low Stock' : 'In Stock'
-          };
-          const matRes = await api.post('/inventory', matPayload);
-          if (onMaterialAdded) onMaterialAdded(matRes.data);
-          actualMaterialName = matRes.data.material;
-          toast.success('Material added successfully!');
-        } catch (err) {
-          console.error('Error creating material:', err);
-          toast.error('Failed to create new material.');
-          setLoading(false);
-          return;
-        }
-      }
-
       const payload = {
         ...formData,
-        material: actualMaterialName,
         length: Number(formData.length) || 0,
         width: Number(formData.width) || 0,
         gsm: Number(formData.gsm) || 0,
@@ -661,12 +673,6 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Threshold *</label>
                     <input type="text" name="min" value={formatIndianNumber(newMaterialData.min)} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. 1000" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-xs text-[#1b2f63]/70 italic mt-1 flex items-center gap-1">
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-accent"></span>
-                      Note: This new material will be saved to your inventory automatically when you click the main "SAVE CHANGES" button at the bottom of the Purchase Order form.
-                    </p>
                   </div>
                 </div>
               </div>

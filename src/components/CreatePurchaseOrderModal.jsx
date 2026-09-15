@@ -328,7 +328,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         }
         
         if (finalPoData.notes) {
-           detailsMsg += `*Notes:* ${finalPoData.notes}\n`;
+           detailsMsg += `*Notes:* ${finalPoData.notes.toUpperCase()}\n`;
         }
 
         const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n${detailsMsg}\nWe have attached the PDF for your reference.`;

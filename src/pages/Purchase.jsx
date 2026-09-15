@@ -111,7 +111,7 @@ export default function Purchase() {
         }
         
         if (po.notes) {
-           detailsMsg += `*Notes:* ${po.notes}\n`;
+           detailsMsg += `*Notes:* ${po.notes.toUpperCase()}\n`;
         }
 
         const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n${detailsMsg}\nWe have attached the PDF for your reference.`;

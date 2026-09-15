@@ -297,7 +297,41 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
            formattedPhone = '91' + formattedPhone.substring(1);
         }
 
-        const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n*PO No:* ${finalPoData.poNo}\n*Date:* ${new Date(finalPoData.createdAt || new Date()).toLocaleDateString('en-IN')}\n*Material:* ${finalPoData.material}\n*Quantity:* ${Number(finalPoData.quantity).toLocaleString('en-IN')}\n*Amount:* ₹${Number(finalPoData.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nWe have attached the PDF for your reference.`;
+        const formatNum = (val) => Number(val || 0).toLocaleString('en-IN');
+        const formatAmt = (val) => Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        let detailsMsg = `*PO No:* ${finalPoData.poNo}\n`;
+        detailsMsg += `*Date:* ${new Date(finalPoData.orderDate || finalPoData.createdAt || new Date()).toLocaleDateString('en-IN')}\n`;
+        if (finalPoData.jobNo) detailsMsg += `*Job No:* ${finalPoData.jobNo}\n`;
+        if (finalPoData.jobName) detailsMsg += `*Job Name:* ${finalPoData.jobName}\n`;
+        detailsMsg += `*Payment Type:* ${finalPoData.paymentType}\n`;
+        detailsMsg += `*Invoice Type:* ${finalPoData.invoiceType}\n`;
+        detailsMsg += `*Material:* ${finalPoData.material}\n`;
+        
+        const dims = [];
+        if (finalPoData.length > 0) dims.push(`L: ${finalPoData.length}`);
+        if (finalPoData.width > 0) dims.push(`W: ${finalPoData.width}`);
+        if (finalPoData.gsm > 0) dims.push(`GSM: ${finalPoData.gsm}`);
+        if (finalPoData.sheetPkt > 0) dims.push(`Sheet/Pkt: ${finalPoData.sheetPkt}`);
+        if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
+        
+        detailsMsg += `*Quantity:* ${formatNum(finalPoData.quantity)}\n`;
+        if (finalPoData.weight > 0) detailsMsg += `*Weight:* ${formatNum(finalPoData.weight)}\n`;
+        if (finalPoData.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(finalPoData.netWeight)}\n`;
+        
+        detailsMsg += `*Rate:* ₹${formatAmt(finalPoData.rate)}\n`;
+        detailsMsg += `*Amount:* ₹${formatAmt(finalPoData.amount)}\n`;
+        
+        if (finalPoData.invoiceType === 'GST' && finalPoData.gstTotal > 0) {
+           detailsMsg += `*GST Total:* ₹${formatAmt(finalPoData.gstTotal)}\n`;
+           detailsMsg += `*Bill Amount:* ₹${formatAmt(finalPoData.totalAmount)}\n`;
+        }
+        
+        if (finalPoData.notes) {
+           detailsMsg += `*Notes:* ${finalPoData.notes}\n`;
+        }
+
+        const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n${detailsMsg}\nWe have attached the PDF for your reference.`;
 
         setWhatsappInfo({ phone: formattedPhone, message });
         setShowWhatsappPrompt(true);

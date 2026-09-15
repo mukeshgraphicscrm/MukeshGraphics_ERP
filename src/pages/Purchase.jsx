@@ -80,7 +80,41 @@ export default function Purchase() {
            formattedPhone = '91' + formattedPhone.substring(1);
         }
 
-        const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n*PO No:* ${po.poNo}\n*Date:* ${new Date(po.createdAt || new Date()).toLocaleDateString('en-IN')}\n*Material:* ${po.material}\n*Quantity:* ${Number(po.quantity).toLocaleString('en-IN')}\n*Amount:* ₹${Number(po.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\n\nWe have attached the PDF for your reference.`;
+        const formatNum = (val) => Number(val || 0).toLocaleString('en-IN');
+        const formatAmt = (val) => Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        let detailsMsg = `*PO No:* ${po.poNo}\n`;
+        detailsMsg += `*Date:* ${new Date(po.orderDate || po.createdAt || new Date()).toLocaleDateString('en-IN')}\n`;
+        if (po.jobNo) detailsMsg += `*Job No:* ${po.jobNo}\n`;
+        if (po.jobName) detailsMsg += `*Job Name:* ${po.jobName}\n`;
+        if (po.paymentType) detailsMsg += `*Payment Type:* ${po.paymentType}\n`;
+        if (po.invoiceType) detailsMsg += `*Invoice Type:* ${po.invoiceType}\n`;
+        detailsMsg += `*Material:* ${po.material}\n`;
+        
+        const dims = [];
+        if (po.length > 0) dims.push(`L: ${po.length}`);
+        if (po.width > 0) dims.push(`W: ${po.width}`);
+        if (po.gsm > 0) dims.push(`GSM: ${po.gsm}`);
+        if (po.sheetPkt > 0) dims.push(`Sheet/Pkt: ${po.sheetPkt}`);
+        if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
+        
+        detailsMsg += `*Quantity:* ${formatNum(po.quantity)}\n`;
+        if (po.weight > 0) detailsMsg += `*Weight:* ${formatNum(po.weight)}\n`;
+        if (po.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(po.netWeight)}\n`;
+        
+        if (po.rate) detailsMsg += `*Rate:* ₹${formatAmt(po.rate)}\n`;
+        detailsMsg += `*Amount:* ₹${formatAmt(po.amount)}\n`;
+        
+        if (po.invoiceType === 'GST' && po.gstTotal > 0) {
+           detailsMsg += `*GST Total:* ₹${formatAmt(po.gstTotal)}\n`;
+           detailsMsg += `*Bill Amount:* ₹${formatAmt(po.totalAmount)}\n`;
+        }
+        
+        if (po.notes) {
+           detailsMsg += `*Notes:* ${po.notes}\n`;
+        }
+
+        const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n${detailsMsg}\nWe have attached the PDF for your reference.`;
         
         const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
         window.open(url, '_blank');

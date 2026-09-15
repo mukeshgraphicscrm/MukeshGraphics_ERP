@@ -25,9 +25,22 @@ export default function Purchase() {
     { header: 'PO', accessor: row => row.poNo, render: row => <span className="font-bold text-[13px] text-gray-900">{row.poNo}</span> },
     { header: 'DATE', accessor: row => row.createdAt, render: row => <span className="text-[13px] text-gray-500">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-IN') : '-'}</span> },
     { header: 'SUPPLIER', accessor: row => suppliers[row.supplierId]?.name || row.supplierId, render: row => <span className="text-[13px] text-gray-700">{suppliers[row.supplierId]?.name || row.supplierId}</span> },
-    { header: 'MATERIAL', accessor: row => row.material, render: row => <span className="text-[13px] text-gray-700">{row.material}</span> },
-    { header: 'QUANTITY', accessor: row => row.quantity.toLocaleString('en-IN'), render: row => <span className="text-[13px] text-gray-500">{row.quantity.toLocaleString('en-IN')}</span> },
-    { header: 'AMOUNT', accessor: row => `₹${row.amount.toLocaleString('en-IN')}`, render: row => <span className="font-medium text-[13px] text-gray-900">₹{row.amount.toLocaleString('en-IN')}</span> },
+    { header: 'MATERIAL', accessor: row => row.products && row.products.length > 0 ? row.products.map(p => p.material).join(', ') : row.material, render: row => <span className="text-[13px] text-gray-700" title={row.products && row.products.length > 0 ? row.products.map(p => p.material).join(', ') : row.material}>{row.products && row.products.length > 0 ? (row.products.length === 1 ? row.products[0].material : `${row.products.length} Items`) : row.material}</span> },
+    { header: 'QUANTITY', accessor: row => row.products && row.products.length > 0 ? row.products.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0) : row.quantity, render: row => {
+        const qty = row.products && row.products.length > 0 ? row.products.reduce((acc, p) => acc + (Number(p.quantity) || 0), 0) : row.quantity;
+        return <span className="text-[13px] text-gray-500">{(Number(qty) || 0).toLocaleString('en-IN')}</span>;
+    } },
+    { header: 'AMOUNT', accessor: row => {
+      const amt = row.products && row.products.length > 0 
+        ? row.products.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+        : (Number(row.amount) || 0);
+      return `₹${amt.toLocaleString('en-IN')}`;
+    }, render: row => {
+      const amt = row.products && row.products.length > 0 
+        ? row.products.reduce((acc, p) => acc + (Number(p.amount) || 0), 0)
+        : (Number(row.amount) || 0);
+      return <span className="font-medium text-[13px] text-gray-900">₹{amt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>;
+    } },
     { header: 'STATUS', accessor: row => row.status, render: row => <StatusBadge status={row.status} /> },
     {
       header: 'DOCUMENT',

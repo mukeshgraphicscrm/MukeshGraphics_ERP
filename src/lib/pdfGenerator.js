@@ -1029,23 +1029,38 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // ==========================================
   // 3. ITEMS TABLE
   // ==========================================
-  const qty = Number(po.quantity) || 0;
-  const rate = Number(po.rate) || 0;
-  const netWt = Number(po.netWeight) || 0;
-  const amount = Number(po.amount) || (qty * rate);
   const gstPercent = po.invoiceType === 'GST' ? 18 : 0;
-  const l = Number(po.length) || 0;
-  const w = Number(po.width) || 0;
-  
-  const sizeStr = (l > 0 && w > 0) ? `${formatNum(l)} X ${formatNum(w)}` : '-';
-  const gsmStr = po.gsm ? formatNum(po.gsm) : '-';
-  const pktStr = po.sheetPkt ? formatNum(po.sheetPkt) : '-';
 
-  const tableData = [
-    [
-      '1',
-      po.material ? po.material.toUpperCase() : '',
-      po.hsn || '-',
+  const productsToIterate = po.products && po.products.length > 0 ? po.products : [{
+    material: po.material, length: po.length, width: po.width, gsm: po.gsm,
+    sheetPkt: po.sheetPkt, quantity: po.quantity, weight: po.weight,
+    netWeight: po.netWeight, rate: po.rate, amount: po.amount, hsn: po.hsn
+  }];
+
+  let totalQty = 0;
+  let totalNetWt = 0;
+  let totalAmount = 0;
+
+  const tableData = productsToIterate.map((p, index) => {
+    const qty = Number(p.quantity) || 0;
+    const rate = Number(p.rate) || 0;
+    const netWt = Number(p.netWeight) || 0;
+    const itemAmt = Number(p.amount) || (qty * rate);
+    const l = Number(p.length) || 0;
+    const w = Number(p.width) || 0;
+    
+    totalQty += qty;
+    totalNetWt += netWt;
+    totalAmount += itemAmt;
+
+    const sizeStr = (l > 0 && w > 0) ? `${formatNum(l)} X ${formatNum(w)}` : '-';
+    const gsmStr = p.gsm ? formatNum(p.gsm) : '-';
+    const pktStr = p.sheetPkt ? formatNum(p.sheetPkt) : '-';
+
+    return [
+      String(index + 1),
+      p.material ? p.material.toUpperCase() : '',
+      p.hsn || '-',
       sizeStr,
       gsmStr,
       pktStr,
@@ -1053,9 +1068,9 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
       formatNum(netWt),
       formatAmt(rate),
       `${gstPercent}.00`,
-      formatAmt(amount)
-    ]
-  ];
+      formatAmt(itemAmt)
+    ];
+  });
 
   autoTable(doc, {
     startY: yPos,
@@ -1075,10 +1090,10 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     body: tableData,
     foot: [[
       '', '', '', '', '', 'Sub Total',
-      formatNum(qty),
-      formatNum(netWt),
+      formatNum(totalQty),
+      formatNum(totalNetWt),
       '', '',
-      formatAmt(amount)
+      formatAmt(totalAmount)
     ]],
     theme: 'grid',
     headStyles: {
@@ -1140,8 +1155,8 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // ==========================================
   // 4. FOOTER CALCULATIONS
   // ==========================================
-  const gstAmount = po.invoiceType === 'GST' ? (amount * 0.18) : 0;
-  const rawTotal = amount + gstAmount;
+  const gstAmount = po.invoiceType === 'GST' ? (totalAmount * 0.18) : 0;
+  const rawTotal = totalAmount + gstAmount;
   const grandTotal = Math.round(rawTotal);
   const roundOff = grandTotal - rawTotal;
 
@@ -1215,7 +1230,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFontSize(8.5);
   doc.setFont("helvetica", "bold");
   doc.text("Taxable Amount", calcX1, calcY);
-  doc.text(formatAmt(amount), calcX2, calcY, { align: 'right' });
+  doc.text(formatAmt(totalAmount), calcX2, calcY, { align: 'right' });
   calcY += 6;
 
   doc.setFont("helvetica", "normal");

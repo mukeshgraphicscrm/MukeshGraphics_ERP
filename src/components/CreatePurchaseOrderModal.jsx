@@ -19,6 +19,14 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     jobNo: '',
     jobName: '',
     modifiedBy: '',
+    notes: '',
+    status: 'Ordered',
+    products: [],
+    gstTotal: '',
+    totalAmount: '',
+  });
+
+  const emptyProduct = {
     material: '',
     length: '',
     width: '',
@@ -28,12 +36,9 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     weight: '',
     netWeight: '',
     rate: '',
-    amount: '',
-    gstTotal: '',
-    totalAmount: '',
-    notes: '',
-    status: 'Ordered',
-  });
+    amount: ''
+  };
+  const [currentProduct, setCurrentProduct] = useState({ ...emptyProduct });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -85,6 +90,23 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   useEffect(() => {
     if (isOpen) {
       if (poToEdit) {
+        // Handle backward compatibility for old single-product POs
+        let poProducts = poToEdit.products || [];
+        if (poProducts.length === 0 && poToEdit.material) {
+          poProducts = [{
+            material: poToEdit.material || '',
+            length: poToEdit.length || '',
+            width: poToEdit.width || '',
+            gsm: poToEdit.gsm || '',
+            sheetPkt: poToEdit.sheetPkt || '',
+            quantity: poToEdit.quantity || '',
+            weight: poToEdit.weight || '',
+            netWeight: poToEdit.netWeight || '',
+            rate: poToEdit.rate || '',
+            amount: poToEdit.amount || ''
+          }];
+        }
+
         setFormData({
           poNo: poToEdit.poNo || '',
           supplierId: poToEdit.supplierId || '',
@@ -95,20 +117,11 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           jobNo: poToEdit.jobNo || '',
           jobName: poToEdit.jobName || '',
           modifiedBy: poToEdit.modifiedBy || '',
-          material: poToEdit.material || '',
-          length: poToEdit.length || '',
-          width: poToEdit.width || '',
-          gsm: poToEdit.gsm || '',
-          sheetPkt: poToEdit.sheetPkt || '',
-          quantity: poToEdit.quantity || '',
-          weight: poToEdit.weight || '',
-          netWeight: poToEdit.netWeight || '',
-          rate: poToEdit.rate || '',
-          amount: poToEdit.amount || '',
-          gstTotal: poToEdit.gstTotal || '',
-          totalAmount: poToEdit.totalAmount || '',
           notes: poToEdit.notes || '',
           status: poToEdit.status || 'Ordered',
+          products: poProducts,
+          gstTotal: poToEdit.gstTotal || '',
+          totalAmount: poToEdit.totalAmount || '',
         });
       } else {
         const currentYear = new Date().getFullYear();
@@ -137,22 +150,14 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           jobNo: '',
           jobName: '',
           modifiedBy: '',
-          material: '',
-          length: '',
-          width: '',
-          gsm: '',
-          sheetPkt: '',
-          quantity: '',
-          weight: '',
-          netWeight: '',
-          rate: '',
-          amount: '',
-          gstTotal: '',
-          totalAmount: '',
           notes: '',
           status: 'Ordered',
+          products: [],
+          gstTotal: '',
+          totalAmount: '',
         });
       }
+      setCurrentProduct({ ...emptyProduct });
     }
   }, [isOpen, suppliers, poToEdit, pos]);
 
@@ -171,13 +176,30 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
   };
 
-  const handleChange = (e) => {
+  const calculateTotals = (products, invoiceType) => {
+    let subtotal = 0;
+    products.forEach(p => {
+      subtotal += parseFloat(p.amount) || 0;
+    });
+    
+    let gstTotal = 0;
+    if (invoiceType === 'GST') {
+      gstTotal = subtotal * 0.18;
+    }
+    
+    return {
+      gstTotal: gstTotal.toFixed(2),
+      totalAmount: (subtotal + gstTotal).toFixed(2)
+    };
+  };
+
+  const handleProductChange = (e) => {
     let { name, value } = e.target;
     
     if (name === 'material') {
       if (value === 'ADD_NEW') {
         setIsAddingNewMaterial(true);
-        setFormData((prev) => ({ ...prev, material: 'ADD_NEW' }));
+        setCurrentProduct((prev) => ({ ...prev, material: 'ADD_NEW' }));
         return;
       } else {
         setIsAddingNewMaterial(false);
@@ -194,10 +216,9 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       }
     }
 
-    setFormData((prev) => {
+    setCurrentProduct((prev) => {
       const updated = { ...prev, [name]: value };
       
-      // Calculate Net Weight
       const l = parseFloat(updated.length) || 0;
       const w = parseFloat(updated.width) || 0;
       const weightVal = parseFloat(updated.weight) || 0;
@@ -215,7 +236,6 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         updated.netWeight = '';
       }
 
-      // Calculate Amount
       const rate = parseFloat(updated.rate) || 0;
       const activeWeight = parseFloat(updated.netWeight) || parseFloat(updated.weight) || q || 0;
       
@@ -225,21 +245,63 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         updated.amount = '';
       }
 
-      // Calculate GST and Total
-      if (updated.amount) {
-        const amt = parseFloat(updated.amount) || 0;
-        if (updated.invoiceType === 'GST') {
-          updated.gstTotal = (amt * 0.18).toFixed(2);
-          updated.totalAmount = (amt + parseFloat(updated.gstTotal)).toFixed(2);
-        } else {
-          updated.gstTotal = '0.00';
-          updated.totalAmount = amt.toFixed(2);
-        }
-      } else {
-        updated.gstTotal = '';
-        updated.totalAmount = '';
-      }
+      return updated;
+    });
+  };
 
+  const addProduct = () => {
+    if (!currentProduct.material || currentProduct.material === 'ADD_NEW') {
+      toast.error('Please select a material');
+      return;
+    }
+    if (!currentProduct.quantity || parseFloat(currentProduct.quantity) <= 0) {
+      toast.error('Please enter a valid quantity');
+      return;
+    }
+    if (!currentProduct.rate || parseFloat(currentProduct.rate) <= 0) {
+      toast.error('Please enter a valid rate');
+      return;
+    }
+
+    setFormData(prev => {
+      const newProducts = [...prev.products, currentProduct];
+      const totals = calculateTotals(newProducts, prev.invoiceType);
+      return {
+        ...prev,
+        products: newProducts,
+        ...totals
+      };
+    });
+    setCurrentProduct({ ...emptyProduct });
+  };
+
+  const removeProduct = (index) => {
+    setFormData(prev => {
+      const newProducts = prev.products.filter((_, i) => i !== index);
+      const totals = calculateTotals(newProducts, prev.invoiceType);
+      return {
+        ...prev,
+        products: newProducts,
+        ...totals
+      };
+    });
+  };
+
+  const editProduct = (index) => {
+    const productToEdit = formData.products[index];
+    setCurrentProduct(productToEdit);
+    removeProduct(index);
+  };
+
+  const handleChange = (e) => {
+    let { name, value } = e.target;
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === 'invoiceType') {
+        const totals = calculateTotals(updated.products, updated.invoiceType);
+        updated.gstTotal = totals.gstTotal;
+        updated.totalAmount = totals.totalAmount;
+      }
       return updated;
     });
   };
@@ -261,7 +323,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       };
       const matRes = await api.post('/inventory', matPayload);
       if (onMaterialAdded) onMaterialAdded(matRes.data);
-      setFormData(prev => ({ ...prev, material: matRes.data.material }));
+      setCurrentProduct(prev => ({ ...prev, material: matRes.data.material }));
       setIsAddingNewMaterial(false);
       setNewMaterialData({
         material: '',
@@ -291,20 +353,16 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     setLoading(true);
     setError(null);
     try {
-      const payload = {
-        ...formData,
-        length: Number(formData.length) || 0,
-        width: Number(formData.width) || 0,
-        gsm: Number(formData.gsm) || 0,
-        sheetPkt: Number(formData.sheetPkt) || 0,
-        quantity: Number(formData.quantity) || 0,
-        weight: Number(formData.weight) || 0,
-        netWeight: Number(formData.netWeight) || 0,
-        rate: Number(formData.rate) || 0,
-        amount: Number(formData.amount) || 0,
-        gstTotal: Number(formData.gstTotal) || 0,
-        totalAmount: Number(formData.totalAmount) || 0,
-      };
+      if (formData.products.length === 0) {
+      toast.error('Please add at least one product to the purchase order.');
+      setLoading(false);
+      return;
+    }
+    const payload = {
+      ...formData,
+      gstTotal: Number(formData.gstTotal) || 0,
+      totalAmount: Number(formData.totalAmount) || 0,
+    };
 
       let finalPoData = null;
 
@@ -320,7 +378,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               grnNo: `GRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
               poId: payload.poNo,
               supplierId: payload.supplierId,
-              material: payload.material,
+              material: payload.products[0]?.material,
               date: new Date().toISOString()
             };
             const grnRes = await api.post('/grn', grnPayload);
@@ -342,7 +400,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               grnNo: `GRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
               poId: payload.poNo,
               supplierId: payload.supplierId,
-              material: payload.material,
+              material: payload.products[0]?.material,
               date: new Date().toISOString()
             };
             const grnRes = await api.post('/grn', grnPayload);
@@ -381,22 +439,22 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         if (finalPoData.jobNo) detailsMsg += `*Job No:* ${finalPoData.jobNo}\n`;
         if (finalPoData.jobName) detailsMsg += `*Job Name:* ${finalPoData.jobName}\n`;
         detailsMsg += `*Payment Type:* ${finalPoData.paymentType}\n`;
-        detailsMsg += `*Invoice Type:* ${finalPoData.invoiceType}\n`;
-        detailsMsg += `*Material:* ${finalPoData.material}\n`;
-        
-        const dims = [];
-        if (finalPoData.length > 0) dims.push(`L: ${finalPoData.length}`);
-        if (finalPoData.width > 0) dims.push(`W: ${finalPoData.width}`);
-        if (finalPoData.gsm > 0) dims.push(`GSM: ${finalPoData.gsm}`);
-        if (finalPoData.sheetPkt > 0) dims.push(`Sheet/Pkt: ${finalPoData.sheetPkt}`);
-        if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
-        
-        detailsMsg += `*Quantity:* ${formatNum(finalPoData.quantity)}\n`;
-        if (finalPoData.weight > 0) detailsMsg += `*Weight:* ${formatNum(finalPoData.weight)}\n`;
-        if (finalPoData.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(finalPoData.netWeight)}\n`;
-        
-        detailsMsg += `*Rate:* ₹${formatAmt(finalPoData.rate)}\n`;
-        detailsMsg += `*Amount:* ₹${formatAmt(finalPoData.amount)}\n`;
+        detailsMsg += `*Invoice Type:* ${finalPoData.invoiceType}\n\n`;
+
+        finalPoData.products.forEach((p, i) => {
+          detailsMsg += `*Item ${i + 1}:* ${p.material}\n`;
+          const dims = [];
+          if (p.length > 0) dims.push(`L: ${p.length}`);
+          if (p.width > 0) dims.push(`W: ${p.width}`);
+          if (p.gsm > 0) dims.push(`GSM: ${p.gsm}`);
+          if (p.sheetPkt > 0) dims.push(`Sheet/Pkt: ${p.sheetPkt}`);
+          if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
+          detailsMsg += `*Quantity:* ${formatNum(p.quantity)}\n`;
+          if (p.weight > 0) detailsMsg += `*Weight:* ${formatNum(p.weight)}\n`;
+          if (p.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(p.netWeight)}\n`;
+          detailsMsg += `*Rate:* ₹${formatAmt(p.rate)}\n`;
+          detailsMsg += `*Amount:* ₹${formatAmt(p.amount)}\n\n`;
+        });
         
         if (finalPoData.invoiceType === 'GST' && finalPoData.gstTotal > 0) {
            detailsMsg += `*GST Total:* ₹${formatAmt(finalPoData.gstTotal)}\n`;
@@ -603,16 +661,54 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <h3 className="text-sm font-bold text-gray-800 border-b pb-1">Product Details</h3>
             </div>
 
+            {/* Added Products Table */}
+            {formData.products && formData.products.length > 0 && (
+              <div className="md:col-span-4 mb-4">
+                <div className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rate</th>
+                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                        <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {formData.products.map((p, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-2 text-sm text-gray-900">{p.material}</td>
+                          <td className="px-4 py-2 text-sm text-gray-500">{formatIndianNumber(p.quantity)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-500">₹{formatIndianNumber(p.rate)}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900 font-medium">₹{formatIndianNumber(p.amount)}</td>
+                          <td className="px-4 py-2 text-right space-x-2">
+                            <button type="button" onClick={() => editProduct(idx)} className="text-blue-500 hover:text-blue-700" title="Edit">
+                              <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button type="button" onClick={() => removeProduct(idx)} className="text-red-500 hover:text-red-700" title="Remove">
+                              <X className="w-4 h-4 inline" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
             {/* Row 4 - Material */}
             <div className="md:col-span-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name (Material) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name (Material)</label>
               {materialOptions.length > 0 ? (
                 <CustomSelect
                   name="material"
-                  value={formData.material}
-                  onChange={handleChange}
+                  value={currentProduct.material}
+                  onChange={handleProductChange}
                   options={materialOptions}
-                  required={!isAddingNewMaterial}
                 />
               ) : (
                 <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
@@ -625,12 +721,12 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <div className="md:col-span-4 bg-brand-accent/5 p-4 rounded-xl border border-brand-accent/20 mb-2 space-y-4">
                 <div className="flex justify-between items-center mb-2 border-b border-brand-accent/20 pb-2">
                   <h4 className="text-sm font-bold text-[#1b2f63]">Add New Material</h4>
-                  <button type="button" onClick={() => { setIsAddingNewMaterial(false); setFormData(p => ({...p, material: ''})) }} className="text-gray-400 hover:text-red-500 text-xs flex items-center gap-1 transition-colors"><X className="w-4 h-4"/> Cancel</button>
+                  <button type="button" onClick={() => { setIsAddingNewMaterial(false); setCurrentProduct(p => ({...p, material: ''})) }} className="text-gray-400 hover:text-red-500 text-xs flex items-center gap-1 transition-colors"><X className="w-4 h-4"/> Cancel</button>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-700 mb-1">Material Name *</label>
-                    <input type="text" name="material" value={newMaterialData.material} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. SBS Board 300 GSM" />
+                    <input type="text" name="material" value={newMaterialData.material} onChange={handleNewMaterialChange} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. SBS Board 300 GSM" />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Paper Size</label>
@@ -694,8 +790,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="length"
-                value={formatIndianNumber(formData.length)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.length)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -704,8 +800,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="width"
-                value={formatIndianNumber(formData.width)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.width)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -714,8 +810,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="gsm"
-                value={formatIndianNumber(formData.gsm)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.gsm)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -724,8 +820,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="sheetPkt"
-                value={formatIndianNumber(formData.sheetPkt)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.sheetPkt)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -736,9 +832,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="quantity"
-                required
-                value={formatIndianNumber(formData.quantity)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.quantity)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -747,8 +842,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="weight"
-                value={formatIndianNumber(formData.weight)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.weight)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -757,7 +852,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 readOnly
-                value={formatIndianNumber(formData.netWeight)}
+                value={formatIndianNumber(currentProduct.netWeight)}
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500"
                 placeholder="Auto-calculated"
               />
@@ -769,9 +864,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 name="rate"
-                required
-                value={formatIndianNumber(formData.rate)}
-                onChange={handleChange}
+                value={formatIndianNumber(currentProduct.rate)}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
               />
             </div>
@@ -780,10 +874,13 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <input
                 type="text"
                 readOnly
-                value={formatIndianNumber(formData.amount)}
+                value={formatIndianNumber(currentProduct.amount)}
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 font-bold"
                 placeholder="Auto-calculated"
               />
+            </div>
+            <div className="md:col-span-4 flex justify-end mt-2">
+              <button type="button" onClick={addProduct} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 font-medium rounded-md text-sm hover:bg-blue-100 transition-colors shadow-sm">Add Product to List</button>
             </div>
 
             <div className="md:col-span-4 mt-2">

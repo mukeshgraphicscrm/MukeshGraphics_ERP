@@ -6,8 +6,10 @@ import CustomSelect from './CustomSelect';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 import { useAuth } from '../contexts/AuthContext';
 import { getImageUrl } from '../pages/Products';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AddProductModal({ isOpen, onClose, onProductAdded, onProductUpdated, onProductDeleted, productToEdit, startInEditMode }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
@@ -108,15 +110,11 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       if (isOpen) {
-        document.body.style.overflow = 'unset';
-        document.documentElement.style.overflow = 'unset';
       }
     };
   }, [isOpen, onClose, isDeleteModalOpen]);

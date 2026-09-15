@@ -5,15 +5,33 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, inventory = [], poToEdit, pos = [] }) {
+  useScrollLock(isOpen);
   const [formData, setFormData] = useState({
     poNo: '',
     supplierId: '',
+    paymentType: 'Debit',
+    invoiceType: 'GST',
+    orderDate: new Date().toISOString().split('T')[0],
+    docDate: new Date().toISOString().split('T')[0],
+    jobNo: '',
+    jobName: '',
+    modifiedBy: '',
     material: '',
+    length: '',
+    width: '',
+    gsm: '',
+    sheetPkt: '',
     quantity: '',
+    weight: '',
+    netWeight: '',
     rate: '',
     amount: '',
+    gstTotal: '',
+    totalAmount: '',
+    notes: '',
     status: 'Ordered',
   });
   const [loading, setLoading] = useState(false);
@@ -31,17 +49,11 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 
@@ -52,10 +64,26 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         setFormData({
           poNo: poToEdit.poNo || '',
           supplierId: poToEdit.supplierId || '',
+          paymentType: poToEdit.paymentType || 'Debit',
+          invoiceType: poToEdit.invoiceType || 'GST',
+          orderDate: poToEdit.orderDate || new Date().toISOString().split('T')[0],
+          docDate: poToEdit.docDate || new Date().toISOString().split('T')[0],
+          jobNo: poToEdit.jobNo || '',
+          jobName: poToEdit.jobName || '',
+          modifiedBy: poToEdit.modifiedBy || '',
           material: poToEdit.material || '',
+          length: poToEdit.length || '',
+          width: poToEdit.width || '',
+          gsm: poToEdit.gsm || '',
+          sheetPkt: poToEdit.sheetPkt || '',
           quantity: poToEdit.quantity || '',
+          weight: poToEdit.weight || '',
+          netWeight: poToEdit.netWeight || '',
           rate: poToEdit.rate || '',
           amount: poToEdit.amount || '',
+          gstTotal: poToEdit.gstTotal || '',
+          totalAmount: poToEdit.totalAmount || '',
+          notes: poToEdit.notes || '',
           status: poToEdit.status || 'Ordered',
         });
       } else {
@@ -78,10 +106,26 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         setFormData({
           poNo: nextPoNo,
           supplierId: Object.keys(suppliers).length > 0 ? Object.values(suppliers)[0].id : '',
+          paymentType: 'Debit',
+          invoiceType: 'GST',
+          orderDate: new Date().toISOString().split('T')[0],
+          docDate: new Date().toISOString().split('T')[0],
+          jobNo: '',
+          jobName: '',
+          modifiedBy: '',
           material: '',
+          length: '',
+          width: '',
+          gsm: '',
+          sheetPkt: '',
           quantity: '',
+          weight: '',
+          netWeight: '',
           rate: '',
           amount: '',
+          gstTotal: '',
+          totalAmount: '',
+          notes: '',
           status: 'Ordered',
         });
       }
@@ -90,19 +134,78 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
   if (!isOpen) return null;
 
+  const formatIndianNumber = (val) => {
+    if (val === null || val === undefined || val === '') return '';
+    const str = val.toString();
+    if (str.endsWith('.')) {
+      const parsed = parseInt(str, 10);
+      return isNaN(parsed) ? '0.' : `${parsed.toLocaleString('en-IN')}.`;
+    }
+    const [intPart, decPart] = str.split('.');
+    const parsedInt = parseInt(intPart, 10);
+    const formattedInt = isNaN(parsedInt) ? (str.startsWith('.') ? '0' : '') : parsedInt.toLocaleString('en-IN');
+    return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
+  };
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+    
+    const numberFields = ['length', 'width', 'gsm', 'sheetPkt', 'quantity', 'weight', 'rate'];
+    if (numberFields.includes(name)) {
+      value = value.replace(/,/g, '');
+      value = value.replace(/[^0-9.]/g, '');
+      const parts = value.split('.');
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+      }
+    }
+
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'quantity' || name === 'rate') {
-        const q = parseFloat(updated.quantity) || 0;
-        const r = parseFloat(updated.rate) || 0;
-        if (updated.quantity && updated.rate) {
-          updated.amount = q * r;
-        } else if (name === 'quantity' || name === 'rate') {
-          updated.amount = '';
-        }
+      
+      // Calculate Net Weight
+      const l = parseFloat(updated.length) || 0;
+      const w = parseFloat(updated.width) || 0;
+      const weightVal = parseFloat(updated.weight) || 0;
+      const g = parseFloat(updated.gsm) || 0;
+      const s = parseFloat(updated.sheetPkt) || 0;
+      const q = parseFloat(updated.quantity) || 0;
+      
+      let netWeight = 0;
+      const multiplier = weightVal > 0 ? weightVal : w;
+      
+      if (l > 0 && multiplier > 0 && g > 0 && s > 0 && q > 0) {
+        netWeight = (l * multiplier * g * q * s) / 10000000.0;
+        updated.netWeight = netWeight.toFixed(3);
+      } else {
+        updated.netWeight = '';
       }
+
+      // Calculate Amount
+      const rate = parseFloat(updated.rate) || 0;
+      const activeWeight = parseFloat(updated.netWeight) || parseFloat(updated.weight) || q || 0;
+      
+      if (activeWeight > 0 && rate > 0) {
+        updated.amount = (activeWeight * rate).toFixed(2);
+      } else {
+        updated.amount = '';
+      }
+
+      // Calculate GST and Total
+      if (updated.amount) {
+        const amt = parseFloat(updated.amount) || 0;
+        if (updated.invoiceType === 'GST') {
+          updated.gstTotal = (amt * 0.18).toFixed(2);
+          updated.totalAmount = (amt + parseFloat(updated.gstTotal)).toFixed(2);
+        } else {
+          updated.gstTotal = '0.00';
+          updated.totalAmount = amt.toFixed(2);
+        }
+      } else {
+        updated.gstTotal = '';
+        updated.totalAmount = '';
+      }
+
       return updated;
     });
   };
@@ -114,9 +217,17 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     try {
       const payload = {
         ...formData,
+        length: Number(formData.length) || 0,
+        width: Number(formData.width) || 0,
+        gsm: Number(formData.gsm) || 0,
+        sheetPkt: Number(formData.sheetPkt) || 0,
         quantity: Number(formData.quantity) || 0,
+        weight: Number(formData.weight) || 0,
+        netWeight: Number(formData.netWeight) || 0,
         rate: Number(formData.rate) || 0,
         amount: Number(formData.amount) || 0,
+        gstTotal: Number(formData.gstTotal) || 0,
+        totalAmount: Number(formData.totalAmount) || 0,
       };
 
       let finalPoData = null;
@@ -268,9 +379,44 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         <form onSubmit={handleSubmit} className="p-6 flex-1 overflow-y-auto custom-scrollbar">
           {error && <div className="mb-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</div>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 space-y-0">
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">PO *</label>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 space-y-0">
+            {/* Row 1 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cash/Debit</label>
+              <CustomSelect
+                name="paymentType"
+                value={formData.paymentType}
+                onChange={handleChange}
+                options={[
+                  { value: 'Debit', label: 'Debit' },
+                  { value: 'Cash', label: 'Cash' }
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Invoice Type</label>
+              <CustomSelect
+                name="invoiceType"
+                value={formData.invoiceType}
+                onChange={handleChange}
+                options={[
+                  { value: 'GST', label: 'GST' },
+                  { value: 'Cash', label: 'Cash' }
+                ]}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Order Date</label>
+              <input
+                type="date"
+                name="orderDate"
+                value={formData.orderDate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Order No (PO No) *</label>
               <input
                 type="text"
                 name="poNo"
@@ -278,11 +424,53 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                 value={formData.poNo}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. PO-2026-001"
               />
             </div>
 
-            <div className="md:col-span-2">
+            {/* Row 2 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Doc Date</label>
+              <input
+                type="date"
+                name="docDate"
+                value={formData.docDate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job No</label>
+              <input
+                type="text"
+                name="jobNo"
+                value={formData.jobNo}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job Name</label>
+              <input
+                type="text"
+                name="jobName"
+                value={formData.jobName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Modify By</label>
+              <input
+                type="text"
+                name="modifiedBy"
+                value={formData.modifiedBy}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+
+            {/* Row 3 - Supplier */}
+            <div className="md:col-span-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
               {supplierOptions.length > 0 ? (
                 <CustomSelect
@@ -299,8 +487,13 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               )}
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Material Description *</label>
+            <div className="md:col-span-4 mt-2">
+              <h3 className="text-sm font-bold text-gray-800 border-b pb-1">Product Details</h3>
+            </div>
+
+            {/* Row 4 - Material */}
+            <div className="md:col-span-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name (Material) *</label>
               {materialOptions.length > 0 ? (
                 <CustomSelect
                   name="material"
@@ -316,60 +509,150 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+            {/* Row 5 - Dimensions & Qty */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
               <input
-                type="number"
+                type="text"
+                name="length"
+                value={formatIndianNumber(formData.length)}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Width</label>
+              <input
+                type="text"
+                name="width"
+                value={formatIndianNumber(formData.width)}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">GSM</label>
+              <input
+                type="text"
+                name="gsm"
+                value={formatIndianNumber(formData.gsm)}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Sheet / PKT</label>
+              <input
+                type="text"
+                name="sheetPkt"
+                value={formatIndianNumber(formData.sheetPkt)}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+
+            {/* Row 6 - Quantities & Amounts */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Qty *</label>
+              <input
+                type="text"
                 name="quantity"
                 required
-                min="0"
-                step="any"
-                value={formData.quantity}
+                value={formatIndianNumber(formData.quantity)}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. 10000"
+              />
+            </div>
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Weight</label>
+              <input
+                type="text"
+                name="weight"
+                value={formatIndianNumber(formData.weight)}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight</label>
+              <input
+                type="text"
+                readOnly
+                value={formatIndianNumber(formData.netWeight)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500"
+                placeholder="Auto-calculated"
               />
             </div>
 
-            <div>
+            {/* Row 7 - Pricing */}
+            <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Rate (₹) *</label>
               <input
-                type="number"
+                type="text"
                 name="rate"
                 required
-                min="0"
-                step="0.01"
-                value={formData.rate}
+                value={formatIndianNumber(formData.rate)}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. 42.50"
               />
             </div>
-
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹)</label>
               <input
-                type="number"
-                name="amount"
-                required
-                min="0"
-                step="0.01"
-                value={formData.amount}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-                placeholder="e.g. 425000"
+                type="text"
+                readOnly
+                value={formatIndianNumber(formData.amount)}
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 font-bold"
+                placeholder="Auto-calculated"
               />
             </div>
 
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-              <CustomSelect
-                name="status"
-                value={formData.status}
+            <div className="md:col-span-4 mt-2">
+              <h3 className="text-sm font-bold text-gray-800 border-b pb-1">Additional Details</h3>
+            </div>
+
+            {/* Row 8 - Footer Info */}
+            <div className="md:col-span-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notes / Narration</label>
+              <textarea
+                name="notes"
+                rows="2"
+                value={formData.notes}
                 onChange={handleChange}
-                options={statusOptions}
-                required
-              />
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none"
+                placeholder="Any special notes..."
+              ></textarea>
+            </div>
+
+            <div className="md:col-span-4 border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
+                <CustomSelect
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  options={statusOptions}
+                  required
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 text-right">GST Total (₹)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={formatIndianNumber(formData.gstTotal)}
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500 text-right font-medium"
+                />
+              </div>
+              <div className="md:col-span-1">
+                <label className="block text-sm font-medium text-gray-900 mb-1 text-right">Bill Amount (₹)</label>
+                <input
+                  type="text"
+                  readOnly
+                  value={formatIndianNumber(formData.totalAmount)}
+                  className="w-full px-3 py-2 bg-blue-50 border border-blue-200 rounded-md text-blue-900 text-right font-bold"
+                />
+              </div>
             </div>
           </div>
 

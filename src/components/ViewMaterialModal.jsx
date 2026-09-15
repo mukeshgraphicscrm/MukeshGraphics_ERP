@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { X, Edit2, Trash2 } from 'lucide-react';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function ViewMaterialModal({ isOpen, onClose, material, onEditClick, onDeleteClick }) {
+  useScrollLock(isOpen);
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {
@@ -11,17 +13,11 @@ export default function ViewMaterialModal({ isOpen, onClose, material, onEditCli
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 

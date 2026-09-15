@@ -8,8 +8,10 @@ import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import { generateInvoicePDF } from '../lib/pdfGenerator';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CreateInvoiceModal({ isOpen, onClose, customers: customerMap, onInvoiceCreated, onInvoiceUpdated, onInvoiceDeleted, invoiceToEdit, initialViewMode = false }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const { invoices, products, customers } = useData();
   const [users, setUsers] = useState([]);
@@ -60,17 +62,11 @@ export default function CreateInvoiceModal({ isOpen, onClose, customers: custome
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose, isDeleteModalOpen]);
 

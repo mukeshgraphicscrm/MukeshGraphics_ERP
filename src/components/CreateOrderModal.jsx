@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrderUpdated, orders = [], orderToEdit, initialData }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     orderNo: '',

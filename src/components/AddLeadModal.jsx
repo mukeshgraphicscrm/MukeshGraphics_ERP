@@ -5,8 +5,10 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { countries } from '../lib/countries';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
 
   const [formData, setFormData] = useState({
@@ -68,17 +70,11 @@ export default function AddLeadModal({ isOpen, onClose, onLeadAdded }) {
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 

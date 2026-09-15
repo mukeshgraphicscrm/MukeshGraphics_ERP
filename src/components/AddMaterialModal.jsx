@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onMaterialUpdated, materialToEdit }) {
+  useScrollLock(isOpen);
   const [formData, setFormData] = useState({
     material: '',
     paperSize: '',
@@ -47,17 +49,11 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);
 

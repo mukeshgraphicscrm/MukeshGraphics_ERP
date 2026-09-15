@@ -6,11 +6,13 @@ import ConfirmDeleteModal from './ConfirmDeleteModal';
 import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 const INPUT_CLS_FN = (disabled) => `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors ${disabled ? 'bg-gray-50 border-gray-300 text-gray-500 cursor-not-allowed' : 'border-gray-300'}`;
 const LABEL_CLS = 'block text-sm font-medium text-gray-700 mb-1';
 
 export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, onUpdated, onDeleted, jobToEdit }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const { customers, suppliers, orders } = useData();
   const [loading, setLoading] = useState(false);
@@ -57,11 +59,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     const handleKeyDown = (e) => { if (e.key === 'Escape' && !isDeleteModalOpen) onClose(); };
     document.addEventListener('keydown', handleKeyDown);
     // Prevent background scroll
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = prev;
     };
   }, [isOpen, onClose, isDeleteModalOpen]);
 

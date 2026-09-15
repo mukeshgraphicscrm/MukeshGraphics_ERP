@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { X, Edit2, Trash2 } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, onDeleteClick, onWhatsappClick, preventClose }) {
+  useScrollLock(isOpen);
   const { customerMap, productMap } = useData();
 
   useEffect(() => {
@@ -14,17 +16,11 @@ export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, on
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose, preventClose]);
 

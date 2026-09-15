@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, FileText, ShoppingCart, Factory, Truck, CheckCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useData } from '../contexts/DataContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function ViewJobPipelineModal({ isOpen, onClose, job }) {
+  useScrollLock(isOpen);
   const { quotations, orders, customerMap, products, dispatches } = useData();
   const [pipelineData, setPipelineData] = useState({
     quotation: null,

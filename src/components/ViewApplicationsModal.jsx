@@ -4,8 +4,10 @@ import { useData } from '../contexts/DataContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import CustomSelect from './CustomSelect';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function ViewApplicationsModal({ isOpen, onClose, job }) {
+  useScrollLock(isOpen);
   const { applicationsReceived, refetch } = useData();
   const [updatingId, setUpdatingId] = useState(null);
 

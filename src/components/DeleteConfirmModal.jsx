@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { X, AlertTriangle } from 'lucide-react';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, message, isDeleting }) {
+  useScrollLock(isOpen);
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen && !isDeleting) {
@@ -11,17 +13,11 @@ export default function DeleteConfirmModal({ isOpen, onClose, onConfirm, title, 
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose, isDeleting]);
 

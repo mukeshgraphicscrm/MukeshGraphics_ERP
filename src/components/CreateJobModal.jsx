@@ -6,6 +6,7 @@ import CustomSelect from './CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import useScrollLock from '../hooks/useScrollLock';
 
 const stageOptions = [
   { value: 'Start', label: 'Start' },
@@ -25,6 +26,7 @@ const statusOptions = [
 ];
 
 export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdated, onJobDeleted, jobs = [], jobToEdit }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const { customers, products } = useData();
   const [formData, setFormData] = useState({
@@ -65,16 +67,12 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
     document.addEventListener('mousedown', handleClickOutside);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
       if (isOpen) {
-        document.body.style.overflow = 'unset';
-        document.documentElement.style.overflow = 'unset';
       }
     };
   }, [isOpen, onClose]);

@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function LostReasonModal({ isOpen, onClose, lead, onConfirm }) {
+  useScrollLock(isOpen);
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
 

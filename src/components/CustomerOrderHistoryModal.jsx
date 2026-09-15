@@ -1,7 +1,9 @@
 import React, { useEffect } from 'react';
 import { X, Calendar, Package, FileText, IndianRupee } from 'lucide-react';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CustomerOrderHistoryModal({ isOpen, onClose, customer, orders = [], products = [] }) {
+  useScrollLock(isOpen);
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && isOpen) {

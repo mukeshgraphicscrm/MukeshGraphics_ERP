@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { useData } from '../contexts/DataContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchScheduled, onDispatchUpdated, dispatchToEdit, initialData }) {
+  useScrollLock(isOpen);
   const { refetch } = useData();
   const [formData, setFormData] = useState({
     dispatchNo: '',
@@ -82,15 +84,11 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       if (isOpen) {
-        document.body.style.overflow = 'unset';
-        document.documentElement.style.overflow = 'unset';
       }
     };
   }, [isOpen, onClose]);

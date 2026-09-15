@@ -6,8 +6,10 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import { generateQuotationPDF } from '../lib/pdfGenerator';
 import { useAuth } from '../contexts/AuthContext';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded, onQuotationUpdated, onQuotationDeleted, quotations = [], quotationToEdit, startInEditMode }) {
+  useScrollLock(isOpen);
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     quotationNo: '',
@@ -181,17 +183,11 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose, isDeleteModalOpen]);
 

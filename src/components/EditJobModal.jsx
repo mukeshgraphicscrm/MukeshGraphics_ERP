@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import CustomSelect from './CustomSelect';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function EditJobModal({ isOpen, onClose, job, onUpdate }) {
+  useScrollLock(isOpen);
   const [formData, setFormData] = useState({ ...job });
 
   useEffect(() => {

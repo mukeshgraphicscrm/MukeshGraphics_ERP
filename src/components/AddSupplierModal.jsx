@@ -4,8 +4,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import DeleteConfirmModal from './DeleteConfirmModal';
 import { cn } from '../lib/utils';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, supplierToEdit, onSupplierUpdated, onSupplierDeleted }) {
+  useScrollLock(isOpen);
   const [formData, setFormData] = useState({
     name: '',
     contactPerson: '',
@@ -61,17 +63,11 @@ export default function AddSupplierModal({ isOpen, onClose, onSupplierAdded, sup
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
     };
   }, [isOpen, onClose, isDeleteModalOpen]);
 

@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
+import useScrollLock from '../hooks/useScrollLock';
 
 export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onCategoryUpdated, onCategoryDeleted }) {
+  useScrollLock(isOpen);
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -44,15 +46,11 @@ export default function AddCategoryModal({ isOpen, onClose, onCategoryAdded, onC
     window.addEventListener('keydown', handleKeyDown);
 
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       if (isOpen) {
-        document.body.style.overflow = 'unset';
-        document.documentElement.style.overflow = 'unset';
       }
     };
   }, [isOpen, onClose]);

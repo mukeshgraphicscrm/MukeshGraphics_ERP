@@ -674,6 +674,16 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                     <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Threshold *</label>
                     <input type="text" name="min" value={formatIndianNumber(newMaterialData.min)} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. 1000" />
                   </div>
+                  <div className="md:col-span-2 flex justify-end mt-2 pt-2 border-t border-brand-accent/10">
+                    <button
+                      type="button"
+                      onClick={handleSaveNewMaterial}
+                      disabled={loading}
+                      className="px-4 py-2 bg-brand-accent text-white font-medium rounded-lg text-sm hover:bg-brand-accent/90 transition-colors shadow-sm disabled:opacity-50"
+                    >
+                      {loading ? 'SAVING...' : 'SAVE MATERIAL'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

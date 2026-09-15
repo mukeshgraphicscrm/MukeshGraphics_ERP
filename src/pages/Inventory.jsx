@@ -7,6 +7,7 @@ import ViewMaterialModal from '../components/ViewMaterialModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
+import toast from 'react-hot-toast';
 
 
 export default function Inventory() {
@@ -51,8 +52,10 @@ export default function Inventory() {
       setIsDeleteModalOpen(false);
       setMaterialToDelete(null);
       setIsViewModalOpen(false); // Close view modal as well if open
+      toast.success('Material deleted successfully!');
     } catch (err) {
       console.error('Error deleting material:', err);
+      toast.error('Failed to delete material.');
     } finally {
       setIsDeleting(false);
     }

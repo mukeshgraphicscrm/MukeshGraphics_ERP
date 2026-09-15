@@ -6,6 +6,9 @@
   body {
     @apply bg-white text-gray-800 font-sans uppercase;
   }
+  body.modal-open {
+    overflow: hidden !important;
+  }
   input:not([type="password"]), textarea, select, button {
     @apply uppercase;
   }

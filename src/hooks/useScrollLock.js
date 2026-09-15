@@ -1,18 +1,23 @@
 import { useEffect } from 'react';
 
+let lockCount = 0;
+
 export default function useScrollLock(isOpen) {
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
+      lockCount++;
+      document.body.classList.add('modal-open');
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
+      if (isOpen) {
+        lockCount--;
+        if (lockCount <= 0) {
+          lockCount = 0;
+          document.body.classList.remove('modal-open');
+        }
+      }
     };
   }, [isOpen]);
 }
+

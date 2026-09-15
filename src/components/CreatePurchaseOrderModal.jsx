@@ -7,7 +7,7 @@ import DeleteConfirmModal from './DeleteConfirmModal';
 import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
 import useScrollLock from '../hooks/useScrollLock';
 
-export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, inventory = [], poToEdit, pos = [] }) {
+export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated, onPoUpdated, onPoDeleted, onGrnCreated, suppliers, inventory = [], poToEdit, pos = [], onMaterialAdded }) {
   useScrollLock(isOpen);
   const [formData, setFormData] = useState({
     poNo: '',
@@ -39,6 +39,30 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [showWhatsappPrompt, setShowWhatsappPrompt] = useState(false);
   const [whatsappInfo, setWhatsappInfo] = useState(null);
+  const [isAddingNewMaterial, setIsAddingNewMaterial] = useState(false);
+  const [newMaterialData, setNewMaterialData] = useState({
+    material: '',
+    paperSize: '',
+    category: 'Paper',
+    stock: '',
+    unit: 'Sheets',
+    min: '',
+  });
+
+  const handleNewMaterialChange = (e) => {
+    let { name, value } = e.target;
+
+    if (name === 'stock' || name === 'min') {
+      value = value.replace(/,/g, '');
+      value = value.replace(/[^0-9.]/g, '');
+      const parts = value.split('.');
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+      }
+    }
+
+    setNewMaterialData((prev) => ({ ...prev, [name]: value }));
+  };
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -150,6 +174,16 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const handleChange = (e) => {
     let { name, value } = e.target;
     
+    if (name === 'material') {
+      if (value === 'ADD_NEW') {
+        setIsAddingNewMaterial(true);
+        setFormData((prev) => ({ ...prev, material: 'ADD_NEW' }));
+        return;
+      } else {
+        setIsAddingNewMaterial(false);
+      }
+    }
+
     const numberFields = ['length', 'width', 'gsm', 'sheetPkt', 'quantity', 'weight', 'rate'];
     if (numberFields.includes(name)) {
       value = value.replace(/,/g, '');
@@ -215,8 +249,38 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     setLoading(true);
     setError(null);
     try {
+      let actualMaterialName = formData.material;
+
+      if (isAddingNewMaterial) {
+        if (!newMaterialData.material) {
+          toast.error("Please enter the material name");
+          setLoading(false);
+          return;
+        }
+        try {
+          const stockVal = Number(newMaterialData.stock) || 0;
+          const minVal = Number(newMaterialData.min) || 0;
+          const matPayload = {
+            ...newMaterialData,
+            stock: stockVal,
+            min: minVal,
+            status: stockVal <= minVal ? 'Low Stock' : 'In Stock'
+          };
+          const matRes = await api.post('/inventory', matPayload);
+          if (onMaterialAdded) onMaterialAdded(matRes.data);
+          actualMaterialName = matRes.data.material;
+          toast.success('Material added successfully!');
+        } catch (err) {
+          console.error('Error creating material:', err);
+          toast.error('Failed to create new material.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const payload = {
         ...formData,
+        material: actualMaterialName,
         length: Number(formData.length) || 0,
         width: Number(formData.width) || 0,
         gsm: Number(formData.gsm) || 0,
@@ -379,6 +443,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       label: item.material
     })) : [];
 
+  materialOptions.unshift({ value: 'ADD_NEW', label: '+ ADD NEW MATERIAL', className: 'text-brand-accent font-bold bg-brand-accent/5' });
+
   const statusOptions = [
     { value: 'Ordered', label: 'Ordered' },
     { value: 'In Transit', label: 'In Transit' },
@@ -534,7 +600,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                   value={formData.material}
                   onChange={handleChange}
                   options={materialOptions}
-                  required
+                  required={!isAddingNewMaterial}
                 />
               ) : (
                 <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
@@ -542,6 +608,69 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                 </div>
               )}
             </div>
+
+            {isAddingNewMaterial && (
+              <div className="md:col-span-4 bg-brand-accent/5 p-4 rounded-xl border border-brand-accent/20 mb-2 space-y-4">
+                <div className="flex justify-between items-center mb-2 border-b border-brand-accent/20 pb-2">
+                  <h4 className="text-sm font-bold text-[#1b2f63]">Add New Material</h4>
+                  <button type="button" onClick={() => { setIsAddingNewMaterial(false); setFormData(p => ({...p, material: ''})) }} className="text-gray-400 hover:text-red-500 text-xs flex items-center gap-1 transition-colors"><X className="w-4 h-4"/> Cancel</button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Material Name *</label>
+                    <input type="text" name="material" value={newMaterialData.material} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. SBS Board 300 GSM" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Paper Size</label>
+                    <input type="text" name="paperSize" value={newMaterialData.paperSize} onChange={handleNewMaterialChange} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. 20x30 inch" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Category *</label>
+                    <CustomSelect
+                      name="category"
+                      value={newMaterialData.category}
+                      onChange={handleNewMaterialChange}
+                      options={[
+                        { value: 'Paper', label: 'Paper' },
+                        { value: 'Ink', label: 'Ink' },
+                        { value: 'Consumables', label: 'Consumables' },
+                        { value: 'Tooling', label: 'Tooling' },
+                        { value: 'Other', label: 'Other' }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Unit of Measure *</label>
+                    <CustomSelect
+                      name="unit"
+                      value={newMaterialData.unit}
+                      onChange={handleNewMaterialChange}
+                      options={[
+                        { value: 'Sheets', label: 'Sheets' },
+                        { value: 'Liters', label: 'Liters' },
+                        { value: 'Kgs', label: 'Kgs' },
+                        { value: 'Rolls', label: 'Rolls' },
+                        { value: 'Pieces', label: 'Pieces' }
+                      ]}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Current Stock *</label>
+                    <input type="text" name="stock" value={formatIndianNumber(newMaterialData.stock)} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. 5000" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Minimum Threshold *</label>
+                    <input type="text" name="min" value={formatIndianNumber(newMaterialData.min)} onChange={handleNewMaterialChange} required className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm uppercase" placeholder="e.g. 1000" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs text-[#1b2f63]/70 italic mt-1 flex items-center gap-1">
+                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-brand-accent"></span>
+                      Note: This new material will be saved to your inventory automatically when you click the main "SAVE CHANGES" button at the bottom of the Purchase Order form.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Row 5 - Dimensions & Qty */}
             <div className="md:col-span-1">

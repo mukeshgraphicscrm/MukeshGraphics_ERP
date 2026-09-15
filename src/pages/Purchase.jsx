@@ -264,6 +264,7 @@ export default function Purchase() {
         onPoUpdated={(updatedPo) => setPoData(prev => prev.map(po => po.id === updatedPo.id ? updatedPo : po))}
         onPoDeleted={(deletedId) => setPoData(prev => prev.filter(po => po.id !== deletedId))}
         onGrnCreated={(newGrn) => setGrnData(prev => [newGrn, ...prev])}
+        onMaterialAdded={(newMat) => setInventory(prev => [...prev, newMat])}
         poToEdit={poToEdit}
       />
       <AddSupplierModal

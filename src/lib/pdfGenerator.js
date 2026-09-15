@@ -418,7 +418,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   }
 };
 
-export const generateInvoicePDF = async (invoice, customers, products) => {
+export const generateInvoicePDF = async (invoice, customers, products, exportType = 'pdf') => {
   const loadImage = (url) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -810,7 +810,31 @@ export const generateInvoicePDF = async (invoice, customers, products) => {
 
   // Save the PDF
   const safeName = (invoice.invoiceNo || 'Invoice').replace(/[^a-zA-Z0-9-]/g, '_');
-  doc.save(`${safeName}.pdf`);
+
+  if (exportType === 'jpg') {
+    const pdfOutput = doc.output('arraybuffer');
+    const loadingTask = pdfjsLib.getDocument({ data: pdfOutput });
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+    
+    // Scale for better resolution
+    const viewport = page.getViewport({ scale: 2 });
+    
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+    
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `${safeName}.jpg`;
+    link.click();
+  } else {
+    doc.save(`${safeName}.pdf`);
+  }
 };
 
 

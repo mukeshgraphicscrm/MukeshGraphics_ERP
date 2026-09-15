@@ -128,16 +128,16 @@ export default function Accounts() {
             setModalMode('view');
             setIsModalOpen(true);
           }}
-          onDownload={async (r) => {
+          onDownload={async (r, exportType = 'pdf') => {
             try {
-              const toastId = toast.loading('Generating PDF...');
+              const toastId = toast.loading(`Generating ${exportType.toUpperCase()}...`);
               const prodMap = {};
               products.forEach(p => prodMap[p.id] = p);
-              await generateInvoicePDF(r, customers, prodMap);
-              toast.success('PDF downloaded successfully', { id: toastId });
+              await generateInvoicePDF(r, customers, prodMap, exportType);
+              toast.success(`${exportType.toUpperCase()} downloaded successfully`, { id: toastId });
             } catch (err) {
               console.error(err);
-              toast.error('Failed to generate PDF');
+              toast.error(`Failed to generate ${exportType.toUpperCase()}`, { id: toastId });
             }
           }}
         />
@@ -732,10 +732,16 @@ const AccountActions = ({ row, onEdit, onView, onDownload }) => {
             <Eye className="w-4 h-4 mr-2" /> View
           </button>
           <button
-            onClick={() => { setIsOpen(false); if (onDownload) onDownload(row); }}
+            onClick={() => { setIsOpen(false); if (onDownload) onDownload(row, 'pdf'); }}
             className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
           >
             <Download className="w-4 h-4 mr-2" /> Download PDF
+          </button>
+          <button
+            onClick={() => { setIsOpen(false); if (onDownload) onDownload(row, 'jpg'); }}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center"
+          >
+            <Download className="w-4 h-4 mr-2" /> Download JPG
           </button>
         </div>
       )}

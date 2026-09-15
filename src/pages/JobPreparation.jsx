@@ -59,15 +59,18 @@ export default function JobPreparation() {
     if (!artworks || !customerMap) return [];
     
     const filtered = artworks.filter(art => {
+      if (art.status?.toUpperCase() !== 'FINAL/PARTY APPROVE') return false;
+
       const customerName = customerMap[art.customerId]?.name || art.customerId;
       if (!customerName) return true;
       
-      const customerJobs = (jobPreparations || []).filter(j => j.party === customerName);
+      const customerJobs = (jobPreparations || []).filter(
+        j => j.party?.trim().toLowerCase() === customerName.trim().toLowerCase()
+      );
       if (customerJobs.length === 0) return true;
       
-      // Assuming jobs are prepended, the first one is the most recent
-      const newestJob = customerJobs[0];
-      if (newestJob.status === 'Done') return false;
+      // If ANY job for this customer is 'Done', remove from recent designs
+      if (customerJobs.some(j => j.status?.toLowerCase() === 'done')) return false;
       
       return true;
     });

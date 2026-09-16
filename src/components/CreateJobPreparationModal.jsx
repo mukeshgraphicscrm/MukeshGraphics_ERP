@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
@@ -19,6 +19,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [formData, setFormData] = useState({
+    linkedOrders: [{ orderNo: '', party: '' }],
     orderNo: '',
     poNo: '',
     party: '',
@@ -36,6 +37,9 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     setIsViewMode(!!jobToEdit);
     if (jobToEdit) {
       setFormData({
+        linkedOrders: jobToEdit.linkedOrders && jobToEdit.linkedOrders.length > 0
+          ? jobToEdit.linkedOrders
+          : [{ orderNo: jobToEdit.orderNo || '', party: jobToEdit.party || '' }],
         orderNo: jobToEdit.orderNo || '',
         poNo: jobToEdit.poNo || '',
         party: jobToEdit.party || '',
@@ -49,7 +53,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
         note: jobToEdit.note || '',
       });
     } else {
-      setFormData({ orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', status: 'Active', note: '' });
+      setFormData({ linkedOrders: [{ orderNo: '', party: '' }], orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', status: 'Active', note: '' });
     }
   }, [jobToEdit, isOpen]);
 
@@ -77,20 +81,27 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       return;
     }
     setLoading(true);
+    
+    const submitData = { ...formData };
+    if (submitData.linkedOrders && submitData.linkedOrders.length > 0) {
+      submitData.orderNo = submitData.linkedOrders[0].orderNo;
+      submitData.party = submitData.linkedOrders[0].party;
+    }
+
     try {
       if (jobToEdit) {
-        await api.put(`/job_preparations/${jobToEdit.id}`, formData);
-        onUpdated({ id: jobToEdit.id, ...formData });
+        await api.put(`/job_preparations/${jobToEdit.id}`, submitData);
+        onUpdated({ id: jobToEdit.id, ...submitData });
         toast.success('Job updated successfully');
       } else {
-        const response = await api.post('/job_preparations', formData);
-        const newJob = response.data?.id ? response.data : { id: Date.now().toString(), ...formData };
+        const response = await api.post('/job_preparations', submitData);
+        const newJob = response.data?.id ? response.data : { id: Date.now().toString(), ...submitData };
         onAdded(newJob);
         toast.success('Job created successfully');
       }
       onClose();
     } catch (error) {
-      const newJob = jobToEdit ? { id: jobToEdit.id, ...formData } : { id: Date.now().toString(), ...formData };
+      const newJob = jobToEdit ? { id: jobToEdit.id, ...submitData } : { id: Date.now().toString(), ...submitData };
       if (jobToEdit) onUpdated(newJob); else onAdded(newJob);
       toast.success(jobToEdit ? 'Job updated' : 'Job created');
       onClose();
@@ -156,38 +167,98 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
           <form id="jobPrepForm" onSubmit={handleSubmit} className="p-6 flex-1 overflow-y-auto custom-scrollbar">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-              {/* Order No. */}
-              <div>
-                <label className={LABEL_CLS}>Order No.</label>
-                <CustomSelect
-                  name="orderNo"
-                  value={formData.orderNo}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    const order = orders?.find(o => o.orderNo === val);
-                    if (order) {
-                      const customer = customers?.find(c => c.id === order.customerId);
-                      setFormData(prev => ({
-                        ...prev,
-                        orderNo: val,
-                        party: customer?.name || prev.party,
-                        poNo: order.poNo || prev.poNo,
-                        paper: order.paper || prev.paper,
-                        gsm: order.gsm || prev.gsm,
-                        paperSize: order.paperSize || prev.paperSize,
-                        jobSize: order.jobSize || prev.jobSize
-                      }));
-                    } else {
-                      setFormData(prev => ({ ...prev, orderNo: val }));
-                    }
-                  }}
-                  options={orderOptions}
-                  placeholder="Select Order..."
-                  required
-                  searchable={true}
-                  disabled={isViewMode}
-                />
-              </div>
+              {formData.linkedOrders && formData.linkedOrders.map((linkedItem, idx) => (
+                <React.Fragment key={idx}>
+                  {/* Order No. */}
+                  <div>
+                    <label className={LABEL_CLS}>Order No. {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''}</label>
+                    <CustomSelect
+                      name={`orderNo-${idx}`}
+                      value={linkedItem.orderNo}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const newLinkedOrders = [...formData.linkedOrders];
+                        const order = orders?.find(o => o.orderNo === val);
+                        if (order) {
+                          const customer = customers?.find(c => c.id === order.customerId);
+                          newLinkedOrders[idx] = { orderNo: val, party: customer?.name || newLinkedOrders[idx].party };
+                          
+                          if (idx === 0) {
+                            setFormData(prev => ({
+                              ...prev,
+                              linkedOrders: newLinkedOrders,
+                              poNo: order.poNo || prev.poNo,
+                              paper: order.paper || prev.paper,
+                              gsm: order.gsm || prev.gsm,
+                              paperSize: order.paperSize || prev.paperSize,
+                              jobSize: order.jobSize || prev.jobSize
+                            }));
+                            return;
+                          }
+                        } else {
+                          newLinkedOrders[idx] = { ...newLinkedOrders[idx], orderNo: val };
+                        }
+                        setFormData(prev => ({ ...prev, linkedOrders: newLinkedOrders }));
+                      }}
+                      options={orderOptions}
+                      placeholder="Select Order..."
+                      required
+                      searchable={true}
+                      disabled={isViewMode}
+                    />
+                  </div>
+
+                  {/* Customer */}
+                  <div>
+                    <label className={LABEL_CLS}>Customer {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''}</label>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <CustomSelect
+                          name={`party-${idx}`}
+                          value={linkedItem.party}
+                          onChange={(e) => {
+                            const newLinkedOrders = [...formData.linkedOrders];
+                            newLinkedOrders[idx] = { ...newLinkedOrders[idx], party: e.target.value };
+                            setFormData(prev => ({ ...prev, linkedOrders: newLinkedOrders }));
+                          }}
+                          options={customerOptions}
+                          placeholder="Select Customer..."
+                          required
+                          searchable={true}
+                          disabled={isViewMode}
+                        />
+                      </div>
+                      {idx > 0 && !isViewMode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newLinkedOrders = formData.linkedOrders.filter((_, i) => i !== idx);
+                            setFormData(prev => ({ ...prev, linkedOrders: newLinkedOrders }));
+                          }}
+                          className="mt-1 flex items-center justify-center p-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 transition-colors shrink-0"
+                          title="Remove Customer"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+
+              {!isViewMode && (
+                <div className="col-span-1 md:col-span-2 flex justify-start mb-2 mt-[-0.5rem]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(prev => ({ ...prev, linkedOrders: [...prev.linkedOrders, { orderNo: '', party: '' }] }));
+                    }}
+                    className="text-sm font-medium text-[#1b2f63] hover:text-[#112046] flex items-center gap-1 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" /> Add Another Customer/Order
+                  </button>
+                </div>
+              )}
 
               {/* PO No. */}
               <div>
@@ -199,21 +270,6 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   disabled={isViewMode}
                   className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. PO-123"
-                />
-              </div>
-
-              {/* Customer (was Party) */}
-              <div>
-                <label className={LABEL_CLS}>Customer</label>
-                <CustomSelect
-                  name="party"
-                  value={formData.party}
-                  onChange={(e) => setFormData(prev => ({ ...prev, party: e.target.value }))}
-                  options={customerOptions}
-                  placeholder="Select Customer..."
-                  required
-                  searchable={true}
-                  disabled={isViewMode}
                 />
               </div>
 

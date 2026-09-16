@@ -17,8 +17,30 @@ export default function JobPreparation() {
   const data = jobPreparations || [];
 
   const columns = [
-    { header: 'O.No', accessor: row => row.orderNo || '-', render: row => <span className="font-medium text-brand-accent">{row.orderNo || '-'}</span> },
-    { header: 'Party', accessor: row => row.party || '-' },
+    { 
+      header: 'O.No', 
+      accessor: row => row.linkedOrders?.length > 0 ? row.linkedOrders.map(l => l.orderNo).filter(Boolean).join(', ') : row.orderNo || '-',
+      render: row => (
+        <div className="flex flex-col gap-1">
+          {row.linkedOrders?.length > 0 
+            ? row.linkedOrders.map((l, i) => <span key={i} className="font-medium text-brand-accent whitespace-nowrap">{l.orderNo || '-'}</span>)
+            : <span className="font-medium text-brand-accent whitespace-nowrap">{row.orderNo || '-'}</span>
+          }
+        </div>
+      )
+    },
+    { 
+      header: 'Party', 
+      accessor: row => row.linkedOrders?.length > 0 ? row.linkedOrders.map(l => l.party).filter(Boolean).join(', ') : row.party || '-',
+      render: row => (
+        <div className="flex flex-col gap-1">
+          {row.linkedOrders?.length > 0
+            ? row.linkedOrders.map((l, i) => <span key={i} className="whitespace-nowrap truncate max-w-[150px] block" title={l.party}>{l.party || '-'}</span>)
+            : <span className="whitespace-nowrap truncate max-w-[150px] block" title={row.party}>{row.party || '-'}</span>
+          }
+        </div>
+      )
+    },
     { header: 'JOB NO', accessor: row => row.jobNo || '-', render: row => <span className="font-medium text-gray-900">{row.jobNo || '-'}</span> },
     { header: 'Paper Size', accessor: row => row.paperSize || '-' },
     { header: 'Job Size', accessor: row => row.jobSize || '-' },

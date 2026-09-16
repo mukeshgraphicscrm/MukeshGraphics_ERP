@@ -38,7 +38,26 @@ export default function Orders() {
 
   const columns = [
     { header: 'Order No.', accessor: row => row.orderNo, render: row => <span className="font-medium text-brand-accent">{row.orderNo}</span> },
-    { header: 'Customer', accessor: row => customers[row.customerId]?.name || 'DELETED CUSTOMER' },
+    { 
+      header: 'Customer', 
+      accessor: row => customers[row.customerId]?.name || 'DELETED CUSTOMER',
+      render: row => {
+        const c = customers[row.customerId];
+        if (!c) return <span className="text-gray-500">DELETED CUSTOMER</span>;
+        const initials = c.name ? c.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NA';
+        return (
+          <div className="flex items-center py-1">
+            <div className="w-9 h-9 rounded-full bg-[#f1f5f9] text-[#1e3a8a] flex items-center justify-center font-bold text-xs mr-4 border border-[#e2e8f0] shrink-0">
+              {initials}
+            </div>
+            <div>
+              <div className="font-bold text-gray-900 text-[13px]">{c.brandName || c.name}</div>
+              <div className="text-gray-700 text-[12px]">{c.name}</div>
+            </div>
+          </div>
+        );
+      }
+    },
     { 
       header: 'Product', 
       accessor: row => {

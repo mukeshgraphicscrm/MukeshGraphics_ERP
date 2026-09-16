@@ -543,6 +543,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const dynamicCategories = [...new Set(Array.isArray(inventory) ? inventory.map(item => item.category).filter(Boolean) : [])];
   const categoryOptions = [...baseCategoryOptions];
   dynamicCategories.forEach(cat => {
+    if (cat.toLowerCase() === 'other') return;
     if (!categoryOptions.find(opt => opt.value.toLowerCase() === cat.toLowerCase())) {
       categoryOptions.push({ value: cat, label: cat });
     }

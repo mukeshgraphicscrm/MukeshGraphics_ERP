@@ -122,6 +122,7 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
   const dynamicCategories = [...new Set(inventory.map(item => item.category).filter(Boolean))];
   const categoryOptions = [...baseCategoryOptions];
   dynamicCategories.forEach(cat => {
+    if (cat.toLowerCase() === 'other') return;
     if (!categoryOptions.find(opt => opt.value.toLowerCase() === cat.toLowerCase())) {
       categoryOptions.push({ value: cat, label: cat });
     }

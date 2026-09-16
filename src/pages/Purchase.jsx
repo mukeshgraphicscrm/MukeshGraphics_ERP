@@ -303,6 +303,7 @@ export default function Purchase() {
         onMaterialAdded={(newMaterial) => {
           setInventory(prev => [...prev, newMaterial]);
         }}
+        inventory={inventory}
       />
       <AddPaperSizeModal
         isOpen={isAddPaperSizeModalOpen}

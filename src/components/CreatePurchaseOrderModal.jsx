@@ -53,6 +53,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     unit: 'Sheets',
     min: '',
   });
+  const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   const handleNewMaterialChange = (e) => {
     let { name, value } = e.target;
@@ -63,6 +65,16 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       const parts = value.split('.');
       if (parts.length > 2) {
         value = parts[0] + '.' + parts.slice(1).join('');
+      }
+    }
+
+    if (name === 'category') {
+      if (value === 'ADD_NEW') {
+        setIsAddingNewCategory(true);
+        setNewMaterialData((prev) => ({ ...prev, category: 'ADD_NEW' }));
+        return;
+      } else {
+        setIsAddingNewCategory(false);
       }
     }
 
@@ -317,6 +329,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       const minVal = Number(newMaterialData.min.toString().replace(/,/g, '')) || 0;
       const matPayload = {
         ...newMaterialData,
+        category: newMaterialData.category === 'ADD_NEW' ? newCategoryName : newMaterialData.category,
         stock: stockVal,
         min: minVal,
         status: stockVal <= minVal ? 'Low Stock' : 'In Stock'
@@ -520,6 +533,21 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     { value: 'In Transit', label: 'In Transit' },
     { value: 'Received', label: 'Received' },
   ];
+
+  const baseCategoryOptions = [
+    { value: 'Paper', label: 'Paper' },
+    { value: 'Ink', label: 'Ink' },
+    { value: 'Consumables', label: 'Consumables' },
+    { value: 'Tooling', label: 'Tooling' }
+  ];
+  const dynamicCategories = [...new Set(Array.isArray(inventory) ? inventory.map(item => item.category).filter(Boolean) : [])];
+  const categoryOptions = [...baseCategoryOptions];
+  dynamicCategories.forEach(cat => {
+    if (!categoryOptions.find(opt => opt.value.toLowerCase() === cat.toLowerCase())) {
+      categoryOptions.push({ value: cat, label: cat });
+    }
+  });
+  categoryOptions.unshift({ value: 'ADD_NEW', label: '+ ADD NEW CATEGORY', className: 'text-brand-accent font-bold bg-brand-accent/5' });
 
   const handleSendWhatsapp = () => {
     if (whatsappInfo) {
@@ -738,14 +766,18 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                       name="category"
                       value={newMaterialData.category}
                       onChange={handleNewMaterialChange}
-                      options={[
-                        { value: 'Paper', label: 'Paper' },
-                        { value: 'Ink', label: 'Ink' },
-                        { value: 'Consumables', label: 'Consumables' },
-                        { value: 'Tooling', label: 'Tooling' },
-                        { value: 'Other', label: 'Other' }
-                      ]}
+                      options={categoryOptions}
                     />
+                    {isAddingNewCategory && (
+                      <input
+                        type="text"
+                        placeholder="Enter new category name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        className="w-full px-3 py-2 mt-2 border border-brand-accent rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 transition-colors uppercase text-sm"
+                        required
+                      />
+                    )}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Unit of Measure *</label>

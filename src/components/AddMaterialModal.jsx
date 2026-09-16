@@ -5,7 +5,7 @@ import api from '../lib/api';
 import CustomSelect from './CustomSelect';
 import useScrollLock from '../hooks/useScrollLock';
 
-export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onMaterialUpdated, materialToEdit }) {
+export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onMaterialUpdated, materialToEdit, inventory = [] }) {
   useScrollLock(isOpen);
   const [formData, setFormData] = useState({
     material: '',
@@ -15,6 +15,8 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
     unit: 'Sheets',
     min: '',
   });
+  const [isAddingNewCategory, setIsAddingNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -61,7 +63,17 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'category') {
+      if (value === 'ADD_NEW') {
+        setIsAddingNewCategory(true);
+        setFormData((prev) => ({ ...prev, category: 'ADD_NEW' }));
+      } else {
+        setIsAddingNewCategory(false);
+        setFormData((prev) => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -74,6 +86,7 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
 
       const payload = {
         ...formData,
+        category: formData.category === 'ADD_NEW' ? newCategoryName : formData.category,
         stock: stockVal,
         min: minVal,
         status: stockVal <= minVal ? 'Low Stock' : 'In Stock'
@@ -99,13 +112,22 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
     }
   };
 
-  const categoryOptions = [
+  const baseCategoryOptions = [
     { value: 'Paper', label: 'Paper' },
     { value: 'Ink', label: 'Ink' },
     { value: 'Consumables', label: 'Consumables' },
-    { value: 'Tooling', label: 'Tooling' },
-    { value: 'Other', label: 'Other' },
+    { value: 'Tooling', label: 'Tooling' }
   ];
+
+  const dynamicCategories = [...new Set(inventory.map(item => item.category).filter(Boolean))];
+  const categoryOptions = [...baseCategoryOptions];
+  dynamicCategories.forEach(cat => {
+    if (!categoryOptions.find(opt => opt.value.toLowerCase() === cat.toLowerCase())) {
+      categoryOptions.push({ value: cat, label: cat });
+    }
+  });
+  
+  categoryOptions.unshift({ value: 'ADD_NEW', label: '+ ADD NEW CATEGORY', className: 'text-brand-accent font-bold bg-brand-accent/5' });
 
   const unitOptions = [
     { value: 'Sheets', label: 'Sheets' },
@@ -163,6 +185,16 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
                 options={categoryOptions}
                 required
               />
+              {isAddingNewCategory && (
+                <input
+                  type="text"
+                  placeholder="Enter new category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="w-full px-3 py-2 mt-2 border border-brand-accent rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 transition-colors uppercase text-sm"
+                  required
+                />
+              )}
             </div>
 
             <div>

@@ -8,7 +8,9 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
   const containerRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
 
-  const selectedOption = !isMulti ? options.find(opt => opt.value === value) : null;
+  const selectedOption = !isMulti
+    ? options.find(opt => opt.value === value)
+    : null;
   const selectedOptions = isMulti ? options.filter(opt => Array.isArray(value) && value.includes(opt.value)) : [];
 
   const filteredOptions = searchable ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase())) : options;
@@ -17,7 +19,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
     const handleOutsideClick = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         if (e.target.closest('.custom-select-portal-element')) {
-            return;
+          return;
         }
         setIsOpen(false);
       }
@@ -29,10 +31,10 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
   useLayoutEffect(() => {
     if (isOpen && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
-      
+
       const spaceBelow = window.innerHeight - rect.bottom;
       const spaceAbove = rect.top;
-      
+
       let actualPlacement = placement;
       if (placement === 'bottom' && spaceBelow < 240 && spaceAbove > spaceBelow) {
         actualPlacement = 'top';
@@ -42,7 +44,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
 
       const top = actualPlacement === 'bottom' ? rect.bottom + 4 : 'auto';
       const bottom = actualPlacement === 'top' ? window.innerHeight - rect.top + 4 : 'auto';
-      
+
       const maxAvailableSpace = actualPlacement === 'bottom' ? spaceBelow - 16 : spaceAbove - 16;
       const finalMaxHeight = Math.min(240, Math.max(100, maxAvailableSpace));
 
@@ -72,7 +74,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       if (e.target && e.target.closest && e.target.closest('.custom-select-portal-element')) {
         return;
       }
-      
+
       // On resize (like mobile keyboard opening), don't close, just let it reposition
       if (e.type === 'resize') {
         return;
@@ -85,7 +87,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
 
       setIsOpen(false);
     };
-    
+
     if (isOpen) {
       window.addEventListener('scroll', handleScrollOrResize, true);
       window.addEventListener('resize', handleScrollOrResize);
@@ -132,12 +134,12 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       </div>
 
       {/* Visually hidden input to support HTML5 required validation */}
-      <input 
-        type="text" 
-        name={name} 
-        value={isMulti ? (Array.isArray(value) ? value.join(',') : '') : (value || '')} 
-        onChange={() => {}}
-        required={required} 
+      <input
+        type="text"
+        name={name}
+        value={isMulti ? (Array.isArray(value) ? value.join(',') : '') : (value || '')}
+        onChange={() => { }}
+        required={required}
         style={{
           position: 'absolute',
           opacity: 0,
@@ -148,7 +150,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
           top: 0,
           zIndex: -1
         }}
-        tabIndex={-1} 
+        tabIndex={-1}
       />
 
       {isOpen && createPortal(
@@ -174,13 +176,13 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
               <ul className="py-1">
                 {filteredOptions.map((option) => {
                   const isSelected = isMulti ? Array.isArray(value) && value.includes(option.value) : value === option.value;
+                  const defaultClass = isSelected
+                    ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
+                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
                   return (
                     <li
                       key={option.value}
-                      className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${isSelected
-                        ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                        }`}
+                      className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${option.className || defaultClass}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isMulti) {

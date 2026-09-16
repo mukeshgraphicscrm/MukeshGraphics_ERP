@@ -190,6 +190,7 @@ export default function Inventory() {
           setData(data.map(m => m.id === updatedMaterial.id ? updatedMaterial : m));
         }}
         materialToEdit={materialToEdit}
+        inventory={data}
       />
 
       <ViewMaterialModal

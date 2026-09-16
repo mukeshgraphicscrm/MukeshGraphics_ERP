@@ -3,9 +3,11 @@ import { Plus, FileDown } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
+import ViewPurchaseOrderModal from '../components/ViewPurchaseOrderModal';
 import AddSupplierModal from '../components/AddSupplierModal';
 import AddMaterialModal from '../components/AddMaterialModal';
 import AddPaperSizeModal from '../components/AddPaperSizeModal';
+import DeleteConfirmModal from '../components/DeleteConfirmModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
 import { generatePurchaseOrderPDF } from '../lib/pdfGenerator';
@@ -18,7 +20,12 @@ export default function Purchase() {
   const [isAddMaterialModalOpen, setIsAddMaterialModalOpen] = useState(false);
   const [isAddPaperSizeModalOpen, setIsAddPaperSizeModalOpen] = useState(false);
   const [poToEdit, setPoToEdit] = useState(null);
+  const [poToView, setPoToView] = useState(null);
+  const [isViewPOModalOpen, setIsViewPOModalOpen] = useState(false);
   const [supplierToEdit, setSupplierToEdit] = useState(null);
+  const [poToDelete, setPoToDelete] = useState(null);
+  const [isDeleteModalPOOpen, setIsDeleteModalPOOpen] = useState(false);
+  const [isDeletingPO, setIsDeletingPO] = useState(false);
 
 
   const poColumns = [
@@ -102,26 +109,46 @@ export default function Purchase() {
         if (po.jobName) detailsMsg += `*Job Name:* ${po.jobName}\n`;
         if (po.paymentType) detailsMsg += `*Payment Type:* ${po.paymentType}\n`;
         if (po.invoiceType) detailsMsg += `*Invoice Type:* ${po.invoiceType}\n`;
-        detailsMsg += `*Material:* ${po.material}\n`;
         
-        const dims = [];
-        if (po.length > 0) dims.push(`L: ${po.length}`);
-        if (po.width > 0) dims.push(`W: ${po.width}`);
-        if (po.gsm > 0) dims.push(`GSM: ${po.gsm}`);
-        if (po.sheetPkt > 0) dims.push(`Sheet/Pkt: ${po.sheetPkt}`);
-        if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
+        if (po.products && po.products.length > 0) {
+          detailsMsg += `\n*Products:*\n`;
+          po.products.forEach((p, idx) => {
+            const dims = [];
+            if (p.length > 0) dims.push(`L: ${p.length}`);
+            if (p.width > 0) dims.push(`W: ${p.width}`);
+            if (p.gsm > 0) dims.push(`GSM: ${p.gsm}`);
+            if (p.sheetPkt > 0) dims.push(`Sheet/Pkt: ${p.sheetPkt}`);
+            
+            detailsMsg += `${idx + 1}. *${p.material || '-'}*\n`;
+            if (dims.length > 0) detailsMsg += `   Dims: ${dims.join(' | ')}\n`;
+            detailsMsg += `   Qty: ${formatNum(p.quantity)}`;
+            if (p.netWeight > 0) detailsMsg += ` | Net Wt: ${formatNum(p.netWeight)}`;
+            detailsMsg += `\n   Rate: ₹${formatAmt(p.rate)} | Amount: ₹${formatAmt(p.amount)}\n\n`;
+          });
+        } else {
+          detailsMsg += `*Material:* ${po.material}\n`;
+          const dims = [];
+          if (po.length > 0) dims.push(`L: ${po.length}`);
+          if (po.width > 0) dims.push(`W: ${po.width}`);
+          if (po.gsm > 0) dims.push(`GSM: ${po.gsm}`);
+          if (po.sheetPkt > 0) dims.push(`Sheet/Pkt: ${po.sheetPkt}`);
+          if (dims.length > 0) detailsMsg += `*Dimensions:* ${dims.join(' | ')}\n`;
+          
+          detailsMsg += `*Quantity:* ${formatNum(po.quantity)}\n`;
+          if (po.weight > 0) detailsMsg += `*Weight:* ${formatNum(po.weight)}\n`;
+          if (po.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(po.netWeight)}\n`;
+          
+          if (po.rate) detailsMsg += `*Rate:* ₹${formatAmt(po.rate)}\n`;
+          detailsMsg += `*Amount:* ₹${formatAmt(po.amount)}\n\n`;
+        }
         
-        detailsMsg += `*Quantity:* ${formatNum(po.quantity)}\n`;
-        if (po.weight > 0) detailsMsg += `*Weight:* ${formatNum(po.weight)}\n`;
-        if (po.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(po.netWeight)}\n`;
-        
-        if (po.rate) detailsMsg += `*Rate:* ₹${formatAmt(po.rate)}\n`;
-        detailsMsg += `*Amount:* ₹${formatAmt(po.amount)}\n`;
-        
+        if (po.freightAmount > 0) {
+           detailsMsg += `*Freight:* ₹${formatAmt(po.freightAmount)}\n`;
+        }
         if (po.invoiceType === 'GST' && po.gstTotal > 0) {
            detailsMsg += `*GST Total:* ₹${formatAmt(po.gstTotal)}\n`;
-           detailsMsg += `*Bill Amount:* ₹${formatAmt(po.totalAmount)}\n`;
         }
+        detailsMsg += `*Bill Amount:* ₹${formatAmt(po.totalAmount || po.amount)}\n`;
         
         if (po.notes) {
            detailsMsg += `*Notes:* ${po.notes.toUpperCase()}\n`;
@@ -137,6 +164,28 @@ export default function Purchase() {
     } catch (err) {
       console.error('Error generating PDF:', err);
       toast.error('Failed to generate PDF.', { id: toastId });
+    }
+  };
+
+  const handleDeletePO = async () => {
+    if (!poToDelete) return;
+    setIsDeletingPO(true);
+    try {
+      await api.delete(`/purchaseOrders/${poToDelete.id}`);
+      setPoData(prev => prev.filter(po => po.id !== poToDelete.id));
+      toast.success('Purchase order deleted successfully!');
+      setIsDeleteModalPOOpen(false);
+      
+      if (poToView && poToView.id === poToDelete.id) {
+        setIsViewPOModalOpen(false);
+        setPoToView(null);
+      }
+      setPoToDelete(null);
+    } catch (err) {
+      console.error('Error deleting PO:', err);
+      toast.error('Failed to delete purchase order.');
+    } finally {
+      setIsDeletingPO(false);
     }
   };
 
@@ -247,8 +296,8 @@ export default function Purchase() {
             columns={poColumns}
             data={poData}
             onRowClick={(row) => {
-              setPoToEdit(row);
-              setIsAddPOModalOpen(true);
+              setPoToView(row);
+              setIsViewPOModalOpen(true);
             }}
           />
         </div>
@@ -279,6 +328,24 @@ export default function Purchase() {
         onGrnCreated={(newGrn) => setGrnData(prev => [newGrn, ...prev])}
         onMaterialAdded={(newMat) => setInventory(prev => [...prev, newMat])}
         poToEdit={poToEdit}
+      />
+      <ViewPurchaseOrderModal
+        isOpen={isViewPOModalOpen}
+        onClose={() => {
+          setIsViewPOModalOpen(false);
+          setPoToView(null);
+        }}
+        po={poToView}
+        onWhatsappClick={sendWhatsapp}
+        onGeneratePDFClick={generatePDF}
+        onEditClick={(po) => {
+          setPoToEdit(po);
+          setIsAddPOModalOpen(true);
+        }}
+        onDeleteClick={(po) => {
+          setPoToDelete(po);
+          setIsDeleteModalPOOpen(true);
+        }}
       />
       <AddSupplierModal
         isOpen={isAddSupplierModalOpen}
@@ -313,6 +380,14 @@ export default function Purchase() {
             setPaperSizes(prev => [...prev, newSize]);
           }
         }}
+      />
+      <DeleteConfirmModal 
+        isOpen={isDeleteModalPOOpen}
+        onClose={() => setIsDeleteModalPOOpen(false)}
+        onConfirm={handleDeletePO}
+        title="Delete Purchase Order"
+        message="Are you sure you want to delete this purchase order? This action cannot be undone and it will be permanently removed from the system."
+        isDeleting={isDeletingPO}
       />
     </>
   );

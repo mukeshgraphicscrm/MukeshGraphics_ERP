@@ -128,6 +128,7 @@ export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, on
                 <tbody className="divide-y divide-gray-100">
                   {(Array.isArray(order.productId) ? order.productId : [order.productId]).map(id => {
                     const prodName = productMap?.[id]?.name || id;
+                    const prodRate = productMap?.[id]?.unitPrice || '0';
                     const prodQty = order.quantities?.[id] || '0';
                     const prodAmount = order.amounts?.[id] || '0';
                     const vars = order.varieties?.[id] || [];
@@ -135,7 +136,10 @@ export default function ViewOrderModal({ isOpen, onClose, order, onEditClick, on
                     
                     return (
                       <tr key={id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{prodName}</td>
+                        <td className="px-4 py-3 font-medium text-gray-900">
+                          {prodName}
+                          <div className="text-xs text-gray-500 font-normal mt-0.5">Rate: ₹{prodRate}</div>
+                        </td>
                         <td className="px-4 py-3 text-gray-600 text-xs">
                           {hasVars ? (
                             <div className="flex flex-col gap-1">

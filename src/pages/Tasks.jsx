@@ -97,7 +97,7 @@ export default function Tasks() {
         assignedTo: task.assignedTo || '',
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : '',
+        dueDate: task.dueDate ? (function(d){ return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16); })(new Date(task.dueDate)) : '',
         audioUrls: urls,
         audioUrl: task.audioUrl || null
       });

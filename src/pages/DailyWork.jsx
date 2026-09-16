@@ -4,6 +4,7 @@ import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestor
 import api from '../lib/api';
 import { Calendar, User, History, Search, ClipboardList } from 'lucide-react';
 import { cn } from '../lib/utils';
+import CustomSelect from '../components/CustomSelect';
 
 export default function DailyWork() {
   const [logs, setLogs] = useState([]);
@@ -207,18 +208,20 @@ export default function DailyWork() {
             />
           </div>
           
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-gray-400" />
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white min-w-[180px]"
-            >
-              <option value="All">All Employees</option>
-              {users.map(user => (
-                <option key={user.id} value={user.name}>{user.name} ({user.designation})</option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2 w-full sm:w-[220px] relative z-20">
+            <User className="w-5 h-5 text-gray-400 shrink-0" />
+            <div className="flex-1">
+              <CustomSelect
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                options={[
+                  { value: 'All', label: 'All Employees' },
+                  ...users.map(user => ({ value: user.name, label: `${user.name} (${user.designation})` }))
+                ]}
+                placeholder="All Employees"
+                searchable={true}
+              />
+            </div>
           </div>
         </div>
       </div>

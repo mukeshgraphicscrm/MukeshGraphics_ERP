@@ -6,8 +6,8 @@ const { syncContactFormLeads, isContactFormCollection } = require('../leadAutoma
 const addLog = async (collectionName, action, details, req, fullDetails = null) => {
   if (!db || collectionName === 'logs') return;
   try {
-    const userName = req.headers['x-user-name'] || 'System';
-    const userRole = req.headers['x-user-role'] || 'Unknown';
+    const userName = req.headers['x-user-name'] || 'BHUPAT BHUT';
+    const userRole = req.headers['x-user-role'] || 'Administrator';
     
     const logEntry = {
       action,

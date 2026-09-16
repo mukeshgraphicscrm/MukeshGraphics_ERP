@@ -22,6 +22,10 @@ export default function Logs() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+  
   // Sort states
   const [sortField, setSortField] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
@@ -121,6 +125,11 @@ export default function Logs() {
     return 0;
   });
 
+  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
+  const validCurrentPage = Math.min(currentPage, totalPages || 1);
+  const startIndex = (validCurrentPage - 1) * itemsPerPage;
+  const paginatedLogs = filteredLogs.slice(startIndex, startIndex + itemsPerPage);
+
   const getActionColor = (action) => {
     switch (action?.toLowerCase()) {
       case 'create': return 'text-emerald-600 bg-emerald-50 ring-emerald-500/20';
@@ -201,7 +210,7 @@ export default function Logs() {
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <div className="text-sm text-gray-500">
-              Showing {filteredLogs.length} logs
+              Showing {filteredLogs.length > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, filteredLogs.length)} of {filteredLogs.length} logs
             </div>
           </div>
         </div>
@@ -263,7 +272,7 @@ export default function Logs() {
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => (
+                paginatedLogs.map((log) => (
                   <tr 
                     key={log.id} 
                     onClick={() => setViewLog(log)}
@@ -312,6 +321,31 @@ export default function Logs() {
             </tbody>
           </table>
         </div>
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="text-sm text-gray-500">
+              Page {validCurrentPage} of {totalPages}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={validCurrentPage === 1}
+                className="px-3 py-1.5 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={validCurrentPage === totalPages}
+                className="px-3 py-1.5 border border-gray-200 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
       
       <ConfirmDeleteModal

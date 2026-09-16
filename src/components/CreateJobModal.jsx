@@ -286,7 +286,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   const customerOptions = customers ? customers.map(cust => ({
     value: cust.name,
-    label: cust.name,
+    label: cust.brandName || cust.name,
   })) : [];
   if (formData.customerName && !customerOptions.find(opt => opt.value === formData.customerName)) {
     customerOptions.push({

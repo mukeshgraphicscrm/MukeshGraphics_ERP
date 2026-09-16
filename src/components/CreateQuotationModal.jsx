@@ -590,7 +590,7 @@ export default function CreateQuotationModal({ isOpen, onClose, onQuotationAdded
 
   const customerOptions = customers.map(c => ({
     value: c.id,
-    label: c.contactPerson ? `${c.contactPerson} (${c.name})` : c.name
+    label: c.brandName || c.name
   }));
 
   const companyOptions = Array.from(new Set(customers.map(c => c.name).filter(Boolean))).map(name => ({

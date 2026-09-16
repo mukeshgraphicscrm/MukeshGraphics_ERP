@@ -404,7 +404,7 @@ export default function CreateOrderModal({ isOpen, onClose, onOrderAdded, onOrde
     ? products.filter(p => p.companyName && p.companyName === selectedCustomer.name)
     : products;
 
-  const customerOptions = customers.map(c => ({ value: c.id, label: c.name }));
+  const customerOptions = customers.map(c => ({ value: c.id, label: c.brandName || c.name }));
   const productOptions = filteredProducts.map(p => ({ value: p.id, label: p.name }));
 
   return (

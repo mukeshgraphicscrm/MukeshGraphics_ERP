@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from '../components/DataTable';
 import CustomSelect from '../components/CustomSelect';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import ViewDesignModal from '../components/ViewDesignModal';
 import { Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -46,6 +47,9 @@ export default function Design() {
   const [pendingRow, setPendingRow] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isStatusReasonModalOpen, setIsStatusReasonModalOpen] = useState(false);
+  
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewRow, setViewRow] = useState(null);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
@@ -160,6 +164,11 @@ export default function Design() {
   };
 
   const handleRowClick = (row) => {
+    setViewRow(row);
+    setIsViewModalOpen(true);
+  };
+
+  const handleEditClick = (row) => {
     if (isLate(row.deadline, row.status, row.delayReason)) {
       setPendingRow(row);
       setDelayReasonText('');
@@ -418,7 +427,7 @@ export default function Design() {
                       name="customerId"
                       value={formData.customerId}
                       onChange={e => setFormData({ ...formData, customerId: e.target.value })}
-                      options={Object.values(customers).map(c => ({ label: c.name, value: c.id }))}
+                      options={Object.values(customers).map(c => ({ label: c.brandName || c.name, value: c.id }))}
                       placeholder="Select a customer"
                       required
                     />
@@ -754,6 +763,18 @@ export default function Design() {
           </div>
         </div>
       )}
+
+      <ViewDesignModal 
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        design={viewRow}
+        onEditClick={handleEditClick}
+        onDeleteClick={(row) => {
+          setEditingId(row.id);
+          setIsDeleteModalOpen(true);
+          setIsViewModalOpen(false);
+        }}
+      />
     </>
   );
 }

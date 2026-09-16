@@ -283,7 +283,7 @@ export default function AddProductModal({ isOpen, onClose, onProductAdded, onPro
 
   const customerOptions = customers.map(cust => ({
     value: cust.name,
-    label: cust.name + (cust.contactPerson ? ` - ${cust.contactPerson}` : ''),
+    label: (cust.brandName || cust.name) + (cust.contactPerson ? ` - ${cust.contactPerson}` : ''),
   }));
 
   if (formData.companyName && !customerOptions.find(opt => opt.value === formData.companyName)) {

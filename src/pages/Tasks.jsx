@@ -97,7 +97,7 @@ export default function Tasks() {
         assignedTo: task.assignedTo || '',
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
-        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : '',
+        dueDate: task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : '',
         audioUrls: urls,
         audioUrl: task.audioUrl || null
       });
@@ -328,16 +328,14 @@ export default function Tasks() {
                 <span className={`px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider ${getStatusColor(task.status)}`}>
                   {task.status}
                 </span>
-                {isAdmin && (
-                  <div className="flex space-x-1">
-                    <button onClick={() => handleOpenModal(task)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-blue-50 rounded-lg">
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => { setTaskToDelete(task.id); setIsDeleteModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 hover:bg-red-50 rounded-lg">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
+                <div className="flex space-x-1">
+                  <button onClick={() => handleOpenModal(task)} className="p-1.5 text-gray-400 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-blue-50 rounded-lg">
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => { setTaskToDelete(task.id); setIsDeleteModalOpen(true); }} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors bg-gray-50 hover:bg-red-50 rounded-lg">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               
               <h3 className="font-bold text-gray-900 text-lg mb-2">{task.title}</h3>
@@ -379,7 +377,7 @@ export default function Tasks() {
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Due Date:</span>
                   <span className="font-medium text-gray-900">
-                    {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No date'}
+                    {task.dueDate ? new Date(task.dueDate).toLocaleString('en-IN', { dateStyle: 'short', timeStyle: 'short' }) : 'No date'}
                   </span>
                 </div>
               </div>
@@ -541,7 +539,7 @@ export default function Tasks() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                   <input
-                    type="date"
+                    type="datetime-local"
                     value={formData.dueDate}
                     onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"

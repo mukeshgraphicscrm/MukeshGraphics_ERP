@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import FollowUpAlert from './FollowUpAlert';
+import TaskAlert from './TaskAlert';
 import { cn } from '../lib/utils'; // Make sure to import cn for dynamic margin
 
 export default function Layout() {
@@ -49,6 +50,7 @@ export default function Layout() {
 
       {/* Global Alerts */}
       <FollowUpAlert />
+      <TaskAlert />
     </div>
   );
 }

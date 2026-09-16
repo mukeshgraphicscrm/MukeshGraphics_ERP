@@ -34,6 +34,9 @@ export default function Logs() {
   const [logToDelete, setLogToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  
   const [viewLog, setViewLog] = useState(null);
 
   useEffect(() => {
@@ -105,6 +108,22 @@ export default function Logs() {
       toast.error('Failed to delete log');
     } finally {
       setIsDeleting(false);
+    }
+  };
+
+  const confirmDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      await api.delete('/logs');
+      setLogs([]); 
+      toast.success('All logs deleted successfully');
+      setIsDeleteAllModalOpen(false);
+      setCurrentPage(1);
+    } catch (error) {
+      console.error('Error deleting all logs:', error);
+      toast.error('Failed to delete all logs');
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -208,10 +227,19 @@ export default function Logs() {
               className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all bg-white"
             />
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-4 w-full sm:w-auto">
             <div className="text-sm text-gray-500">
               Showing {filteredLogs.length > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, filteredLogs.length)} of {filteredLogs.length} logs
             </div>
+            {filteredLogs.length > 0 && (
+              <button
+                onClick={() => setIsDeleteAllModalOpen(true)}
+                className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete All Logs
+              </button>
+            )}
           </div>
         </div>
 
@@ -355,9 +383,18 @@ export default function Logs() {
           setLogToDelete(null);
         }}
         onConfirm={confirmDelete}
-        title="Delete Log"
-        message="Are you sure you want to delete this log entry? This action cannot be undone."
+        title="DELETE LOG"
+        message="ARE YOU SURE YOU WANT TO DELETE THIS LOG ENTRY? THIS ACTION CANNOT BE UNDONE."
         isLoading={isDeleting}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteAllModalOpen}
+        onClose={() => setIsDeleteAllModalOpen(false)}
+        onConfirm={confirmDeleteAll}
+        title="DELETE ALL LOGS"
+        message="ARE YOU SURE YOU WANT TO DELETE ALL LOG ENTRIES? THIS ACTION CANNOT BE UNDONE."
+        isLoading={isDeletingAll}
       />
 
       {/* View Log Modal */}

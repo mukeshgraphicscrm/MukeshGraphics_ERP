@@ -160,6 +160,43 @@ const createCrudRouter = (collectionName) => {
     }
   });
 
+  // DELETE all items (only allowed for logs)
+  router.delete('/', async (req, res) => {
+    if (collectionName !== 'logs') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+    if (!db) {
+      mockData[collectionName] = [];
+      return res.json({ message: 'All logs deleted successfully' });
+    }
+    try {
+      const snapshot = await db.collection(collectionName).get();
+      const batches = [];
+      let batch = db.batch();
+      let count = 0;
+      
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+        count++;
+        if (count === 490) {
+          batches.push(batch.commit());
+          batch = db.batch();
+          count = 0;
+        }
+      });
+      
+      if (count > 0) {
+        batches.push(batch.commit());
+      }
+      
+      await Promise.all(batches);
+      res.json({ message: 'All logs deleted successfully' });
+    } catch (error) {
+      console.error(`Error deleting all ${collectionName}:`, error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // DELETE item
   router.delete('/:id', async (req, res) => {
     if (!db) {

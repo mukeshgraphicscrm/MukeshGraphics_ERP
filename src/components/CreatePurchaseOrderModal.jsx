@@ -21,6 +21,9 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     modifiedBy: '',
     notes: '',
     status: 'Ordered',
+    freightAmount: '',
+    deliveryDate: '',
+    deliveryPlace: '',
     products: [],
     gstTotal: '',
     totalAmount: '',
@@ -131,6 +134,9 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           modifiedBy: poToEdit.modifiedBy || '',
           notes: poToEdit.notes || '',
           status: poToEdit.status || 'Ordered',
+          freightAmount: poToEdit.freightAmount || '',
+          deliveryDate: poToEdit.deliveryDate || '',
+          deliveryPlace: poToEdit.deliveryPlace || '',
           products: poProducts,
           gstTotal: poToEdit.gstTotal || '',
           totalAmount: poToEdit.totalAmount || '',
@@ -164,12 +170,26 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           modifiedBy: '',
           notes: '',
           status: 'Ordered',
+          freightAmount: '',
+          deliveryDate: '',
+          deliveryPlace: '',
           products: [],
           gstTotal: '',
           totalAmount: '',
         });
       }
       setCurrentProduct({ ...emptyProduct });
+      setIsAddingNewMaterial(false);
+      setNewMaterialData({
+        material: '',
+        paperSize: '',
+        category: 'Paper',
+        stock: '',
+        unit: 'Sheets',
+        min: '',
+      });
+      setIsAddingNewCategory(false);
+      setNewCategoryName('');
     }
   }, [isOpen, suppliers, poToEdit, pos]);
 
@@ -188,7 +208,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     return decPart !== undefined ? `${formattedInt}.${decPart}` : formattedInt;
   };
 
-  const calculateTotals = (products, invoiceType) => {
+  const calculateTotals = (products, invoiceType, freightAmount = 0) => {
     let subtotal = 0;
     products.forEach(p => {
       subtotal += parseFloat(p.amount) || 0;
@@ -199,9 +219,11 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       gstTotal = subtotal * 0.18;
     }
     
+    const freight = parseFloat(freightAmount) || 0;
+    
     return {
       gstTotal: gstTotal.toFixed(2),
-      totalAmount: (subtotal + gstTotal).toFixed(2)
+      totalAmount: (subtotal + gstTotal + freight).toFixed(2)
     };
   };
 
@@ -218,7 +240,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       }
     }
 
-    const numberFields = ['length', 'width', 'gsm', 'sheetPkt', 'quantity', 'weight', 'rate'];
+    const numberFields = ['length', 'width', 'gsm', 'sheetPkt', 'quantity', 'weight', 'rate', 'netWeight'];
     if (numberFields.includes(name)) {
       value = value.replace(/,/g, '');
       value = value.replace(/[^0-9.]/g, '');
@@ -238,14 +260,15 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       const s = parseFloat(updated.sheetPkt) || 0;
       const q = parseFloat(updated.quantity) || 0;
       
-      let netWeight = 0;
       const multiplier = weightVal > 0 ? weightVal : w;
       
-      if (l > 0 && multiplier > 0 && g > 0 && s > 0 && q > 0) {
-        netWeight = (l * multiplier * g * q * s) / 10000000.0;
-        updated.netWeight = netWeight.toFixed(3);
-      } else {
-        updated.netWeight = '';
+      if (name !== 'netWeight') {
+        if (l > 0 && multiplier > 0 && g > 0 && s > 0 && q > 0) {
+          const calculatedNetWeight = (l * multiplier * g * q * s) / 10000000.0;
+          updated.netWeight = calculatedNetWeight.toFixed(3);
+        } else {
+          updated.netWeight = '';
+        }
       }
 
       const rate = parseFloat(updated.rate) || 0;
@@ -277,7 +300,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
     setFormData(prev => {
       const newProducts = [...prev.products, currentProduct];
-      const totals = calculateTotals(newProducts, prev.invoiceType);
+      const totals = calculateTotals(newProducts, prev.invoiceType, prev.freightAmount);
       return {
         ...prev,
         products: newProducts,
@@ -290,7 +313,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const removeProduct = (index) => {
     setFormData(prev => {
       const newProducts = prev.products.filter((_, i) => i !== index);
-      const totals = calculateTotals(newProducts, prev.invoiceType);
+      const totals = calculateTotals(newProducts, prev.invoiceType, prev.freightAmount);
       return {
         ...prev,
         products: newProducts,
@@ -307,10 +330,18 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
   const handleChange = (e) => {
     let { name, value } = e.target;
+    if (name === 'freightAmount') {
+      value = value.replace(/,/g, '');
+      value = value.replace(/[^0-9.]/g, '');
+      const parts = value.split('.');
+      if (parts.length > 2) {
+        value = parts[0] + '.' + parts.slice(1).join('');
+      }
+    }
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      if (name === 'invoiceType') {
-        const totals = calculateTotals(updated.products, updated.invoiceType);
+      if (name === 'invoiceType' || name === 'freightAmount') {
+        const totals = calculateTotals(updated.products, updated.invoiceType, updated.freightAmount);
         updated.gstTotal = totals.gstTotal;
         updated.totalAmount = totals.totalAmount;
       }
@@ -668,6 +699,40 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               />
             </div>
 
+            {/* Row 3 - Additional Logistics */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
+              <input
+                type="date"
+                name="deliveryDate"
+                value={formData.deliveryDate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Place</label>
+              <input
+                type="text"
+                name="deliveryPlace"
+                value={formData.deliveryPlace}
+                onChange={handleChange}
+                placeholder="e.g. Factory, Warehouse"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Freight Amount (₹)</label>
+              <input
+                type="text"
+                name="freightAmount"
+                value={formData.freightAmount}
+                onChange={handleChange}
+                placeholder="0.00"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+              />
+            </div>
+
             {/* Row 3 - Supplier */}
             <div className="md:col-span-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Supplier *</label>
@@ -884,9 +949,10 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               <label className="block text-sm font-medium text-gray-700 mb-1">Net Weight</label>
               <input
                 type="text"
-                readOnly
+                name="netWeight"
                 value={formatIndianNumber(currentProduct.netWeight)}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-md text-gray-500"
+                onChange={handleProductChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="Auto-calculated"
               />
             </div>

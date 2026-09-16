@@ -40,6 +40,8 @@ export default function AddMaterialModal({ isOpen, onClose, onMaterialAdded, onM
         min: '',
       });
     }
+    setIsAddingNewCategory(false);
+    setNewCategoryName('');
   }, [materialToEdit, isOpen]);
 
   useEffect(() => {

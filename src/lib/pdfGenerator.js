@@ -1009,21 +1009,46 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFont("helvetica", "normal");
   doc.text(`: ${dateStr}`, rMargin + 25, startY + 14);
 
-  doc.setFont("helvetica", "bold");
-  doc.text("JOB NO", rMargin, startY + 20);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${po.jobNo || ''}`, rMargin + 25, startY + 20);
+  let rightY = startY + 20;
 
-  doc.setFont("helvetica", "bold");
-  doc.text("JOB NAME", rMargin, startY + 26);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${po.jobName ? po.jobName.substring(0, 18).toUpperCase() : ''}`, rMargin + 25, startY + 26);
+  if (po.deliveryDate) {
+    const dDate = new Date(po.deliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    doc.setFont("helvetica", "bold");
+    doc.text("DEL. DATE", rMargin, rightY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${dDate}`, rMargin + 25, rightY);
+    rightY += 6;
+  }
+  if (po.deliveryPlace) {
+    doc.setFont("helvetica", "bold");
+    doc.text("DEL. PLACE", rMargin, rightY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${po.deliveryPlace.substring(0, 18).toUpperCase()}`, rMargin + 25, rightY);
+    rightY += 6;
+  }
 
-  doc.setFont("helvetica", "bold");
-  doc.text("MODIFY BY", rMargin, startY + 32);
-  doc.setFont("helvetica", "normal");
-  doc.text(`: ${po.modifiedBy ? po.modifiedBy.toUpperCase() : ''}`, rMargin + 25, startY + 32);
+  if (po.jobNo) {
+    doc.setFont("helvetica", "bold");
+    doc.text("JOB NO", rMargin, rightY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${po.jobNo}`, rMargin + 25, rightY);
+    rightY += 6;
+  }
 
+  if (po.jobName) {
+    doc.setFont("helvetica", "bold");
+    doc.text("JOB NAME", rMargin, rightY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${po.jobName.substring(0, 18).toUpperCase()}`, rMargin + 25, rightY);
+    rightY += 6;
+  }
+
+  if (po.modifiedBy && rightY <= startY + 38) { // Only if space permits
+    doc.setFont("helvetica", "bold");
+    doc.text("MODIFY BY", rMargin, rightY);
+    doc.setFont("helvetica", "normal");
+    doc.text(`: ${po.modifiedBy.toUpperCase()}`, rMargin + 25, rightY);
+  }
   let yPos = startY + 48;
 
   // ==========================================
@@ -1156,7 +1181,8 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // 4. FOOTER CALCULATIONS
   // ==========================================
   const gstAmount = po.invoiceType === 'GST' ? (totalAmount * 0.18) : 0;
-  const rawTotal = totalAmount + gstAmount;
+  const freight = Number(po.freightAmount) || 0;
+  const rawTotal = totalAmount + gstAmount + freight;
   const grandTotal = Math.round(rawTotal);
   const roundOff = grandTotal - rawTotal;
 
@@ -1241,6 +1267,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     calcY += 6;
     doc.text("SGST 9.00%", calcX1, calcY);
     doc.text(formatAmt(halfGst), calcX2, calcY, { align: 'right' });
+    calcY += 6;
+  }
+
+  if (freight > 0) {
+    doc.text("Freight Amount", calcX1, calcY);
+    doc.text(formatAmt(freight), calcX2, calcY, { align: 'right' });
     calcY += 6;
   }
 

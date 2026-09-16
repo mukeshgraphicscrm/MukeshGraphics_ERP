@@ -101,6 +101,24 @@ const createCrudRouter = (collectionName) => {
     }
     try {
       const data = { ...req.body, createdAt: new Date().toISOString() };
+      
+      if (collectionName === 'orders' && data.orderNo && data.orderNo.startsWith('ORD-')) {
+        try {
+          const snapshot = await db.collection(collectionName).get();
+          let maxNum = 0;
+          snapshot.forEach(doc => {
+            const numPart = doc.data().orderNo?.split('-')[1];
+            const num = parseInt(numPart, 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          });
+          data.orderNo = `ORD-${String(maxNum + 1).padStart(3, '0')}`;
+        } catch (e) {
+          console.error("Error auto-incrementing orderNo", e);
+        }
+      }
+
       const docRef = await db.collection(collectionName).add(data);
 
       if (isContactFormCollection(collectionName)) {

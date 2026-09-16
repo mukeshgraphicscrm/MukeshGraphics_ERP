@@ -54,6 +54,8 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
           setFormData({
             dispatchNo: nextDispatchNo,
             customer: initialData ? initialData.customer || '' : '',
+            jobId: initialData ? initialData.jobId || null : null,
+            orderId: initialData ? initialData.orderId || null : null,
             vehicleNo: '',
             driver: '',
             date: new Date().toISOString().split('T')[0],
@@ -65,6 +67,8 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
           setFormData({
             dispatchNo: 'DSP-001',
             customer: initialData ? initialData.customer || '' : '',
+            jobId: initialData ? initialData.jobId || null : null,
+            orderId: initialData ? initialData.orderId || null : null,
             vehicleNo: '',
             driver: '',
             date: new Date().toISOString().split('T')[0],
@@ -115,14 +119,30 @@ export default function ScheduleDispatchModal({ isOpen, onClose, onDispatchSched
         payload.createdAt = new Date().toISOString();
       }
 
+      let res;
       if (dispatchToEdit) {
-        const res = await api.put(`/dispatches/${dispatchToEdit.id}`, payload);
+        res = await api.put(`/dispatches/${dispatchToEdit.id}`, payload);
         if (onDispatchUpdated) onDispatchUpdated(res.data);
         toast.success('Dispatch updated successfully!');
       } else {
-        const res = await api.post('/dispatches', payload);
+        res = await api.post('/dispatches', payload);
         if (onDispatchScheduled) onDispatchScheduled(res.data);
         toast.success('Dispatch scheduled successfully!');
+      }
+
+      // Update related job and order if delivered
+      if (payload.status === 'DELIVERED') {
+        try {
+          if (payload.jobId) {
+            await api.put(`/productionJobs/${payload.jobId}`, { stage: 'Dispatched', progress: 100 });
+          }
+          if (payload.orderId) {
+            await api.put(`/orders/${payload.orderId}`, { status: 'COMPLETED' });
+          }
+        } catch (updateErr) {
+          console.error('Failed to update related job/order status:', updateErr);
+          toast.error('Dispatch saved but failed to update job/order status automatically.');
+        }
       }
 
       if (refetch) {

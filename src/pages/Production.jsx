@@ -378,14 +378,14 @@ export default function Production() {
         onJobAdded={(newJob) => {
           setJobs(prev => [...prev, newJob]);
           if (newJob.stage === 'Ready To Dispatch') {
-            setDispatchInitialData({ customer: newJob.customerName });
+            setDispatchInitialData({ customer: newJob.customerName, jobId: newJob.id, orderId: newJob.orderId });
             setIsScheduleDispatchOpen(true);
           }
         }}
         onJobUpdated={(updatedJob) => {
           setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
           if (updatedJob.stage === 'Ready To Dispatch') {
-            setDispatchInitialData({ customer: updatedJob.customerName });
+            setDispatchInitialData({ customer: updatedJob.customerName, jobId: updatedJob.id, orderId: updatedJob.orderId });
             setIsScheduleDispatchOpen(true);
           }
         }}

@@ -233,61 +233,6 @@ export default function Purchase() {
           </div>
         </div>
 
-        {/* Approved Suppliers Chips */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Approved Suppliers</h3>
-            <button
-              onClick={() => {
-                setSupplierToEdit(null);
-                setIsAddSupplierModalOpen(true);
-              }}
-              className="btn-add"
-            >
-              <Plus className="w-4 h-4 mr-1" /> <span>Add Supplier</span>
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {Object.values(suppliers).length > 0 ? (
-              Object.values(suppliers).map(supplier => (
-                <span
-                  key={supplier.id}
-                  onClick={() => {
-                    setSupplierToEdit(supplier);
-                    setIsAddSupplierModalOpen(true);
-                  }}
-                  className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  {supplier.name}
-                </span>
-              ))
-            ) : (
-              <span className="text-sm text-gray-500">No approved suppliers found.</span>
-            )}
-          </div>
-        </div>
-
-        {/* Paper Sizes Chips */}
-        <div className="mt-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Paper Sizes</h3>
-          </div>
-          <div className="flex flex-wrap gap-3">
-            {paperSizes.length > 0 ? (
-              paperSizes.map(size => (
-                <span
-                  key={size.id}
-                  className="bg-white text-gray-700 border border-gray-200 px-4 py-2 rounded-full text-[13px] font-medium shadow-sm transition-colors"
-                >
-                  {size.name} {size.unit}
-                </span>
-              ))
-            ) : (
-              <span className="text-sm text-gray-500">No paper sizes added yet.</span>
-            )}
-          </div>
-        </div>
-
         {/* PO Table */}
         <div>
           <DataTable
@@ -300,6 +245,66 @@ export default function Purchase() {
               setIsViewPOModalOpen(true);
             }}
           />
+        </div>
+
+        {/* Management Box for Suppliers & Sizes */}
+        <div className="border-t-4 border-t-brand-primary bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-8 mt-6">
+          {/* Approved Suppliers Chips */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Approved Suppliers</h3>
+              <button
+                onClick={() => {
+                  setSupplierToEdit(null);
+                  setIsAddSupplierModalOpen(true);
+                }}
+                className="btn-add"
+              >
+                <Plus className="w-4 h-4 mr-1" /> <span>Add Supplier</span>
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {Object.values(suppliers).length > 0 ? (
+                Object.values(suppliers).map(supplier => (
+                  <span
+                    key={supplier.id}
+                    onClick={() => {
+                      setSupplierToEdit(supplier);
+                      setIsAddSupplierModalOpen(true);
+                    }}
+                    className="bg-brand-primary/5 text-brand-primary border border-brand-primary/20 px-5 py-2.5 rounded-full text-[14px] font-bold shadow-sm hover:bg-brand-primary/10 cursor-pointer transition-colors"
+                  >
+                    {supplier.name}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-gray-500">No approved suppliers found.</span>
+              )}
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Paper Sizes Chips */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Paper Sizes</h3>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {paperSizes.length > 0 ? (
+                paperSizes.map(size => (
+                  <span
+                    key={size.id}
+                    className="bg-brand-accent/5 text-brand-accent border border-brand-accent/20 px-5 py-2.5 rounded-full text-[14px] font-bold shadow-sm transition-colors"
+                  >
+                    {size.name} {size.unit}
+                  </span>
+                ))
+              ) : (
+                <span className="text-sm text-gray-500">No paper sizes added yet.</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* GRN Table */}

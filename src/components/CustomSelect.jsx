@@ -6,6 +6,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const containerRef = useRef(null);
+  const searchInputRef = useRef(null);
   const [dropdownStyle, setDropdownStyle] = useState({});
 
   const selectedOption = !isMulti
@@ -64,6 +65,17 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
       });
     }
   }); // Runs on every render to sync position dynamically
+
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      // Focus after a tiny delay to ensure positioning is applied
+      setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus({ preventScroll: true });
+        }
+      }, 0);
+    }
+  }, [isOpen]);
 
   const openTimeRef = useRef(0);
 
@@ -159,7 +171,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
             <div className="p-2 border-b border-gray-100 shrink-0">
               <input
                 type="text"
-                autoFocus
+                ref={searchInputRef}
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

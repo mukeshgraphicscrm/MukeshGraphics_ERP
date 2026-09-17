@@ -1144,7 +1144,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
       cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
       halign: 'center',
       valign: 'middle',
-      lineColor: borderLight,
+      lineColor: [100, 100, 100],
       lineWidth: 0.5,
     },
     bodyStyles: {

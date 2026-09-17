@@ -437,6 +437,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   type="number"
                   value={formData.sheetCount}
                   onChange={setPreserveCase('sheetCount')}
+                  onWheel={(e) => e.target.blur()}
                   disabled={isViewMode}
                   className={INPUT_CLS_FN(isViewMode)}
                   placeholder="e.g. 2000"

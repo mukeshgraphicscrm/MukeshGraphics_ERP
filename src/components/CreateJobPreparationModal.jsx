@@ -86,6 +86,23 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       toast.error('Reason (Note) is required for Delay or Hold status.');
       return;
     }
+    
+    // Validation: Check if there's enough stock in inventory
+    if (formData.materialId && formData.sheetCount) {
+      const invItem = inventory?.find(i => i.id === formData.materialId);
+      if (invItem) {
+        let availableStock = Number(invItem.stock || 0);
+        // If editing and using the same material, add back the previously used sheets to see total available
+        if (jobToEdit && jobToEdit.materialId === formData.materialId) {
+          availableStock += Number(jobToEdit.sheetCount || 0);
+        }
+        if (Number(formData.sheetCount) > availableStock) {
+          toast.error(`Not enough stock. Only ${availableStock} sheets available for ${invItem.material}.`);
+          return;
+        }
+      }
+    }
+    
     setLoading(true);
     
     const submitData = { ...formData };
@@ -98,13 +115,48 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       if (jobToEdit) {
         await api.put(`/job_preparations/${jobToEdit.id}`, submitData);
         onUpdated({ id: jobToEdit.id, ...submitData });
+        
+        // Handle inventory adjustment on edit
+        let currentInventory = [...(inventory || [])];
+        let hasChanges = false;
+        
+        // 1. Revert previous stock usage
+        if (jobToEdit.materialId && jobToEdit.sheetCount) {
+          const oldItemIdx = currentInventory.findIndex(i => i.id === jobToEdit.materialId);
+          if (oldItemIdx !== -1) {
+            currentInventory[oldItemIdx] = { 
+              ...currentInventory[oldItemIdx], 
+              stock: Number(currentInventory[oldItemIdx].stock || 0) + Number(jobToEdit.sheetCount) 
+            };
+            await api.put(`/inventory/${currentInventory[oldItemIdx].id}`, currentInventory[oldItemIdx]);
+            hasChanges = true;
+          }
+        }
+        
+        // 2. Apply new stock usage
+        if (submitData.materialId && submitData.sheetCount) {
+          const newItemIdx = currentInventory.findIndex(i => i.id === submitData.materialId);
+          if (newItemIdx !== -1) {
+            currentInventory[newItemIdx] = { 
+              ...currentInventory[newItemIdx], 
+              stock: Number(currentInventory[newItemIdx].stock || 0) - Number(submitData.sheetCount) 
+            };
+            await api.put(`/inventory/${currentInventory[newItemIdx].id}`, currentInventory[newItemIdx]);
+            hasChanges = true;
+          }
+        }
+        
+        if (hasChanges && setInventory) {
+          setInventory(currentInventory);
+        }
+        
         toast.success('Job updated successfully');
       } else {
         const response = await api.post('/job_preparations', submitData);
         const newJob = response.data?.id ? response.data : { id: Date.now().toString(), ...submitData };
         onAdded(newJob);
         
-        // Deduct from inventory if material and sheet count are provided
+        // Deduct from inventory on creation
         if (submitData.materialId && submitData.sheetCount) {
           const invItem = inventory?.find(i => i.id === submitData.materialId);
           if (invItem) {
@@ -137,6 +189,24 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
   const handleDelete = async () => {
     setLoading(true);
+    
+    // Add back to inventory if this job used sheets
+    if (jobToEdit?.materialId && jobToEdit?.sheetCount) {
+      const invItem = inventory?.find(i => i.id === jobToEdit.materialId);
+      if (invItem) {
+        const newStock = Number(invItem.stock || 0) + Number(jobToEdit.sheetCount);
+        const updatedItem = { ...invItem, stock: newStock };
+        try {
+          await api.put(`/inventory/${invItem.id}`, updatedItem);
+          if (setInventory) {
+            setInventory(prev => prev.map(item => item.id === invItem.id ? updatedItem : item));
+          }
+        } catch (err) {
+          console.error('Failed to restore inventory on delete:', err);
+        }
+      }
+    }
+
     try { await api.delete(`/job_preparations/${jobToEdit.id}`); } catch (_) { }
     onDeleted(jobToEdit.id);
     toast.success('Job deleted');

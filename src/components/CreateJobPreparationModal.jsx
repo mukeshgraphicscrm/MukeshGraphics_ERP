@@ -14,7 +14,7 @@ const LABEL_CLS = 'block text-sm font-medium text-gray-700 mb-1';
 export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, onUpdated, onDeleted, jobToEdit }) {
   useScrollLock(isOpen);
   const { currentUser } = useAuth();
-  const { customers, suppliers, orders } = useData();
+  const { customers, suppliers, orders, artworks, products } = useData();
   const [loading, setLoading] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -29,6 +29,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     paperSize: '',
     jobSize: '',
     supplier: '',
+    designId: '',
     status: 'Active',
     note: '',
   });
@@ -49,11 +50,12 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
         paperSize: jobToEdit.paperSize || '',
         jobSize: jobToEdit.jobSize || '',
         supplier: jobToEdit.supplier || '',
+        designId: jobToEdit.designId || '',
         status: jobToEdit.status || 'Active',
         note: jobToEdit.note || '',
       });
     } else {
-      setFormData({ linkedOrders: [{ orderNo: '', party: '' }], orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', status: 'Active', note: '' });
+      setFormData({ linkedOrders: [{ orderNo: '', party: '' }], orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', designId: '', status: 'Active', note: '' });
     }
   }, [jobToEdit, isOpen]);
 
@@ -139,6 +141,16 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     { label: 'Delay', value: 'Delay' },
     { label: 'Done', value: 'Done' },
     { label: 'Hold', value: 'Hold' },
+  ];
+
+  const designOptions = [
+    ...(artworks || [])
+      .filter(art => art.status?.toUpperCase() === 'FINAL/PARTY APPROVE')
+      .map(art => {
+        const customerName = customers?.find(c => c.id === art.customerId)?.name || art.customerId;
+        const productName = products?.find(p => p.id === art.productId)?.name || art.productId || 'Unknown Product';
+        return { label: `${customerName} - ${productName}`, value: art.id };
+      })
   ];
 
   return (
@@ -259,6 +271,20 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   </button>
                 </div>
               )}
+
+              {/* Design */}
+              <div>
+                <label className={LABEL_CLS}>Design</label>
+                <CustomSelect
+                  name="designId"
+                  value={formData.designId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, designId: e.target.value }))}
+                  options={designOptions}
+                  placeholder="Select Design..."
+                  searchable={true}
+                  disabled={isViewMode}
+                />
+              </div>
 
               {/* PO No. */}
               <div>

@@ -23,8 +23,9 @@ export default function DataTable({
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       matchesSearch = columns.some(column => {
-        // Use exportAccessor if available (since it formats arrays/objects nicely to string), else accessor
-        const val = column.exportAccessor ? column.exportAccessor(row) : column.accessor(row);
+        // Prefer searchAccessor for search (covers extra fields), then exportAccessor, then accessor
+        const accessorFn = column.searchAccessor || (column.exportAccessor ? column.exportAccessor : column.accessor);
+        const val = accessorFn(row);
 
         if (Array.isArray(val)) {
           return val.some(v => String(v).toLowerCase().includes(term));

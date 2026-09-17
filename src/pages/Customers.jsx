@@ -66,7 +66,7 @@ export default function Customers() {
 
   const columns = [
     {
-      header: 'Customer', accessor: row => row.name, render: row => {
+      header: 'Customer', accessor: row => row.name, searchAccessor: row => `${row.name || ''} ${row.brandName || ''}`, render: row => {
         const initials = row.name ? row.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'NA';
         return (
           <div className="flex items-center">

@@ -83,6 +83,10 @@ export default function JobPreparation() {
     const filtered = artworks.filter(art => {
       if (art.status?.toUpperCase() !== 'FINAL/PARTY APPROVE') return false;
 
+      // Exclude this design if it's already assigned to a job preparation
+      const isDesignUsed = (jobPreparations || []).some(j => j.designId === art.id);
+      if (isDesignUsed) return false;
+
       const customerName = customerMap[art.customerId]?.name || art.customerId;
       if (!customerName) return true;
       
@@ -91,8 +95,7 @@ export default function JobPreparation() {
       );
       if (customerJobs.length === 0) return true;
       
-      // If ANY job for this customer is 'Done', remove from recent designs
-      if (customerJobs.some(j => j.status?.toLowerCase() === 'done')) return false;
+      // Logic to remove if ANY job for this customer is 'Done' was removed per request.
       
       return true;
     });

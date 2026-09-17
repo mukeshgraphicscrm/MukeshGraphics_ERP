@@ -885,12 +885,13 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const doc = new jsPDF();
   const logoBase64 = await loadImage('/Title_Logo.png');
 
-  // --- Brand Colors ---
-  const brandDark = [235, 125, 55];      // Soft Lighter Orange
-  const brandAccent = [235, 125, 55];    // Soft Lighter Orange
-  const textPrimary = [33, 37, 41];      // Dark Grey for normal text
+  // --- Brand Colors (Professional Navy + Steel Blue) ---
+  const brandDark = [15, 52, 96];        // Deep Navy Blue (header, table header, tag)
+  const brandAccent = [41, 128, 185];    // Steel Blue (accents, card borders)
+  const brandGold = [212, 160, 23];      // Warm Gold (highlights)
+  const textPrimary = [33, 37, 41];      // Dark Charcoal
   const textSecondary = [108, 117, 125]; // Muted Grey
-  const borderLight = [222, 226, 230];   // Soft grey borders
+  const borderLight = [213, 227, 240];   // Light Blue-Grey borders
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -958,40 +959,40 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left) - Supplier Details
-  doc.setFillColor(252, 253, 255);
+  doc.setFillColor(245, 249, 254);
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, startY, cardW, 40, 2, 2, 'FD');
 
-  doc.setFillColor(...brandDark);
+  doc.setFillColor(...brandAccent);
   doc.roundedRect(margin, startY, 4, 40, 2, 2, 'F');
   doc.rect(margin + 2, startY, 2, 40, 'F');
 
-  // "Billed To" Card Background (Right) - PO Details
-  doc.setFillColor(252, 253, 255);
+  // "PO Details" Card Background (Right)
+  doc.setFillColor(245, 249, 254);
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin + cardW + 12, startY, cardW, 40, 2, 2, 'FD');
 
-  doc.setFillColor(...brandAccent);
+  doc.setFillColor(...brandDark);
   doc.roundedRect(margin + cardW + 12, startY, 4, 40, 2, 2, 'F');
   doc.rect(margin + cardW + 14, startY, 2, 40, 'F');
 
-  // SUPPLIER DETAILS (Left)
-  doc.setTextColor(...brandDark);
+  // SUPPLIER DETAILS (Left) — text moved up 2pt for visual balance
+  doc.setTextColor(...brandAccent);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(`M/s. : ${supplierName.toUpperCase()}`, margin + 10, startY + 8);
+  doc.text(`M/s. : ${supplierName.toUpperCase()}`, margin + 10, startY + 6);
 
   doc.setFontSize(9);
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "normal");
-  let toY = startY + 16;
+  let toY = startY + 14;
   if (supplierCity) { doc.text(supplierCity.toUpperCase(), margin + 10, toY); toY += 6; }
   doc.text(`Place of Supply : ${placeOfSupply}`, margin + 10, toY); toY += 6;
   doc.text(`GSTIN No. : ${supplierGst.toUpperCase()}`, margin + 10, toY);
 
-  // PO DETAILS (Right)
+  // PO DETAILS (Right) — text moved up 2pt for visual balance
   const dateObj = po.createdAt ? new Date(po.createdAt) : new Date();
   const dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -1000,16 +1001,16 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setTextColor(...textPrimary);
   
   doc.setFont("helvetica", "bold");
-  doc.text("Order No.", rMargin, startY + 8);
+  doc.text("Order No.", rMargin, startY + 6);
   doc.setFont("helvetica", "normal");
-  doc.text(`: ${po.poNo || 'N/A'}`, rMargin + 25, startY + 8);
+  doc.text(`: ${po.poNo || 'N/A'}`, rMargin + 25, startY + 6);
 
   doc.setFont("helvetica", "bold");
-  doc.text("Date", rMargin, startY + 14);
+  doc.text("Date", rMargin, startY + 12);
   doc.setFont("helvetica", "normal");
-  doc.text(`: ${dateStr}`, rMargin + 25, startY + 14);
+  doc.text(`: ${dateStr}`, rMargin + 25, startY + 12);
 
-  let rightY = startY + 20;
+  let rightY = startY + 18;
 
   if (po.deliveryDate) {
     const dDate = new Date(po.deliveryDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -1043,13 +1044,13 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     rightY += 6;
   }
 
-  if (po.modifiedBy && rightY <= startY + 38) { // Only if space permits
+  if (po.modifiedBy && rightY <= startY + 36) {
     doc.setFont("helvetica", "bold");
     doc.text("MODIFY BY", rMargin, rightY);
     doc.setFont("helvetica", "normal");
     doc.text(`: ${po.modifiedBy.toUpperCase()}`, rMargin + 25, rightY);
   }
-  let yPos = startY + 48;
+  let yPos = startY + 43;
 
   // ==========================================
   // 3. ITEMS TABLE
@@ -1140,8 +1141,8 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
       valign: 'middle',
     },
     footStyles: {
-      fillColor: [255, 255, 255],
-      textColor: textPrimary,
+      fillColor: [235, 245, 255],
+      textColor: brandDark,
       fontStyle: 'bold',
       fontSize: 9,
       lineColor: borderLight,
@@ -1181,12 +1182,14 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // 4. FOOTER CALCULATIONS
   // ==========================================
   const gstAmount = po.invoiceType === 'GST' ? (totalAmount * 0.18) : 0;
-  const freight = Number(po.freightAmount) || 0;
-  const rawTotal = totalAmount + gstAmount + freight;
+  const freightUnitRate = Number(po.freightAmount) || 0;
+  // Freight total = unit rate × total net weight
+  const freightTotal = freightUnitRate * totalNetWt;
+  const rawTotal = totalAmount + gstAmount + freightTotal;
   const grandTotal = Math.round(rawTotal);
   const roundOff = grandTotal - rawTotal;
 
-  let footerY = tableFinalY + 10;
+  let footerY = tableFinalY + 5;
 
   // Ensure enough space for footer
   if (footerY + 80 > pageH - margin) {
@@ -1270,9 +1273,9 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     calcY += 6;
   }
 
-  if (freight > 0) {
-    doc.text("Freight Amount", calcX1, calcY);
-    doc.text(formatAmt(freight), calcX2, calcY, { align: 'right' });
+  if (freightTotal > 0) {
+    doc.text(`Freight (${formatAmt(freightUnitRate)} x ${formatNum(totalNetWt)} Kg)`, calcX1, calcY);
+    doc.text(formatAmt(freightTotal), calcX2, calcY, { align: 'right' });
     calcY += 6;
   }
 
@@ -1281,9 +1284,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   
   // Grand Total Line
   const gtY = footerY + gridHeight - 8;
+  doc.setDrawColor(...brandAccent);
+  doc.setLineWidth(0.5);
   doc.line(vLineX, gtY - 3, pageW - margin, gtY - 3);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
+  doc.setTextColor(...brandDark);
   doc.text("Grand Total", calcX1, gtY + 1);
   doc.text(formatAmt(grandTotal), calcX2, gtY + 1, { align: 'right' });
 
@@ -1291,6 +1297,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const sigY = footerY + gridHeight + 4;
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
+  doc.setTextColor(...brandDark);
   doc.text("For, MUKESH GRAPHICS", pageW - margin - 2, sigY, { align: 'right' });
   
   doc.setFont("helvetica", "italic");

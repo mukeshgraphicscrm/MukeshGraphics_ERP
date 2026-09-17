@@ -49,6 +49,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const [showWhatsappPrompt, setShowWhatsappPrompt] = useState(false);
   const [whatsappInfo, setWhatsappInfo] = useState(null);
   const [isAddingNewMaterial, setIsAddingNewMaterial] = useState(false);
+  const [editingProductIndex, setEditingProductIndex] = useState(null);
   const [newMaterialData, setNewMaterialData] = useState({
     material: '',
     paperSize: '',
@@ -192,6 +193,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       });
       setIsAddingNewCategory(false);
       setNewCategoryName('');
+      setEditingProductIndex(null);
     }
   }, [isOpen, suppliers, poToEdit, pos]);
 
@@ -212,8 +214,10 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
 
   const calculateTotals = (products, invoiceType, freightAmount = 0) => {
     let subtotal = 0;
+    let totalNetWeight = 0;
     products.forEach(p => {
       subtotal += parseFloat(p.amount) || 0;
+      totalNetWeight += parseFloat(p.netWeight) || 0;
     });
     
     let gstTotal = 0;
@@ -221,11 +225,13 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
       gstTotal = subtotal * 0.18;
     }
     
-    const freight = parseFloat(freightAmount) || 0;
+    // Freight is a per-unit-weight rate: total freight = freightUnitAmount × totalNetWeight
+    const freightUnitRate = parseFloat(freightAmount) || 0;
+    const freightTotal = freightUnitRate * totalNetWeight;
     
     return {
       gstTotal: gstTotal.toFixed(2),
-      totalAmount: (subtotal + gstTotal + freight).toFixed(2)
+      totalAmount: (subtotal + gstTotal + freightTotal).toFixed(2)
     };
   };
 
@@ -268,6 +274,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
         if (l > 0 && multiplier > 0 && g > 0 && s > 0 && q > 0) {
           const calculatedNetWeight = (l * multiplier * g * q * s) / 10000000.0;
           updated.netWeight = calculatedNetWeight.toFixed(3);
+        } else if (l === 0 && w === 0 && g === 0 && s === 0 && weightVal > 0 && q > 0) {
+          updated.netWeight = (q * weightVal).toFixed(3);
         } else {
           updated.netWeight = '';
         }
@@ -301,15 +309,24 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     }
 
     setFormData(prev => {
-      const newProducts = [...prev.products, currentProduct];
+      let newProducts;
+      if (editingProductIndex !== null) {
+        // Replace the product at the original index
+        newProducts = prev.products.map((p, i) => i === editingProductIndex ? currentProduct : p);
+      } else {
+        newProducts = [...prev.products, currentProduct];
+      }
       const totals = calculateTotals(newProducts, prev.invoiceType, prev.freightAmount);
-      return {
-        ...prev,
-        products: newProducts,
-        ...totals
-      };
+      return { ...prev, products: newProducts, ...totals };
     });
     setCurrentProduct({ ...emptyProduct });
+    setEditingProductIndex(null);
+  };
+
+  const cancelEdit = () => {
+    // Just clear the form — the product was never removed from the list
+    setCurrentProduct({ ...emptyProduct });
+    setEditingProductIndex(null);
   };
 
   const removeProduct = (index) => {
@@ -327,7 +344,7 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
   const editProduct = (index) => {
     const productToEdit = formData.products[index];
     setCurrentProduct(productToEdit);
-    removeProduct(index);
+    setEditingProductIndex(index); // remember index, do NOT remove from list
   };
 
   const handleChange = (e) => {
@@ -703,37 +720,39 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
             </div>
 
             {/* Row 3 - Additional Logistics */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
-              <input
-                type="date"
-                name="deliveryDate"
-                value={formData.deliveryDate}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Place</label>
-              <input
-                type="text"
-                name="deliveryPlace"
-                value={formData.deliveryPlace}
-                onChange={handleChange}
-                placeholder="e.g. Factory, Warehouse"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Freight Amount (₹)</label>
-              <input
-                type="text"
-                name="freightAmount"
-                value={formData.freightAmount}
-                onChange={handleChange}
-                placeholder="0.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
-              />
+            <div className="md:col-span-4 grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Date</label>
+                <input
+                  type="date"
+                  name="deliveryDate"
+                  value={formData.deliveryDate}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Delivery Place</label>
+                <input
+                  type="text"
+                  name="deliveryPlace"
+                  value={formData.deliveryPlace}
+                  onChange={handleChange}
+                  placeholder="e.g. Factory, Warehouse"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">Freight Unit Amount (₹)</label>
+                <input
+                  type="text"
+                  name="freightAmount"
+                  value={formData.freightAmount}
+                  onChange={handleChange}
+                  placeholder="0.00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
+                />
+              </div>
             </div>
 
             {/* Row 3 - Supplier */}
@@ -996,8 +1015,23 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
               ></textarea>
             </div>
 
-            <div className="md:col-span-4 flex justify-end mt-2">
-              <button type="button" onClick={addProduct} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 font-medium rounded-md text-sm hover:bg-blue-100 transition-colors shadow-sm">Add Product to List</button>
+            <div className="md:col-span-4 flex justify-end gap-2 mt-2">
+              {editingProductIndex !== null && (
+                <button
+                  type="button"
+                  onClick={cancelEdit}
+                  className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-medium rounded-md text-sm hover:bg-red-100 transition-colors shadow-sm"
+                >
+                  Cancel Edit
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={addProduct}
+                className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 font-medium rounded-md text-sm hover:bg-blue-100 transition-colors shadow-sm"
+              >
+                {editingProductIndex !== null ? 'Update Product' : 'Add Product to List'}
+              </button>
             </div>
 
             <div className="md:col-span-4 border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">

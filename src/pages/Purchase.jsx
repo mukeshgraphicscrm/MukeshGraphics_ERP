@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, FileDown } from 'lucide-react';
+import { Plus, FileDown, Image as ImageIcon, Printer } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreatePurchaseOrderModal from '../components/CreatePurchaseOrderModal';
@@ -57,9 +57,23 @@ export default function Purchase() {
           <button 
             onClick={(e) => { e.stopPropagation(); generatePDF(row); }}
             className="p-1.5 bg-brand-primary/10 text-brand-primary rounded-md hover:bg-brand-primary/20 transition-colors"
-            title="Generate PO Document"
+            title="Download PDF"
           >
             <FileDown className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); generateJPG(row); }}
+            className="p-1.5 bg-brand-accent/10 text-brand-accent rounded-md hover:bg-brand-accent/20 transition-colors"
+            title="Download JPG"
+          >
+            <ImageIcon className="w-4 h-4" />
+          </button>
+          <button 
+            onClick={(e) => { e.stopPropagation(); printPO(row); }}
+            className="p-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+            title="Print (Black & White)"
+          >
+            <Printer className="w-4 h-4" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); sendWhatsapp(row); }}
@@ -84,6 +98,28 @@ export default function Purchase() {
     }
   };
 
+  const generateJPG = async (po) => {
+    const toastId = toast.loading('Generating JPG...');
+    try {
+      await generatePurchaseOrderPDF(po, suppliers, 'jpg');
+      toast.success('PO JPG downloaded!', { id: toastId });
+    } catch (err) {
+      console.error('Error generating JPG:', err);
+      toast.error('Failed to generate JPG.', { id: toastId });
+    }
+  };
+
+  const printPO = async (po) => {
+    const toastId = toast.loading('Preparing to print...');
+    try {
+      await generatePurchaseOrderPDF(po, suppliers, 'print');
+      toast.dismiss(toastId);
+    } catch (err) {
+      console.error('Error preparing print:', err);
+      toast.error('Failed to prepare print.', { id: toastId });
+    }
+  };
+
   const sendWhatsapp = async (po) => {
     const toastId = toast.loading('Generating PDF for WhatsApp...');
     try {
@@ -102,6 +138,7 @@ export default function Purchase() {
 
         const formatNum = (val) => Number(val || 0).toLocaleString('en-IN');
         const formatAmt = (val) => Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const formatRate = (val) => Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
         
         let detailsMsg = `*PO No:* ${po.poNo}\n`;
         detailsMsg += `*Date:* ${new Date(po.orderDate || po.createdAt || new Date()).toLocaleDateString('en-IN')}\n`;
@@ -123,7 +160,7 @@ export default function Purchase() {
             if (dims.length > 0) detailsMsg += `   Dims: ${dims.join(' | ')}\n`;
             detailsMsg += `   Qty: ${formatNum(p.quantity)}`;
             if (p.netWeight > 0) detailsMsg += ` | Net Wt: ${formatNum(p.netWeight)}`;
-            detailsMsg += `\n   Rate: ₹${formatAmt(p.rate)} | Amount: ₹${formatAmt(p.amount)}\n\n`;
+            detailsMsg += `\n   Rate: ₹${formatRate(p.rate)} | Amount: ₹${formatAmt(p.amount)}\n\n`;
           });
         } else {
           detailsMsg += `*Material:* ${po.material}\n`;
@@ -138,7 +175,7 @@ export default function Purchase() {
           if (po.weight > 0) detailsMsg += `*Weight:* ${formatNum(po.weight)}\n`;
           if (po.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(po.netWeight)}\n`;
           
-          if (po.rate) detailsMsg += `*Rate:* ₹${formatAmt(po.rate)}\n`;
+          if (po.rate) detailsMsg += `*Rate:* ₹${formatRate(po.rate)}\n`;
           detailsMsg += `*Amount:* ₹${formatAmt(po.amount)}\n\n`;
         }
         

@@ -398,17 +398,17 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
     const loadingTask = pdfjsLib.getDocument({ data: pdfOutput });
     const pdfDocument = await loadingTask.promise;
     const page = await pdfDocument.getPage(1);
-    
+
     // Scale for better resolution
     const viewport = page.getViewport({ scale: 2 });
-    
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.height = viewport.height;
     canvas.width = viewport.width;
-    
+
     await page.render({ canvasContext: context, viewport: viewport }).promise;
-    
+
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const link = document.createElement('a');
     link.href = imgData;
@@ -818,17 +818,17 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
     const loadingTask = pdfjsLib.getDocument({ data: pdfOutput });
     const pdfDocument = await loadingTask.promise;
     const page = await pdfDocument.getPage(1);
-    
+
     // Scale for better resolution
     const viewport = page.getViewport({ scale: 2 });
-    
+
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
     canvas.height = viewport.height;
     canvas.width = viewport.width;
-    
+
     await page.render({ canvasContext: context, viewport: viewport }).promise;
-    
+
     const imgData = canvas.toDataURL('image/jpeg', 0.95);
     const link = document.createElement('a');
     link.href = imgData;
@@ -866,7 +866,8 @@ const getAmountInWords = (amount) => {
   return res;
 };
 
-export const generatePurchaseOrderPDF = async (po, suppliers) => {
+export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf') => {
+  const isPrint = exportType === 'print';
   const loadImage = (url) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -888,15 +889,16 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors (Professional Navy + Steel Blue) ---
-  const brandDark = [15, 52, 96];        // Deep Navy Blue (header, table header, tag)
-  const brandAccent = [41, 128, 185];    // Steel Blue (accents, card borders)
-  const brandGold = [212, 160, 23];      // Warm Gold (highlights)
-  const textPrimary = [33, 37, 41];      // Dark Charcoal
-  const textSecondary = [108, 117, 125]; // Muted Grey
-  const borderLight = [213, 227, 240];   // Light Blue-Grey borders
+  const brandDark = isPrint ? [0, 0, 0] : [15, 52, 96];        // Deep Navy Blue (header, table header, tag)
+  const brandAccent = isPrint ? [150, 150, 150] : [41, 128, 185];    // Steel Blue (accents, card borders)
+  const brandGold = isPrint ? [0, 0, 0] : [212, 160, 23];      // Warm Gold (highlights)
+  const textPrimary = isPrint ? [0, 0, 0] : [33, 37, 41];      // Dark Charcoal
+  const textSecondary = isPrint ? [80, 80, 80] : [108, 117, 125]; // Muted Grey
+  const borderLight = isPrint ? [0, 0, 0] : [213, 227, 240];   // Light Blue-Grey borders
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatRate = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -914,7 +916,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const hm = margin - 7;
 
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', hm, 17, 22, 22, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 20, 15, 15, '', 'FAST');
   }
 
   const centerX = pageW / 2;
@@ -1003,7 +1005,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   const rMargin = margin + cardW + 22;
   doc.setFontSize(9);
   doc.setTextColor(...textPrimary);
-  
+
   doc.setFont("helvetica", "bold");
   doc.text("Order No.", rMargin, startY + 6);
   doc.setFont("helvetica", "normal");
@@ -1078,7 +1080,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     const itemAmt = Number(p.amount) || (qty * rate);
     const l = Number(p.length) || 0;
     const w = Number(p.width) || 0;
-    
+
     totalQty += qty;
     totalNetWt += netWt;
     totalAmount += itemAmt;
@@ -1096,7 +1098,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
       pktStr,
       formatNum(qty),
       formatNum(netWt),
-      formatAmt(rate),
+      formatRate(rate),
       `${gstPercent}.00`,
       formatAmt(itemAmt)
     ];
@@ -1209,7 +1211,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   }
   const noteText = allNotes.join('\n\n').replace(/\n{3,}/g, '\n\n').toUpperCase().trim();
   const splitNote = doc.splitTextToSize(noteText, vLineX - margin - 15);
-  
+
   // Calculate exact line height used by jsPDF to prevent extra gaps
   const lineHeightMm = doc.getFontSize() * doc.getLineHeightFactor() * 25.4 / 72;
   const noteHeight = splitNote.length > 0 && noteText ? (splitNote.length - 1) * lineHeightMm + 2 : 2;
@@ -1222,15 +1224,21 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
     "4. ONLY SINGLE DELIVERY WILL BE ACCEPTED AGAINST EACH ORDER ITEM.",
     "   NO EXCESS QUANTITY WILL BE ACCEPTED."
   ];
-  let termsHeight = 4;
+  const termLineHeightMm = 7 * 1.15 * 25.4 / 72;
+  let termsTotalHeight = 0;
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, vLineX - margin - 4);
-    termsHeight += (3.5 * wrappedTerm.length);
+    termsTotalHeight += (wrappedTerm.length * termLineHeightMm) + 1;
   });
 
-  // 31mm for static gaps (GST, titles, lines) + 4mm bottom padding = 35mm
-  const requiredLeftHeight = 35 + noteHeight + termsHeight;
-  const gridHeight = Math.max(50, requiredLeftHeight);
+  let rightLines = 2;
+  if (po.invoiceType === 'GST') rightLines += 2;
+  if (Number(po.freightAmount) > 0) rightLines += 1;
+  const requiredRightHeight = 6 + (rightLines * 6) + 12;
+
+  // 31mm static gaps + tight bottom padding
+  const requiredLeftHeight = 31 + noteHeight + termsTotalHeight + 2;
+  const gridHeight = Math.max(requiredRightHeight, requiredLeftHeight);
 
   // Ensure enough space for dynamic footer
   if (footerY + gridHeight + 10 > pageH - margin) {
@@ -1248,14 +1256,14 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   // --- Left Side (Words & Terms) ---
   doc.setFontSize(8);
   doc.setFont("helvetica", "normal");
-  
+
   let leftY = footerY + 5;
   doc.text(`Total GST : ${getAmountInWords(gstAmount)}`, margin + 2, leftY);
   leftY += 6;
   doc.setFont("helvetica", "bold");
   doc.text(`Bill Amount : ${getAmountInWords(grandTotal)}`, margin + 2, leftY);
   leftY += 6;
-  
+
   doc.setDrawColor(...borderLight);
   doc.line(margin, leftY, vLineX, leftY);
   leftY += 5;
@@ -1263,9 +1271,9 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFont("helvetica", "bold");
   doc.text("Note :", margin + 2, leftY);
   doc.setFont("helvetica", "normal");
-  
+
   doc.text(splitNote, margin + 12, leftY);
-  
+
   leftY += noteHeight;
   doc.line(margin, leftY, vLineX, leftY);
   leftY += 5; // Restored spacing above Terms & Condition
@@ -1274,12 +1282,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.text("Terms & Condition :", margin + 2, leftY);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  
+
   let termY = leftY + 4;
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, vLineX - margin - 4);
     doc.text(wrappedTerm, margin + 2, termY);
-    termY += (3.5 * wrappedTerm.length);
+    termY += (wrappedTerm.length * termLineHeightMm) + 1;
   });
 
   // --- Right Side (Calculations) ---
@@ -1312,7 +1320,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
 
   doc.text("Round Off", calcX1, calcY);
   doc.text(formatAmt(roundOff), calcX2, calcY, { align: 'right' });
-  
+
   // Grand Total Line
   const gtY = footerY + gridHeight - 8;
   doc.setDrawColor(...brandAccent);
@@ -1330,7 +1338,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...brandDark);
   doc.text("For, MUKESH GRAPHICS", pageW - margin - 2, sigY, { align: 'right' });
-  
+
   doc.setFont("helvetica", "italic");
   doc.setTextColor(...textSecondary);
   doc.text("(Authorized Signatory)", pageW - margin - 2, sigY + 12, { align: 'right' });
@@ -1352,5 +1360,32 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
 
   // Save the PDF
   const safeName = (po.poNo || 'PO').replace(/[^a-zA-Z0-9-]/g, '_');
-  doc.save(`${safeName}.pdf`);
+
+  if (exportType === 'jpg') {
+    const pdfOutput = doc.output('arraybuffer');
+    const loadingTask = pdfjsLib.getDocument({ data: pdfOutput });
+    const pdfDocument = await loadingTask.promise;
+    const page = await pdfDocument.getPage(1);
+
+    const viewport = page.getViewport({ scale: 2 });
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    const link = document.createElement('a');
+    link.href = imgData;
+    link.download = `${safeName}.jpg`;
+    link.click();
+  } else if (exportType === 'print') {
+    doc.autoPrint();
+    const blobUrl = doc.output('bloburl');
+    window.open(blobUrl, '_blank');
+  } else {
+    doc.save(`${safeName}.pdf`);
+  }
 };

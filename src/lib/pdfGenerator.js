@@ -392,6 +392,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
 
   // Save the PDF
   const safeName = (quote.quotationNo || 'Quotation').replace(/[^a-zA-Z0-9-]/g, '_');
+  doc.setProperties({ title: safeName });
 
   if (exportType === 'jpg') {
     const pdfOutput = doc.output('arraybuffer');
@@ -812,6 +813,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
 
   // Save the PDF
   const safeName = (invoice.invoiceNo || 'Invoice').replace(/[^a-zA-Z0-9-]/g, '_');
+  doc.setProperties({ title: safeName });
 
   if (exportType === 'jpg') {
     const pdfOutput = doc.output('arraybuffer');
@@ -1360,6 +1362,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
 
   // Save the PDF
   const safeName = (po.poNo || 'PO').replace(/[^a-zA-Z0-9-]/g, '_');
+  doc.setProperties({ title: safeName });
 
   if (exportType === 'jpg') {
     const pdfOutput = doc.output('arraybuffer');

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
@@ -14,7 +14,18 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
     : null;
   const selectedOptions = isMulti ? options.filter(opt => Array.isArray(value) && value.includes(opt.value)) : [];
 
-  const filteredOptions = searchable ? options.filter(opt => opt.label.toLowerCase().includes(searchTerm.toLowerCase())) : options;
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchTerm.trim()) return options;
+    const term = searchTerm.trim().toLowerCase();
+    return options.filter(opt => {
+      // Always show special/action options (e.g. "+ ADD NEW MATERIAL") regardless of search term
+      if (opt.value === 'ADD_NEW' || opt.label?.startsWith('+')) {
+        return true;
+      }
+      // Safely filter by label only
+      return opt.label != null && opt.label.toLowerCase().includes(term);
+    });
+  }, [options, searchTerm, searchable]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -186,14 +197,14 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
               <div className="px-3 py-2 text-gray-500 text-sm">No options available</div>
             ) : (
               <ul className="py-1">
-                {filteredOptions.map((option) => {
+                {filteredOptions.map((option, index) => {
                   const isSelected = isMulti ? Array.isArray(value) && value.includes(option.value) : value === option.value;
                   const defaultClass = isSelected
                     ? 'bg-[#E8A33D]/10 text-[#E8A33D] font-bold'
                     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900';
                   return (
                     <li
-                      key={option.value}
+                      key={`${option.value}-${index}`}
                       className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${option.className || defaultClass}`}
                       onClick={(e) => {
                         e.stopPropagation();

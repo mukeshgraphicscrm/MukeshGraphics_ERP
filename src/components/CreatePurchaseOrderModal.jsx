@@ -552,8 +552,9 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     label: s.name
   }));
 
+  const seenMaterials = new Set();
   const materialOptions = Array.isArray(inventory) ? inventory
-    .filter(item => item.material)
+    .filter(item => item.material && !seenMaterials.has(item.material) && seenMaterials.add(item.material))
     .map(item => ({
       value: item.material,
       label: item.material

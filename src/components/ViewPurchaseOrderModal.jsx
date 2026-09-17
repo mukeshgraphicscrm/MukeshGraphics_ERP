@@ -188,7 +188,10 @@ export default function ViewPurchaseOrderModal({ isOpen, onClose, po, onWhatsapp
                 <tbody className="divide-y divide-gray-100">
                   {products.map((p, idx) => (
                     <tr key={idx} className="hover:bg-gray-50/50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{p.material || '-'}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        <div>{p.material || '-'}</div>
+                        {p.notes && <div className="text-xs text-gray-500 font-normal mt-0.5 whitespace-pre-wrap">{p.notes}</div>}
+                      </td>
                       <td className="px-4 py-3 text-gray-600">{p.length && p.width ? `${p.length} x ${p.width}` : '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{p.gsm || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{p.sheetPkt || '-'}</td>

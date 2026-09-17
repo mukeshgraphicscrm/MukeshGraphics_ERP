@@ -39,7 +39,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
     weight: '',
     netWeight: '',
     rate: '',
-    amount: ''
+    amount: '',
+    notes: ''
   };
   const [currentProduct, setCurrentProduct] = useState({ ...emptyProduct });
   const [loading, setLoading] = useState(false);
@@ -118,7 +119,8 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
             weight: poToEdit.weight || '',
             netWeight: poToEdit.netWeight || '',
             rate: poToEdit.rate || '',
-            amount: poToEdit.amount || ''
+            amount: poToEdit.amount || '',
+            notes: poToEdit.notes || ''
           }];
         }
 
@@ -497,16 +499,16 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
           if (p.weight > 0) detailsMsg += `*Weight:* ${formatNum(p.weight)}\n`;
           if (p.netWeight > 0) detailsMsg += `*Net Weight:* ${formatNum(p.netWeight)}\n`;
           detailsMsg += `*Rate:* ₹${formatAmt(p.rate)}\n`;
-          detailsMsg += `*Amount:* ₹${formatAmt(p.amount)}\n\n`;
+          detailsMsg += `*Amount:* ₹${formatAmt(p.amount)}\n`;
+          if (p.notes) {
+            detailsMsg += `*Notes:* ${p.notes.toUpperCase()}\n`;
+          }
+          detailsMsg += `\n`;
         });
         
         if (finalPoData.invoiceType === 'GST' && finalPoData.gstTotal > 0) {
            detailsMsg += `*GST Total:* ₹${formatAmt(finalPoData.gstTotal)}\n`;
            detailsMsg += `*Bill Amount:* ₹${formatAmt(finalPoData.totalAmount)}\n`;
-        }
-        
-        if (finalPoData.notes) {
-           detailsMsg += `*Notes:* ${finalPoData.notes.toUpperCase()}\n`;
         }
 
         const message = `Hello ${supplier.name},\n\nPlease find the details of our Purchase Order:\n\n${detailsMsg}\nWe have attached the PDF for your reference.`;
@@ -772,7 +774,10 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                     <tbody className="divide-y divide-gray-200 bg-white">
                       {formData.products.map((p, idx) => (
                         <tr key={idx}>
-                          <td className="px-4 py-2 text-sm text-gray-900">{p.material}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">
+                            <div>{p.material}</div>
+                            {p.notes && <div className="text-xs text-gray-500 mt-0.5">{p.notes}</div>}
+                          </td>
                           <td className="px-4 py-2 text-sm text-gray-500">{formatIndianNumber(p.quantity)}</td>
                           <td className="px-4 py-2 text-sm text-gray-500">₹{formatIndianNumber(p.rate)}</td>
                           <td className="px-4 py-2 text-sm text-gray-900 font-medium">₹{formatIndianNumber(p.amount)}</td>
@@ -978,25 +983,20 @@ export default function CreatePurchaseOrderModal({ isOpen, onClose, onPoCreated,
                 placeholder="Auto-calculated"
               />
             </div>
-            <div className="md:col-span-4 flex justify-end mt-2">
-              <button type="button" onClick={addProduct} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 font-medium rounded-md text-sm hover:bg-blue-100 transition-colors shadow-sm">Add Product to List</button>
-            </div>
-
             <div className="md:col-span-4 mt-2">
-              <h3 className="text-sm font-bold text-gray-800 border-b pb-1">Additional Details</h3>
-            </div>
-
-            {/* Row 8 - Footer Info */}
-            <div className="md:col-span-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes / Narration</label>
               <textarea
                 name="notes"
                 rows="2"
-                value={formData.notes}
-                onChange={handleChange}
+                value={currentProduct.notes}
+                onChange={handleProductChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors resize-none"
-                placeholder="Any special notes..."
+                placeholder="Any special notes for this product..."
               ></textarea>
+            </div>
+
+            <div className="md:col-span-4 flex justify-end mt-2">
+              <button type="button" onClick={addProduct} className="px-4 py-2 bg-blue-50 text-blue-600 border border-blue-200 font-medium rounded-md text-sm hover:bg-blue-100 transition-colors shadow-sm">Add Product to List</button>
             </div>
 
             <div className="md:col-span-4 border-t pt-4 mt-2 grid grid-cols-1 md:grid-cols-3 gap-4 items-end">

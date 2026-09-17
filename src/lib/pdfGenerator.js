@@ -36,6 +36,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatRate = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -212,7 +213,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
       index + 1,
       itemDesc,
       q.toLocaleString('en-IN'),
-      formatMoney(p),
+      formatRate(p),
       formatMoney(amount)
     ]);
   });
@@ -449,6 +450,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatRate = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
@@ -625,7 +627,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
       index + 1,
       itemDesc,
       q.toLocaleString('en-IN'),
-      formatMoney(p),
+      formatRate(p),
       formatMoney(amount)
     ]);
   });

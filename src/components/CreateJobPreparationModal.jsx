@@ -192,7 +192,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               {formData.linkedOrders && formData.linkedOrders.map((linkedItem, idx) => (
                 <React.Fragment key={idx}>
                   {/* Order No. */}
-                  <div>
+                  <div className="min-w-0">
                     <label className={LABEL_CLS}>Order No. {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''} <span className="text-red-500">*</span></label>
                     <CustomSelect
                       name={`orderNo-${idx}`}
@@ -231,10 +231,10 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   </div>
 
                   {/* Customer */}
-                  <div>
+                  <div className="min-w-0">
                     <label className={LABEL_CLS}>Customer {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''} <span className="text-red-500">*</span></label>
                     <div className="flex gap-2">
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <CustomSelect
                           name={`party-${idx}`}
                           value={linkedItem.party}
@@ -283,7 +283,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
               )}
 
               {/* Design */}
-              <div>
+              <div className="min-w-0">
                 <label className={LABEL_CLS}>Design</label>
                 <CustomSelect
                   name="designId"

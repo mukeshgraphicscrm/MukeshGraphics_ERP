@@ -14,7 +14,7 @@ const LABEL_CLS = 'block text-sm font-medium text-gray-700 mb-1';
 export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, onUpdated, onDeleted, jobToEdit }) {
   useScrollLock(isOpen);
   const { currentUser } = useAuth();
-  const { customers, suppliers, orders, artworks, products } = useData();
+  const { customers, suppliers, orders, artworks, products, inventory, setInventory } = useData();
   const [loading, setLoading] = useState(false);
   const [isViewMode, setIsViewMode] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -30,6 +30,8 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
     jobSize: '',
     supplier: '',
     designId: '',
+    materialId: '',
+    sheetCount: '',
     status: 'Active',
     note: '',
   });
@@ -51,11 +53,13 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
         jobSize: jobToEdit.jobSize || '',
         supplier: jobToEdit.supplier || '',
         designId: jobToEdit.designId || '',
+        materialId: jobToEdit.materialId || '',
+        sheetCount: jobToEdit.sheetCount || '',
         status: jobToEdit.status || 'Active',
         note: jobToEdit.note || '',
       });
     } else {
-      setFormData({ linkedOrders: [{ orderNo: '', party: '' }], orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', designId: '', status: 'Active', note: '' });
+      setFormData({ linkedOrders: [{ orderNo: '', party: '' }], orderNo: '', poNo: '', party: '', jobNo: '', paper: '', gsm: '', paperSize: '', jobSize: '', supplier: '', designId: '', materialId: '', sheetCount: '', status: 'Active', note: '' });
     }
   }, [jobToEdit, isOpen]);
 
@@ -99,6 +103,25 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
         const response = await api.post('/job_preparations', submitData);
         const newJob = response.data?.id ? response.data : { id: Date.now().toString(), ...submitData };
         onAdded(newJob);
+        
+        // Deduct from inventory if material and sheet count are provided
+        if (submitData.materialId && submitData.sheetCount) {
+          const invItem = inventory?.find(i => i.id === submitData.materialId);
+          if (invItem) {
+            const newStock = Number(invItem.stock || 0) - Number(submitData.sheetCount);
+            const updatedItem = { ...invItem, stock: newStock };
+            try {
+              await api.put(`/inventory/${invItem.id}`, updatedItem);
+              if (setInventory) {
+                setInventory(prev => prev.map(item => item.id === invItem.id ? updatedItem : item));
+              }
+            } catch (err) {
+              console.error('Failed to update inventory:', err);
+              toast.error('Failed to deduct from inventory.');
+            }
+          }
+        }
+        
         toast.success('Job created successfully');
       }
       onClose();
@@ -162,6 +185,10 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       .filter(o => o.customerId === customer.id)
       .map(o => ({ label: o.orderNo, value: o.orderNo }));
   };
+
+  const materialOptions = [
+    ...(inventory || []).map(m => ({ label: m.material, value: m.id }))
+  ];
 
   return (
     <>
@@ -386,6 +413,33 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                   placeholder="Select Supplier..."
                   searchable={true}
                   disabled={isViewMode}
+                />
+              </div>
+
+              {/* Material */}
+              <div className="min-w-0">
+                <label className={LABEL_CLS}>Material</label>
+                <CustomSelect
+                  name="materialId"
+                  value={formData.materialId}
+                  onChange={(e) => setFormData(prev => ({ ...prev, materialId: e.target.value }))}
+                  options={materialOptions}
+                  placeholder="Select Material..."
+                  searchable={true}
+                  disabled={isViewMode}
+                />
+              </div>
+
+              {/* Sheet */}
+              <div className="min-w-0">
+                <label className={LABEL_CLS}>Sheet</label>
+                <input
+                  type="number"
+                  value={formData.sheetCount}
+                  onChange={setPreserveCase('sheetCount')}
+                  disabled={isViewMode}
+                  className={INPUT_CLS_FN(isViewMode)}
+                  placeholder="e.g. 2000"
                 />
               </div>
 

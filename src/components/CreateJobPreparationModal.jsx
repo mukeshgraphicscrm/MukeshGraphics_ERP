@@ -153,6 +153,16 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
       })
   ];
 
+  const getFilteredOrderOptions = (partyName) => {
+    if (!partyName) return orderOptions; // If no customer selected, show all orders
+    const customer = customers?.find(c => c.name === partyName);
+    if (!customer) return orderOptions;
+    
+    return (orders || [])
+      .filter(o => o.customerId === customer.id)
+      .map(o => ({ label: o.orderNo, value: o.orderNo }));
+  };
+
   return (
     <>
       {/* Overlay */}
@@ -183,7 +193,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 <React.Fragment key={idx}>
                   {/* Order No. */}
                   <div>
-                    <label className={LABEL_CLS}>Order No. {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''}</label>
+                    <label className={LABEL_CLS}>Order No. {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''} <span className="text-red-500">*</span></label>
                     <CustomSelect
                       name={`orderNo-${idx}`}
                       value={linkedItem.orderNo}
@@ -212,7 +222,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                         }
                         setFormData(prev => ({ ...prev, linkedOrders: newLinkedOrders }));
                       }}
-                      options={orderOptions}
+                      options={getFilteredOrderOptions(linkedItem.party)}
                       placeholder="Select Order..."
                       required
                       searchable={true}
@@ -222,7 +232,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
                   {/* Customer */}
                   <div>
-                    <label className={LABEL_CLS}>Customer {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''}</label>
+                    <label className={LABEL_CLS}>Customer {formData.linkedOrders.length > 1 ? `#${idx + 1}` : ''} <span className="text-red-500">*</span></label>
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <CustomSelect
@@ -301,7 +311,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
 
               {/* Job No. */}
               <div>
-                <label className={LABEL_CLS}>Job No.</label>
+                <label className={LABEL_CLS}>Job No. <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   required

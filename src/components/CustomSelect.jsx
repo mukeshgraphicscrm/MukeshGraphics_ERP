@@ -148,7 +148,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
         }}
       >
         {Icon && <Icon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />}
-        <span className={`block truncate text-sm ${(isMulti ? selectedOptions.length > 0 : selectedOption) ? 'text-gray-900' : 'text-gray-500'}`}>
+        <span className={`block truncate flex-1 min-w-0 text-left text-sm ${(isMulti ? selectedOptions.length > 0 : selectedOption) ? 'text-gray-900' : 'text-gray-500'}`}>
           {isMulti
             ? (selectedOptions.length > 0 ? selectedOptions.map(o => o.label).join(', ') : placeholder)
             : (selectedOption ? selectedOption.label : placeholder)}

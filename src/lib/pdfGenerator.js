@@ -1195,19 +1195,54 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
 
   let footerY = tableFinalY + 5;
 
-  // Ensure enough space for footer
-  if (footerY + 80 > pageH - margin) {
+  const vLineX = pageW - margin - 70;
+
+  // Pre-calculate text wrapping to determine exact required height
+  let allNotes = [];
+  productsToIterate.forEach((p, idx) => {
+    if (p.notes && p.notes.trim()) {
+      allNotes.push(`${idx + 1}. ${p.notes.trim()}`);
+    }
+  });
+  if (po.notes && po.notes.trim()) {
+    allNotes.push(`PO NOTE: ${po.notes.trim()}`);
+  }
+  const noteText = allNotes.join('\n\n').replace(/\n{3,}/g, '\n\n').toUpperCase().trim();
+  const splitNote = doc.splitTextToSize(noteText, vLineX - margin - 15);
+  
+  // Calculate exact line height used by jsPDF to prevent extra gaps
+  const lineHeightMm = doc.getFontSize() * doc.getLineHeightFactor() * 25.4 / 72;
+  const noteHeight = splitNote.length > 0 && noteText ? (splitNote.length - 1) * lineHeightMm + 2 : 2;
+
+  const terms = [
+    "1. PLEASE MENTION THE P.O. NO. & DATE ON ALL YOUR INVOICE & CHALLANS.",
+    "2. THE MATERIAL SHOULD BE DELIVERED AT SHIPPING ADDRESS BY 6 PM TAXES EXTRA AS APPLICABLE.",
+    "3. WE RESERVE THE RIGHT TO AMEND/CANCEL THIS P.O.",
+    "   ALL DISPUTES SUBJECT TO BHAVNAGAR GUJARAT JURISDICTION.",
+    "4. ONLY SINGLE DELIVERY WILL BE ACCEPTED AGAINST EACH ORDER ITEM.",
+    "   NO EXCESS QUANTITY WILL BE ACCEPTED."
+  ];
+  let termsHeight = 4;
+  terms.forEach(term => {
+    const wrappedTerm = doc.splitTextToSize(term, vLineX - margin - 4);
+    termsHeight += (3.5 * wrappedTerm.length);
+  });
+
+  // 31mm for static gaps (GST, titles, lines) + 4mm bottom padding = 35mm
+  const requiredLeftHeight = 35 + noteHeight + termsHeight;
+  const gridHeight = Math.max(50, requiredLeftHeight);
+
+  // Ensure enough space for dynamic footer
+  if (footerY + gridHeight + 10 > pageH - margin) {
     doc.addPage();
     footerY = margin + 10;
   }
 
   // Draw Bottom Grid
-  const gridHeight = 70;
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.rect(margin, footerY, pageW - margin * 2, gridHeight);
   // Vertical line separating left (words/terms) and right (calculations)
-  const vLineX = pageW - margin - 70;
   doc.line(vLineX, footerY, vLineX, footerY + gridHeight);
 
   // --- Left Side (Words & Terms) ---
@@ -1229,36 +1264,17 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.text("Note :", margin + 2, leftY);
   doc.setFont("helvetica", "normal");
   
-  let allNotes = [];
-  productsToIterate.forEach((p, idx) => {
-    if (p.notes && p.notes.trim()) {
-      allNotes.push(`${idx + 1}. ${p.notes.trim()}`);
-    }
-  });
-  if (po.notes && po.notes.trim()) {
-    allNotes.push(`PO NOTE: ${po.notes.trim()}`);
-  }
-  const noteText = allNotes.join('\n').toUpperCase();
-  
-  const splitNote = doc.splitTextToSize(noteText, vLineX - margin - 15);
   doc.text(splitNote, margin + 12, leftY);
   
-  leftY += Math.max(10, splitNote.length * 4 + 2);
+  leftY += noteHeight;
   doc.line(margin, leftY, vLineX, leftY);
-  leftY += 5;
+  leftY += 5; // Restored spacing above Terms & Condition
 
   doc.setFont("helvetica", "bold");
   doc.text("Terms & Condition :", margin + 2, leftY);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7);
-  const terms = [
-    "1. PLEASE MENTION THE P.O. NO. & DATE ON ALL YOUR INVOICE & CHALLANS.",
-    "2. THE MATERIAL SHOULD BE DELIVERED AT SHIPPING ADDRESS BY 6 PM TAXES EXTRA AS APPLICABLE.",
-    "3. WE RESERVE THE RIGHT TO AMEND/CANCEL THIS P.O.",
-    "   ALL DISPUTES SUBJECT TO BHAVNAGAR GUJARAT JURISDICTION.",
-    "4. ONLY SINGLE DELIVERY WILL BE ACCEPTED AGAINST EACH ORDER ITEM.",
-    "   NO EXCESS QUANTITY WILL BE ACCEPTED."
-  ];
+  
   let termY = leftY + 4;
   terms.forEach(term => {
     const wrappedTerm = doc.splitTextToSize(term, vLineX - margin - 4);

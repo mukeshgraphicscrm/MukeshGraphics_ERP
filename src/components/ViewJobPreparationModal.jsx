@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { X, Edit2, Trash2, Printer } from 'lucide-react';
 import useScrollLock from '../hooks/useScrollLock';
+import { useData } from '../contexts/DataContext';
 
 export default function ViewJobPreparationModal({ isOpen, onClose, job, onEditClick, onDeleteClick, preventClose }) {
   useScrollLock(isOpen);
+  const { customers, artworks, products, inventory } = useData();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -24,6 +26,17 @@ export default function ViewJobPreparationModal({ isOpen, onClose, job, onEditCl
   const orderNumbers = job.linkedOrders?.length > 0
     ? job.linkedOrders.map(l => l.orderNo).filter(Boolean).join(', ')
     : job.orderNo || '-';
+
+  const design = artworks?.find(a => a.id === job.designId);
+  let designName = '-';
+  if (design) {
+    const cName = customers?.find(c => c.id === design.customerId)?.name || design.customerId;
+    const pName = products?.find(p => p.id === design.productId)?.name || design.productId || 'Unknown Product';
+    designName = `${cName} - ${pName}`;
+  }
+
+  const material = inventory?.find(i => i.id === job.materialId);
+  const materialName = material ? material.material : '-';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && !preventClose) onClose(); }}>
@@ -84,6 +97,14 @@ export default function ViewJobPreparationModal({ isOpen, onClose, job, onEditCl
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">PO Number</p>
               <p className="text-sm font-semibold text-gray-900">{job.poNo || '-'}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Design</p>
+              <p className="text-sm font-semibold text-gray-900">{designName}</p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Material</p>
+              <p className="text-sm font-semibold text-gray-900">{materialName}</p>
             </div>
             <div>
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Supplier</p>

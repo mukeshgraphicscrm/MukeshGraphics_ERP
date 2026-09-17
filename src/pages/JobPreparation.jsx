@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge';
 import CreateJobPreparationModal from '../components/CreateJobPreparationModal';
 import ViewJobPreparationModal from '../components/ViewJobPreparationModal';
 import AddSupplierModal from '../components/AddSupplierModal';
+import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import { useData } from '../contexts/DataContext';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
@@ -18,6 +19,9 @@ export default function JobPreparation() {
   const [jobToEdit, setJobToEdit] = useState(null);
   const [jobToView, setJobToView] = useState(null);
   const [statusFilter, setStatusFilter] = useState('Active');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const data = jobPreparations || [];
 
@@ -105,7 +109,7 @@ export default function JobPreparation() {
       return true;
     });
 
-    return filtered.slice(0, 20);
+    return filtered;
   }, [artworks, customerMap, jobPreparations]);
 
   return (
@@ -254,35 +258,54 @@ export default function JobPreparation() {
           setIsModalOpen(true);
         }}
         onDeleteClick={async (job) => {
-          if (window.confirm('Are you sure you want to delete this job preparation?')) {
-            try {
-              if (job.materialId && job.sheetCount) {
-                const invItem = inventory?.find(i => i.id === job.materialId);
-                if (invItem) {
-                  const newStock = Number(invItem.stock || 0) + Number(job.sheetCount);
-                  const updatedItem = { ...invItem, stock: newStock };
-                  await api.put(`/inventory/${invItem.id}`, updatedItem);
-                  if (setInventory) {
-                    setInventory(prev => prev.map(item => item.id === invItem.id ? updatedItem : item));
-                  }
-                }
-              }
-              await api.delete(`/job_preparations/${job.id}`);
-              handleJobDeleted(job.id);
-              setIsViewModalOpen(false);
-              setJobToView(null);
-              toast.success('Job deleted successfully');
-            } catch (err) {
-              console.error(err);
-              toast.error('Failed to delete job');
-            }
-          }
+          setJobToDelete(job);
+          setIsDeleteModalOpen(true);
         }}
       />
 
       <AddSupplierModal
         isOpen={isSupplierModalOpen}
         onClose={() => setIsSupplierModalOpen(false)}
+      />
+
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setJobToDelete(null);
+        }}
+        onConfirm={async () => {
+          if (!jobToDelete) return;
+          setIsDeleting(true);
+          try {
+            if (jobToDelete.materialId && jobToDelete.sheetCount) {
+              const invItem = inventory?.find(i => i.id === jobToDelete.materialId);
+              if (invItem) {
+                const newStock = Number(invItem.stock || 0) + Number(jobToDelete.sheetCount);
+                const updatedItem = { ...invItem, stock: newStock };
+                await api.put(`/inventory/${invItem.id}`, updatedItem);
+                if (setInventory) {
+                  setInventory(prev => prev.map(item => item.id === invItem.id ? updatedItem : item));
+                }
+              }
+            }
+            await api.delete(`/job_preparations/${jobToDelete.id}`);
+            handleJobDeleted(jobToDelete.id);
+            setIsViewModalOpen(false);
+            setJobToView(null);
+            toast.success('Job deleted successfully');
+          } catch (err) {
+            console.error(err);
+            toast.error('Failed to delete job');
+          } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+            setJobToDelete(null);
+          }
+        }}
+        title="DELETE JOB PREPARATION"
+        message={`Are you sure you want to delete job ${jobToDelete?.jobNo || ''}? This action cannot be undone.`}
+        isLoading={isDeleting}
       />
     </>
   );

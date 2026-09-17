@@ -37,7 +37,6 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
   });
 
   useEffect(() => {
-    setIsViewMode(!!jobToEdit);
     if (jobToEdit) {
       setFormData({
         linkedOrders: jobToEdit.linkedOrders && jobToEdit.linkedOrders.length > 0
@@ -540,7 +539,7 @@ export default function CreateJobPreparationModal({ isOpen, onClose, onAdded, on
                 <textarea
                   rows={2}
                   value={formData.note}
-                  onChange={set('note')}
+                  onChange={setPreserveCase('note')}
                   disabled={isViewMode}
                   className={`${INPUT_CLS_FN(isViewMode)} resize-none`}
                   placeholder={isViewMode ? '' : (isNoteVisible ? `Reason for ${formData.status}... (e.g. Paper not received)` : 'Optional remarks...')}

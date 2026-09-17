@@ -27,12 +27,12 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
-  const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
+  const brandDark = [90, 90, 90];       // Medium Grey (for headers, footer, tags)
+  const brandAccent = [140, 140, 140];    // Light Grey (for top strip, accents)
   const brandLight = [255, 255, 255];    // White
-  const textPrimary = [33, 37, 41];      // Dark Grey for normal text
-  const textSecondary = [108, 117, 125]; // Muted Grey
-  const borderLight = [222, 226, 230];   // Soft grey borders
+  const textPrimary = [0, 0, 0];      // Dark Grey for normal text
+  const textSecondary = [0, 0, 0]; // Muted Grey
+  const borderLight = [230, 230, 230];   // Soft grey borders
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -68,7 +68,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   // The user requested to not have the name under the logo. 
   // Our code puts it in the center. We will keep the center text 
   // but style it nicely with the brand dark blue.
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.text("MUKESH GRAPHICS", centerX, 23, { align: 'center' });
@@ -134,7 +134,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)
-  doc.setFillColor(252, 253, 255); // Very light tint
+  doc.setFillColor(245, 245, 245); // Very light tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'FD');
@@ -145,7 +145,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.rect(margin + 2, startY, 2, 35, 'F');
 
   // "Billed To" Card Background (Right)
-  doc.setFillColor(252, 253, 255); // Very light tint
+  doc.setFillColor(245, 245, 245); // Very light tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin + cardW + 12, startY, cardW, 35, 2, 2, 'FD');
@@ -163,7 +163,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.text("BILLED TO", margin + cardW + 22, startY + 7);
 
   // Card Content - From (Left)
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("MUKESH GRAPHICS", margin + 10, startY + 14);
@@ -176,7 +176,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   doc.text("MO: 9512007008 (Amanbhai)", margin + 10, startY + 30);
 
   // Card Content - To (Right)
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text(custName.toUpperCase(), margin + cardW + 22, startY + 14);
@@ -274,18 +274,18 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const bankCardW = 92;
 
   // Highlighting Bank Details box with a light background and prominent text
-  doc.setFillColor(248, 250, 252); // Very light blue/grey tint
+  doc.setFillColor(240, 240, 240); // Very light blue/grey tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD'); // Fill and draw border
 
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("PAYMENT / BANK DETAILS", margin + 4, yPos + 9);
 
   // Add a small divider line under title
-  doc.setDrawColor(226, 232, 240);
+  doc.setDrawColor(200, 200, 200);
   doc.line(margin + 4, yPos + 12, margin + bankCardW - 4, yPos + 12);
 
   doc.setFontSize(10);
@@ -298,7 +298,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
     doc.setFont("helvetica", "normal");
     doc.text(label, lX, bY);
 
-    doc.setTextColor(...brandDark); // Use dark blue for values to highlight them
+    doc.setTextColor(0, 0, 0); // Use dark blue for values to highlight them
     doc.setFont("helvetica", isBold ? "bold" : "bold"); // Making all bank details bold for highlighting
     doc.text(value, vX, bY);
     bY += 8;
@@ -353,8 +353,8 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
     noteY = margin;
   }
 
-  doc.setFillColor(255, 250, 245); // Very light orange tint for note
-  doc.setDrawColor(253, 216, 181); // Soft orange border to match the screenshot
+  doc.setFillColor(245, 245, 245); // Very light orange tint for note
+  doc.setDrawColor(200, 200, 200); // Soft orange border to match the screenshot
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, noteY, pageW - margin * 2, 22, 2, 2, 'FD');
 
@@ -365,7 +365,7 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...brandAccent); // Orange text for NOTE:
+  doc.setTextColor(0, 0, 0); // Orange text for NOTE:
   doc.text("NOTE:", margin + 8, noteY + 7.5);
 
   doc.setFontSize(10.5);
@@ -441,12 +441,12 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [30, 58, 138];       // Dark Blue (for headers, footer, tags)
-  const brandAccent = [249, 115, 22];    // Orange (for top strip, accents)
+  const brandDark = [90, 90, 90];       // Medium Grey (for headers, footer, tags)
+  const brandAccent = [140, 140, 140];    // Light Grey (for top strip, accents)
   const brandLight = [255, 255, 255];    // White
-  const textPrimary = [33, 37, 41];      // Dark Grey for normal text
-  const textSecondary = [108, 117, 125]; // Muted Grey
-  const borderLight = [222, 226, 230];   // Soft grey borders
+  const textPrimary = [0, 0, 0];      // Dark Grey for normal text
+  const textSecondary = [0, 0, 0]; // Muted Grey
+  const borderLight = [230, 230, 230];   // Soft grey borders
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -482,7 +482,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   // The user requested to not have the name under the logo. 
   // Our code puts it in the center. We will keep the center text 
   // but style it nicely with the brand dark blue.
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.text("MUKESH GRAPHICS", centerX, 23, { align: 'center' });
@@ -548,7 +548,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left)
-  doc.setFillColor(252, 253, 255); // Very light tint
+  doc.setFillColor(245, 245, 245); // Very light tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, startY, cardW, 35, 2, 2, 'FD');
@@ -559,7 +559,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   doc.rect(margin + 2, startY, 2, 35, 'F');
 
   // "Billed To" Card Background (Right)
-  doc.setFillColor(252, 253, 255); // Very light tint
+  doc.setFillColor(245, 245, 245); // Very light tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin + cardW + 12, startY, cardW, 35, 2, 2, 'FD');
@@ -577,7 +577,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   doc.text("BILLED TO", margin + cardW + 22, startY + 7);
 
   // Card Content - From (Left)
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("MUKESH GRAPHICS", margin + 10, startY + 14);
@@ -590,7 +590,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   doc.text("MO: 9512007008 (Amanbhai)", margin + 10, startY + 30);
 
   // Card Content - To (Right)
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text(custName.toUpperCase(), margin + cardW + 22, startY + 14);
@@ -694,18 +694,18 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   const bankCardW = 92;
 
   // Highlighting Bank Details box with a light background and prominent text
-  doc.setFillColor(248, 250, 252); // Very light blue/grey tint
+  doc.setFillColor(240, 240, 240); // Very light blue/grey tint
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, yPos, bankCardW, 48, 2, 2, 'FD'); // Fill and draw border
 
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
   doc.text("PAYMENT / BANK DETAILS", margin + 4, yPos + 9);
 
   // Add a small divider line under title
-  doc.setDrawColor(226, 232, 240);
+  doc.setDrawColor(200, 200, 200);
   doc.line(margin + 4, yPos + 12, margin + bankCardW - 4, yPos + 12);
 
   doc.setFontSize(10);
@@ -718,7 +718,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
     doc.setFont("helvetica", "normal");
     doc.text(label, lX, bY);
 
-    doc.setTextColor(...brandDark); // Use dark blue for values to highlight them
+    doc.setTextColor(0, 0, 0); // Use dark blue for values to highlight them
     doc.setFont("helvetica", isBold ? "bold" : "bold"); // Making all bank details bold for highlighting
     doc.text(value, vX, bY);
     bY += 8;
@@ -773,8 +773,8 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
     noteY = margin;
   }
 
-  doc.setFillColor(255, 250, 245); // Very light orange tint for note
-  doc.setDrawColor(253, 216, 181); // Soft orange border to match the screenshot
+  doc.setFillColor(245, 245, 245); // Very light orange tint for note
+  doc.setDrawColor(200, 200, 200); // Soft orange border to match the screenshot
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, noteY, pageW - margin * 2, 22, 2, 2, 'FD');
 
@@ -785,7 +785,7 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
 
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...brandAccent); // Orange text for NOTE:
+  doc.setTextColor(0, 0, 0); // Orange text for NOTE:
   doc.text("NOTE:", margin + 8, noteY + 7.5);
 
   doc.setFontSize(10.5);
@@ -888,13 +888,13 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const doc = new jsPDF();
   const logoBase64 = await loadImage('/Title_Logo.png');
 
-  // --- Brand Colors (Professional Navy + Steel Blue) ---
-  const brandDark = isPrint ? [0, 0, 0] : [15, 52, 96];        // Deep Navy Blue (header, table header, tag)
-  const brandAccent = isPrint ? [150, 150, 150] : [41, 128, 185];    // Steel Blue (accents, card borders)
-  const brandGold = isPrint ? [0, 0, 0] : [212, 160, 23];      // Warm Gold (highlights)
-  const textPrimary = isPrint ? [0, 0, 0] : [33, 37, 41];      // Dark Charcoal
-  const textSecondary = isPrint ? [80, 80, 80] : [108, 117, 125]; // Muted Grey
-  const borderLight = isPrint ? [0, 0, 0] : [213, 227, 240];   // Light Blue-Grey borders
+  // --- Brand Colors (Gray & White Theme) ---
+  const brandDark = [90, 90, 90];       // Medium Grey
+  const brandAccent = [140, 140, 140];     // Light Grey
+  const brandGold = [160, 160, 160];       // Grey highlights
+  const textPrimary = [0, 0, 0];        // Dark Grey for text
+  const textSecondary = [0, 0, 0];   // Muted Grey
+  const borderLight = [230, 230, 230];     // Light Grey borders
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -921,7 +921,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
 
   const centerX = pageW / 2;
 
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.text("MUKESH GRAPHICS", centerX, 25, { align: 'center' });
@@ -963,7 +963,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left) - Supplier Details
-  doc.setFillColor(245, 249, 254);
+  doc.setFillColor(245, 245, 245);
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin, startY, cardW, 40, 2, 2, 'FD');
@@ -973,7 +973,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   doc.rect(margin + 2, startY, 2, 40, 'F');
 
   // "PO Details" Card Background (Right)
-  doc.setFillColor(245, 249, 254);
+  doc.setFillColor(245, 245, 245);
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
   doc.roundedRect(margin + cardW + 12, startY, cardW, 40, 2, 2, 'FD');
@@ -983,7 +983,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   doc.rect(margin + cardW + 14, startY, 2, 40, 'F');
 
   // SUPPLIER DETAILS (Left) — text moved up 2pt for visual balance
-  doc.setTextColor(...brandAccent);
+  doc.setTextColor(0, 0, 0);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   const supplierLabel = `M/s. : ${supplierName.toUpperCase()}`;
@@ -1147,8 +1147,8 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
       valign: 'middle',
     },
     footStyles: {
-      fillColor: [235, 245, 255],
-      textColor: brandDark,
+      fillColor: [235, 235, 235],
+      textColor: [0, 0, 0],
       fontStyle: 'bold',
       fontSize: 9,
       lineColor: borderLight,
@@ -1328,7 +1328,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   doc.line(vLineX, gtY - 3, pageW - margin, gtY - 3);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.text("Grand Total", calcX1, gtY + 1);
   doc.text(formatAmt(grandTotal), calcX2, gtY + 1, { align: 'right' });
 
@@ -1336,7 +1336,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const sigY = footerY + gridHeight + 4;
   doc.setFontSize(8);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...brandDark);
+  doc.setTextColor(0, 0, 0);
   doc.text("For, MUKESH GRAPHICS", pageW - margin - 2, sigY, { align: 'right' });
 
   doc.setFont("helvetica", "italic");

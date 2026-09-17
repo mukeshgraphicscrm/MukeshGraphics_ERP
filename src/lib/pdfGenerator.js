@@ -891,12 +891,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors (Gray & White Theme) ---
-  const brandDark = [90, 90, 90];       // Medium Grey
+  const brandDark = [140, 140, 140];       // Match brandAccent
   const brandAccent = [140, 140, 140];     // Light Grey
   const brandGold = [160, 160, 160];       // Grey highlights
   const textPrimary = [0, 0, 0];        // Dark Grey for text
   const textSecondary = [0, 0, 0];   // Muted Grey
-  const borderLight = [230, 230, 230];     // Light Grey borders
+  const borderLight = [140, 140, 140];     // Changed to match brandAccent (Grand Total line color)
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -905,20 +905,26 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
+  const yOffset = isPrint ? -11 : 0;
 
   // ==========================================
   // 1. TOP HEADER STRIP & LOGO
   // ==========================================
-  doc.setFillColor(...brandDark);
-  doc.rect(0, 0, pageW, 10, 'F');
+  if (isPrint) {
+    doc.setFillColor(...brandDark);
+    doc.rect(0, 0, pageW, 2, 'F');
+  } else {
+    doc.setFillColor(...brandDark);
+    doc.rect(0, 0, pageW, 10, 'F');
 
-  doc.setFillColor(...brandAccent);
-  doc.rect(0, 10, pageW, 3, 'F');
+    doc.setFillColor(...brandAccent);
+    doc.rect(0, 10, pageW, 3, 'F');
+  }
 
   const hm = margin - 7;
 
   if (logoBase64) {
-    doc.addImage(logoBase64, 'PNG', hm, 20, 15, 15, '', 'FAST');
+    doc.addImage(logoBase64, 'PNG', hm, 20 + yOffset, 15, 15, '', 'FAST');
   }
 
   const centerX = pageW / 2;
@@ -926,19 +932,19 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   doc.setTextColor(0, 0, 0);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
-  doc.text("MUKESH GRAPHICS", centerX, 25, { align: 'center' });
+  doc.text("MUKESH GRAPHICS", centerX, 25 + yOffset, { align: 'center' });
 
   doc.setTextColor(...textSecondary);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.text("PLOT NO. 58, VISHWAKARMA INDUSTRIAL ESTATE,", centerX, 31, { align: 'center' });
-  doc.text("NEAR CHITRA GIDC, BHAVNAGAR - 364004", centerX, 36, { align: 'center' });
+  doc.text("PLOT NO. 58, VISHWAKARMA INDUSTRIAL ESTATE,", centerX, 31 + yOffset, { align: 'center' });
+  doc.text("NEAR CHITRA GIDC, BHAVNAGAR - 364004", centerX, 36 + yOffset, { align: 'center' });
 
   // Quote / Estimate Tag
   const tagW = 45;
   const tagH = 8;
   const tagX = pageW - hm - tagW;
-  const tagY = 17;
+  const tagY = 17 + yOffset;
 
   doc.setFillColor(...brandDark);
   doc.roundedRect(tagX, tagY, tagW, tagH, 1, 1, 'F');
@@ -950,7 +956,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
 
   doc.setDrawColor(...borderLight);
   doc.setLineWidth(0.5);
-  doc.line(hm, 42, pageW - hm, 42);
+  doc.line(hm, 42 + yOffset, pageW - hm, 42 + yOffset);
 
   // ==========================================
   // 2. FROM / TO SECTION (Cards)
@@ -961,7 +967,7 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const supplierGst = supplier.gstNumber || '';
   const placeOfSupply = supplierCity ? supplierCity.toUpperCase() : '';
 
-  const startY = 48;
+  const startY = 48 + yOffset;
   const cardW = (pageW - margin * 2 - 12) / 2;
 
   // "From" Card Background (Left) - Supplier Details
@@ -1138,14 +1144,15 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
       cellPadding: { top: 3, bottom: 3, left: 1, right: 1 },
       halign: 'center',
       valign: 'middle',
-      lineColor: brandDark,
-      lineWidth: 0.1,
+      lineColor: borderLight,
+      lineWidth: 0.5,
     },
     bodyStyles: {
       textColor: textPrimary,
       fontSize: 8.5,
       cellPadding: { top: 4, bottom: 4, left: 2, right: 2 },
       lineColor: borderLight,
+      lineWidth: 0.5,
       valign: 'middle',
     },
     footStyles: {

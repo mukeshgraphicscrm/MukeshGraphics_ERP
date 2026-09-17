@@ -984,12 +984,14 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setTextColor(...brandAccent);
   doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
-  doc.text(`M/s. : ${supplierName.toUpperCase()}`, margin + 10, startY + 6);
+  const supplierLabel = `M/s. : ${supplierName.toUpperCase()}`;
+  const supplierLines = doc.splitTextToSize(supplierLabel, cardW - 14);
+  doc.text(supplierLines, margin + 10, startY + 6);
 
   doc.setFontSize(9);
   doc.setTextColor(...textPrimary);
   doc.setFont("helvetica", "normal");
-  let toY = startY + 14;
+  let toY = startY + 6 + (supplierLines.length * 4) + 2; // Dynamic Y based on name length
   if (supplierCity) { doc.text(supplierCity.toUpperCase(), margin + 10, toY); toY += 6; }
   doc.text(`Place of Supply : ${placeOfSupply}`, margin + 10, toY); toY += 6;
   doc.text(`GSTIN No. : ${supplierGst.toUpperCase()}`, margin + 10, toY);
@@ -1226,7 +1228,18 @@ export const generatePurchaseOrderPDF = async (po, suppliers) => {
   doc.setFont("helvetica", "bold");
   doc.text("Note :", margin + 2, leftY);
   doc.setFont("helvetica", "normal");
-  const noteText = po.notes ? po.notes.toUpperCase() : '';
+  
+  let allNotes = [];
+  productsToIterate.forEach((p, idx) => {
+    if (p.notes && p.notes.trim()) {
+      allNotes.push(`${idx + 1}. ${p.notes.trim()}`);
+    }
+  });
+  if (po.notes && po.notes.trim()) {
+    allNotes.push(`PO NOTE: ${po.notes.trim()}`);
+  }
+  const noteText = allNotes.join('\n').toUpperCase();
+  
   const splitNote = doc.splitTextToSize(noteText, vLineX - margin - 15);
   doc.text(splitNote, margin + 12, leftY);
   

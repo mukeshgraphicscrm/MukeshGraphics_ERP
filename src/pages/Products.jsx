@@ -88,7 +88,7 @@ export default function Products() {
         // Full width header background
         doc.setFillColor(27, 47, 99); // Brand Dark Blue
         doc.rect(0, 0, pageWidth, 35, 'F');
-        
+
         // Add subtle accent line
         doc.setFillColor(234, 88, 12); // Brand Orange
         doc.rect(0, 35, pageWidth, 2, 'F');
@@ -99,7 +99,7 @@ export default function Products() {
           doc.circle(margin + 10, 17.5, 12, 'F');
           doc.addImage(logoBase64, 'PNG', margin + 2, 9.5, 16, 16);
         }
-        
+
         const textStartX = margin + (logoBase64 ? 28 : 0);
 
         doc.setFont("helvetica", "bold");
@@ -230,11 +230,11 @@ export default function Products() {
       const pageCount = doc.internal.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
-        
+
         // Footer background
         doc.setFillColor(27, 47, 99);
         doc.rect(0, pageHeight - 12, pageWidth, 12, 'F');
-        
+
         doc.setFontSize(8);
         doc.setTextColor(255, 255, 255);
         doc.text(`Generated on: ${new Date().toLocaleDateString('en-IN')}`, margin, pageHeight - 4.5);

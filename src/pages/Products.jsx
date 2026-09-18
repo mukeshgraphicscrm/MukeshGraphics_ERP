@@ -65,22 +65,47 @@ export default function Products() {
       let yPos = 50;
       let col = 0;
 
-      const loadImage = (url) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = 'Anonymous';
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL('image/png'));
-          };
-          img.onerror = () => resolve(null);
-          img.src = url;
-        });
-      };
+        const loadImage = (url) => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = 'Anonymous';
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.width;
+              canvas.height = img.height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = (e) => {
+              console.warn("Direct image load failed, trying proxy for:", url);
+              
+              // Fallback to local proxy to bypass CORS
+              const proxyImg = new Image();
+              proxyImg.crossOrigin = 'Anonymous';
+              proxyImg.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = proxyImg.width;
+                canvas.height = proxyImg.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(proxyImg, 0, 0);
+                resolve(canvas.toDataURL('image/png'));
+              };
+              proxyImg.onerror = () => {
+                console.error("Proxy image load also failed for:", url);
+                resolve(null);
+              };
+              
+              const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+              const proxyUrl = `${baseUrl.replace(/\/$/, '')}/proxy-image?url=${encodeURIComponent(url)}`;
+              proxyImg.src = proxyUrl;
+            };
+            
+            // Append cache buster to bypass cached opaque responses without CORS headers
+            const cacheBuster = url.includes('?') ? `&cb=${new Date().getTime()}` : `?cb=${new Date().getTime()}`;
+            img.src = url + cacheBuster;
+          });
+        };
 
       const logoBase64 = await loadImage('/logo.png');
 

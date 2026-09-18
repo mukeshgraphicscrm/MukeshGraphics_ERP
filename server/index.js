@@ -46,6 +46,25 @@ const dashboardRouter = require('./routes/dashboard');
 const usersRouter = require('./routes/users');
 
 // Dashboard metrics
+app.get('/api/proxy-image', async (req, res) => {
+  try {
+    const url = req.query.url;
+    if (!url) return res.status(400).send('URL required');
+    const response = await fetch(url);
+    if (!response.ok) return res.status(response.status).send('Failed to fetch image');
+    const arrayBuffer = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    res.set('Content-Type', contentType);
+    res.set('Cache-Control', 'public, max-age=31536000');
+    res.set('Access-Control-Allow-Origin', '*'); 
+    res.send(buffer);
+  } catch (error) {
+    console.error('Image proxy error:', error);
+    res.status(500).send('Server Error');
+  }
+});
+
 app.use('/api/dashboard', dashboardRouter);
 
 // Set up static folder for uploads

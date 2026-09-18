@@ -11,7 +11,15 @@ export default function TaskAlert() {
   const { currentUser } = useAuth();
   const [dueTasks, setDueTasks] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [dismissedTaskIds, setDismissedTaskIds] = useState(new Set());
+  const [dismissedTaskIds, setDismissedTaskIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('dismissedTaskIds');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (error) {
+      console.error('Error parsing dismissedTaskIds:', error);
+      return new Set();
+    }
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,6 +84,7 @@ export default function TaskAlert() {
     const newDismissed = new Set(dismissedTaskIds);
     dueTasks.forEach(t => newDismissed.add(t.id));
     setDismissedTaskIds(newDismissed);
+    localStorage.setItem('dismissedTaskIds', JSON.stringify(Array.from(newDismissed)));
   };
 
   const handleMarkCompleted = async (taskId) => {

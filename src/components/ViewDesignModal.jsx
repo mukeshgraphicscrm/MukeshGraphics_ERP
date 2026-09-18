@@ -65,25 +65,29 @@ export default function ViewDesignModal({ isOpen, onClose, design, onEditClick, 
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button 
-              onClick={() => {
-                onClose();
-                onEditClick(design);
-              }}
-              className="flex items-center px-3 py-1.5 text-sm font-medium text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 rounded-md transition-colors"
-            >
-              <Edit2 className="w-4 h-4 mr-1.5" />
-              Edit
-            </button>
-            <button 
-              onClick={() => {
-                onDeleteClick(design);
-              }}
-              className="flex items-center px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
-            >
-              <Trash2 className="w-4 h-4 mr-1.5" />
-              Delete
-            </button>
+            {onEditClick && (
+              <button 
+                onClick={() => {
+                  onClose();
+                  onEditClick(design);
+                }}
+                className="flex items-center px-3 py-1.5 text-sm font-medium text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 rounded-md transition-colors"
+              >
+                <Edit2 className="w-4 h-4 mr-1.5" />
+                Edit
+              </button>
+            )}
+            {onDeleteClick && (
+              <button 
+                onClick={() => {
+                  onDeleteClick(design);
+                }}
+                className="flex items-center px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                Delete
+              </button>
+            )}
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors p-1 ml-2">
               <X className="w-5 h-5" />
             </button>

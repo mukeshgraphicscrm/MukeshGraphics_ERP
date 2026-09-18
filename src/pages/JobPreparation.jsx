@@ -6,6 +6,7 @@ import CreateJobPreparationModal from '../components/CreateJobPreparationModal';
 import ViewJobPreparationModal from '../components/ViewJobPreparationModal';
 import AddSupplierModal from '../components/AddSupplierModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import ViewDesignModal from '../components/ViewDesignModal';
 import { useData } from '../contexts/DataContext';
 import { cn } from '../lib/utils';
 import api from '../lib/api';
@@ -22,6 +23,8 @@ export default function JobPreparation() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [jobToDelete, setJobToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDesignModalOpen, setIsDesignModalOpen] = useState(false);
+  const [designToView, setDesignToView] = useState(null);
 
   const data = jobPreparations || [];
 
@@ -182,7 +185,7 @@ export default function JobPreparation() {
                     ))
                   ) : recentArtworks.length > 0 ? (
                     recentArtworks.map((art, idx) => (
-                      <tr key={art.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors">
+                      <tr key={art.id} className="border-b border-gray-50 hover:bg-gray-50/60 transition-colors cursor-pointer" onClick={() => { setDesignToView(art); setIsDesignModalOpen(true); }}>
                         <td className="px-5 py-3.5 font-bold text-brand-accent whitespace-nowrap">{String(idx + 1).padStart(3, '0')}</td>
                         <td className="px-5 py-3.5 text-gray-700 font-medium max-w-[160px] truncate">{customerMap[art.customerId]?.name || art.customerId || '-'}</td>
                         <td className="px-5 py-3.5 whitespace-nowrap"><StatusBadge status={art.status || 'Active'} /></td>
@@ -306,6 +309,12 @@ export default function JobPreparation() {
         title="DELETE JOB PREPARATION"
         message={`Are you sure you want to delete job ${jobToDelete?.jobNo || ''}? This action cannot be undone.`}
         isLoading={isDeleting}
+      />
+
+      <ViewDesignModal
+        isOpen={isDesignModalOpen}
+        onClose={() => { setIsDesignModalOpen(false); setDesignToView(null); }}
+        design={designToView}
       />
     </>
   );

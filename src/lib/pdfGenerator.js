@@ -27,11 +27,11 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [90, 90, 90];       // Medium Grey (for headers, footer, tags)
-  const brandAccent = [140, 140, 140];    // Light Grey (for top strip, accents)
-  const brandLight = [255, 255, 255];    // White
-  const textPrimary = [0, 0, 0];      // Dark Grey for normal text
-  const textSecondary = [0, 0, 0]; // Muted Grey
+  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
+  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
+  const brandLight = [248, 249, 250];    // Very light grey for backgrounds
+  const textPrimary = [0, 0, 0];         // Dark Grey for text
+  const textSecondary = [100, 100, 100]; // Muted Grey
   const borderLight = [230, 230, 230];   // Soft grey borders
 
   // Helper
@@ -442,11 +442,11 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [90, 90, 90];       // Medium Grey (for headers, footer, tags)
-  const brandAccent = [140, 140, 140];    // Light Grey (for top strip, accents)
-  const brandLight = [255, 255, 255];    // White
-  const textPrimary = [0, 0, 0];      // Dark Grey for normal text
-  const textSecondary = [0, 0, 0]; // Muted Grey
+  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
+  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
+  const brandLight = [248, 249, 250];    // Very light grey for backgrounds
+  const textPrimary = [0, 0, 0];         // Dark Grey for text
+  const textSecondary = [100, 100, 100]; // Muted Grey
   const borderLight = [230, 230, 230];   // Soft grey borders
 
   // Helper
@@ -890,13 +890,13 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const doc = new jsPDF();
   const logoBase64 = await loadImage('/Title_Logo.png');
 
-  // --- Brand Colors (Gray & White Theme) ---
-  const brandDark = [140, 140, 140];       // Match brandAccent
-  const brandAccent = [140, 140, 140];     // Light Grey
-  const brandGold = [160, 160, 160];       // Grey highlights
-  const textPrimary = [0, 0, 0];        // Dark Grey for text
-  const textSecondary = [0, 0, 0];   // Muted Grey
-  const borderLight = [140, 140, 140];     // Changed to match brandAccent (Grand Total line color)
+  // --- Brand Colors ---
+  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
+  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
+  const brandGold = [255, 179, 0];       // Gold highlights
+  const textPrimary = [0, 0, 0];         // Dark Grey for text
+  const textSecondary = [100, 100, 100]; // Muted Grey
+  const borderLight = [230, 230, 230];   // Soft grey borders
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

@@ -27,12 +27,13 @@ export const generateQuotationPDF = async (quote, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
-  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
+  const isPrint = exportType === 'print';
+  const brandDark = isPrint ? [90, 90, 90] : [26, 35, 126];       // Medium Grey / Indigo 900
+  const brandAccent = isPrint ? [140, 140, 140] : [255, 111, 0];     // Light Grey / Amber 900
   const brandLight = [248, 249, 250];    // Very light grey for backgrounds
   const textPrimary = [0, 0, 0];         // Dark Grey for text
-  const textSecondary = [100, 100, 100]; // Muted Grey
-  const borderLight = [230, 230, 230];   // Soft grey borders
+  const textSecondary = isPrint ? [0, 0, 0] : [100, 100, 100]; // Muted Grey
+  const borderLight = isPrint ? [140, 140, 140] : [230, 230, 230];   // Soft grey borders
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -442,12 +443,13 @@ export const generateInvoicePDF = async (invoice, customers, products, exportTyp
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
-  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
+  const isPrint = exportType === 'print';
+  const brandDark = isPrint ? [90, 90, 90] : [26, 35, 126];       // Medium Grey / Indigo 900
+  const brandAccent = isPrint ? [140, 140, 140] : [255, 111, 0];     // Light Grey / Amber 900
   const brandLight = [248, 249, 250];    // Very light grey for backgrounds
   const textPrimary = [0, 0, 0];         // Dark Grey for text
-  const textSecondary = [100, 100, 100]; // Muted Grey
-  const borderLight = [230, 230, 230];   // Soft grey borders
+  const textSecondary = isPrint ? [0, 0, 0] : [100, 100, 100]; // Muted Grey
+  const borderLight = isPrint ? [140, 140, 140] : [230, 230, 230];   // Soft grey borders
 
   // Helper
   const formatMoney = (amount) => 'Rs. ' + amount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -891,12 +893,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   const logoBase64 = await loadImage('/Title_Logo.png');
 
   // --- Brand Colors ---
-  const brandDark = [26, 35, 126];       // Indigo 900 (Deep Professional Blue)
-  const brandAccent = [255, 111, 0];     // Amber 900 (Vibrant deep orange)
-  const brandGold = [255, 179, 0];       // Gold highlights
+  const brandDark = isPrint ? [140, 140, 140] : [26, 35, 126];       // Grey / Indigo 900
+  const brandAccent = isPrint ? [140, 140, 140] : [255, 111, 0];     // Grey / Amber 900
+  const brandGold = isPrint ? [160, 160, 160] : [255, 179, 0];       // Grey / Gold highlights
   const textPrimary = [0, 0, 0];         // Dark Grey for text
-  const textSecondary = [100, 100, 100]; // Muted Grey
-  const borderLight = [230, 230, 230];   // Soft grey borders
+  const textSecondary = isPrint ? [0, 0, 0] : [100, 100, 100]; // Muted Grey
+  const borderLight = isPrint ? [140, 140, 140] : [230, 230, 230];   // Soft grey borders
 
   const formatNum = (num) => Number(num || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const formatAmt = (num) => Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

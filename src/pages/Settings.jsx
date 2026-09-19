@@ -38,7 +38,8 @@ export default function Settings() {
   const [userToEdit, setUserToEdit] = useState(null);
   const [goalSettings, setGoalSettings] = useState({
     year: new Date().getFullYear().toString(),
-    salesTarget: ''
+    salesTarget: '',
+    profitMargin: '15'
   });
   const [goalLoading, setGoalLoading] = useState(false);
 
@@ -148,7 +149,8 @@ export default function Settings() {
       if (goals) {
         setGoalSettings({
           year: goals.year || new Date().getFullYear().toString(),
-          salesTarget: goals.salesTarget || ''
+          salesTarget: goals.salesTarget || '',
+          profitMargin: goals.profitMargin || '15'
         });
       }
     }
@@ -517,6 +519,20 @@ export default function Settings() {
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
                     placeholder="e.g. 1,00,00,000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Profit Margin (%) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={goalSettings.profitMargin}
+                    onChange={(e) => setGoalSettings(prev => ({ ...prev, profitMargin: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
+                    placeholder="e.g. 15"
                   />
                 </div>
                 <div className="pt-2">

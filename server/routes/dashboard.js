@@ -7,11 +7,20 @@ router.get('/kpi', async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not initialized' });
   
   try {
-    const [ordersSnapshot, customersSnapshot, jobsSnapshot] = await Promise.all([
+    const [ordersSnapshot, customersSnapshot, jobsSnapshot, settingsSnapshot] = await Promise.all([
       db.collection('orders').get(),
       db.collection('customers').get(),
-      db.collection('productionJobs').get()
+      db.collection('productionJobs').get(),
+      db.collection('settings').where('type', '==', 'goals').get()
     ]);
+
+    let profitMargin = 15; // default 15%
+    if (!settingsSnapshot.empty) {
+      const goalsSetting = settingsSnapshot.docs[0].data();
+      if (goalsSetting.profitMargin) {
+        profitMargin = parseFloat(goalsSetting.profitMargin);
+      }
+    }
 
     const totalOrdersCount = ordersSnapshot.size;
     const activeCustomersCount = customersSnapshot.size;
@@ -113,7 +122,7 @@ router.get('/kpi', async (req, res) => {
     });
 
     const revenueLakhs = (totalRevenue / 100000).toFixed(2);
-    const profitLakhs = (totalRevenue * 0.15 / 100000).toFixed(2); // Estimated 15% profit margin
+    const profitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2); // Estimated profit margin
 
     // Sort activities by time desc and get top 5
     activities.sort((a, b) => b.time - a.time);
@@ -142,7 +151,7 @@ router.get('/kpi', async (req, res) => {
       pendingDispatches: { value: pendingCount, subtitle: 'Pending processing' },
       pendingPayments: { value: `₹${totalOutstanding.toLocaleString('en-IN')}`, subtitle: 'Total outstanding' },
       monthlyRevenue: { value: `₹${revenueLakhs}L`, subtitle: 'Current Month' },
-      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: 'Estimated (15% margin)' },
+      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: `Estimated (${profitMargin}% margin)` },
       activeCustomers: { value: activeCustomersCount, subtitle: 'Total clients' },
     };
 

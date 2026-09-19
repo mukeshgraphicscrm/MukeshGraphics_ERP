@@ -7,6 +7,8 @@ import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import CustomSelect from '../components/CustomSelect';
 import { useAuth } from '../contexts/AuthContext';
 import { useData } from '../contexts/DataContext';
+import { createPortal } from 'react-dom';
+import useScrollLock from '../hooks/useScrollLock';
 
 const AVAILABLE_MODULES = [
   'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations',
@@ -53,6 +55,19 @@ export default function Settings() {
   const [designationModalOpen, setDesignationModalOpen] = useState(false);
   const [designationInput, setDesignationInput] = useState('');
   const [editingOldDesignation, setEditingOldDesignation] = useState(null);
+  const [designationToDelete, setDesignationToDelete] = useState(null);
+
+  useScrollLock(designationModalOpen);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && designationModalOpen) {
+        setDesignationModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [designationModalOpen]);
 
   const designationOptions = useMemo(() => {
     const existing = users.map(u => u.designation).filter(Boolean);
@@ -62,13 +77,14 @@ export default function Settings() {
       .map(d => ({ 
         label: d, 
         value: d,
-        actions: d !== 'Employee' ? (
+        actions: d !== 'Employee' ? (closeDropdown) => (
           <div className="flex items-center space-x-1">
             <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                if (closeDropdown) closeDropdown();
                 setEditingOldDesignation(d);
                 setDesignationInput(d);
                 setDesignationModalOpen(true);
@@ -83,12 +99,8 @@ export default function Settings() {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete designation "${d}"?`)) {
-                  setCustomDesignations(prev => prev.filter(x => x !== d));
-                  if (formData.designation === d) {
-                    setFormData(prev => ({ ...prev, designation: 'Employee' }));
-                  }
-                }
+                if (closeDropdown) closeDropdown();
+                setDesignationToDelete(d);
               }}
               className="p-1 text-gray-400 hover:bg-gray-200 hover:text-red-600 rounded transition-colors"
               title="Delete"
@@ -598,8 +610,32 @@ export default function Settings() {
         message="Are you sure you want to delete this user? This action cannot be undone."
         isLoading={loading}
       />
-      {designationModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <ConfirmDeleteModal
+        isOpen={!!designationToDelete}
+        onClose={() => setDesignationToDelete(null)}
+        onConfirm={() => {
+          if (!designationToDelete) return;
+          const d = designationToDelete;
+          setCustomDesignations(prev => prev.filter(x => x !== d));
+          if (formData.designation === d) {
+            setFormData(prev => ({ ...prev, designation: 'Employee' }));
+          }
+          toast.success(`Designation "${d}" deleted`);
+          setDesignationToDelete(null);
+        }}
+        title="Delete Designation"
+        message={`Are you sure you want to delete designation "${designationToDelete}"? This action cannot be undone.`}
+        isLoading={false}
+      />
+      {designationModalOpen && createPortal(
+        <div 
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setDesignationModalOpen(false);
+            }
+          }}
+        >
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <h3 className="font-bold text-gray-900">{editingOldDesignation ? 'Edit Designation' : 'Add New Designation'}</h3>
@@ -616,9 +652,11 @@ export default function Settings() {
                   if (formData.designation === editingOldDesignation) {
                      setFormData(prev => ({ ...prev, designation: trimmed }));
                   }
+                  toast.success('Designation updated successfully');
                } else {
                   setCustomDesignations(prev => Array.from(new Set([...prev, trimmed])));
                   setFormData(prev => ({ ...prev, designation: trimmed }));
+                  toast.success('Designation added successfully');
                }
                setDesignationModalOpen(false);
             }} className="p-6 space-y-4">
@@ -640,7 +678,8 @@ export default function Settings() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -230,7 +230,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                       </div>
                       {option.actions && (
                         <div className="flex items-center ml-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                           {option.actions}
+                           {typeof option.actions === 'function' ? option.actions(() => setIsOpen(false)) : option.actions}
                         </div>
                       )}
                     </li>

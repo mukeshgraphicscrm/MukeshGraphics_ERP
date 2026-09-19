@@ -1093,9 +1093,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
-        <p className="text-gray-500 mt-1">Welcome back, {currentUser?.profile?.name || currentUser?.displayName || 'Mukesh'} — here's how the plant is running today.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Executive Dashboard</h1>
+          <p className="text-gray-500 mt-1">Welcome back, {currentUser?.profile?.name || currentUser?.displayName || 'Mukesh'} — here's how the plant is running today.</p>
+        </div>
+        <button
+          onClick={handleOpenTaskModal}
+          className="btn-add whitespace-nowrap self-start sm:self-auto"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Quick Assign Task
+        </button>
       </div>
 
       {/* KPI & Goals Grid */}

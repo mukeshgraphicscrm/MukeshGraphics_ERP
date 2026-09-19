@@ -865,7 +865,7 @@ const getAmountInWords = (amount) => {
   const [rupees, paise] = numStr.split('.');
   let res = numberToWords(parseInt(rupees, 10));
   if (parseInt(paise, 10) > 0) {
-    res = res.replace('Only', '').trim() + ' and ' + numberToWords(parseInt(paise, 10)).replace('Only', 'Paise Only').trim();
+    res = res.replace('Only', '').trim() + ' and ' + numberToWords(parseInt(paise, 10)).replace('Only', 'Rupees Only').trim();
   }
   return res;
 };
@@ -1242,13 +1242,20 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
     termsTotalHeight += (wrappedTerm.length * termLineHeightMm) + 1;
   });
 
+  doc.setFontSize(8);
+  const gstText = `Total GST : ${getAmountInWords(gstAmount)}`;
+  const gstLines = doc.splitTextToSize(gstText, vLineX - margin - 4);
+  const billAmountText = `Bill Amount : ${getAmountInWords(grandTotal)}`;
+  const billAmountLines = doc.splitTextToSize(billAmountText, vLineX - margin - 4);
+  const wordsHeight = (gstLines.length * 4 + 2) + (billAmountLines.length * 4 + 2);
+
   let rightLines = 2;
   if (po.invoiceType === 'GST') rightLines += 2;
   if (Number(po.freightAmount) > 0) rightLines += 1;
   const requiredRightHeight = 6 + (rightLines * 6) + 12;
 
-  // 31mm static gaps + tight bottom padding
-  const requiredLeftHeight = 31 + noteHeight + termsTotalHeight + 2;
+  // 19mm static gaps + dynamic words height + tight bottom padding
+  const requiredLeftHeight = 19 + wordsHeight + noteHeight + termsTotalHeight + 2;
   const gridHeight = Math.max(requiredRightHeight, requiredLeftHeight);
 
   // Ensure enough space for dynamic footer
@@ -1269,11 +1276,12 @@ export const generatePurchaseOrderPDF = async (po, suppliers, exportType = 'pdf'
   doc.setFont("helvetica", "normal");
 
   let leftY = footerY + 5;
-  doc.text(`Total GST : ${getAmountInWords(gstAmount)}`, margin + 2, leftY);
-  leftY += 6;
+  doc.text(gstLines, margin + 2, leftY);
+  leftY += (gstLines.length * 4) + 2;
+
   doc.setFont("helvetica", "bold");
-  doc.text(`Bill Amount : ${getAmountInWords(grandTotal)}`, margin + 2, leftY);
-  leftY += 6;
+  doc.text(billAmountLines, margin + 2, leftY);
+  leftY += (billAmountLines.length * 4) + 2;
 
   doc.setDrawColor(...borderLight);
   doc.line(margin, leftY, vLineX, leftY);

@@ -205,7 +205,7 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                   return (
                     <li
                       key={`${option.value}-${index}`}
-                      className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center ${option.className || defaultClass}`}
+                      className={`px-3 py-2 text-sm cursor-pointer transition-colors flex items-center justify-between group ${option.className || defaultClass}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isMulti) {
@@ -220,12 +220,19 @@ export default function CustomSelect({ options, value, onChange, placeholder = "
                         }
                       }}
                     >
-                      {isMulti && (
-                        <div className={`w-4 h-4 mr-2 border rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-[#E8A33D] bg-[#E8A33D]' : 'border-gray-300'}`}>
-                          {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>}
+                      <div className="flex items-center truncate flex-1 min-w-0">
+                        {isMulti && (
+                          <div className={`w-4 h-4 mr-2 border rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-[#E8A33D] bg-[#E8A33D]' : 'border-gray-300'}`}>
+                            {isSelected && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                        )}
+                        <span className="truncate">{option.label}</span>
+                      </div>
+                      {option.actions && (
+                        <div className="flex items-center ml-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                           {option.actions}
                         </div>
                       )}
-                      <span className="truncate">{option.label}</span>
                     </li>
                   );
                 })}

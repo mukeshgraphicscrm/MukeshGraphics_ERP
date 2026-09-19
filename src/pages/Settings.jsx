@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit, Key, Target } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { UserPlus, Save, Users, Trash2, Eye, EyeOff, Edit, Key, Target, X } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -48,6 +48,59 @@ export default function Settings() {
     designation: 'Employee',
     accessibleModules: []
   });
+
+  const [customDesignations, setCustomDesignations] = useState([]);
+  const [designationModalOpen, setDesignationModalOpen] = useState(false);
+  const [designationInput, setDesignationInput] = useState('');
+  const [editingOldDesignation, setEditingOldDesignation] = useState(null);
+
+  const designationOptions = useMemo(() => {
+    const existing = users.map(u => u.designation).filter(Boolean);
+    const allUnique = Array.from(new Set(['Employee', ...existing, ...customDesignations]));
+    const options = allUnique
+      .filter(d => d !== 'Administrator')
+      .map(d => ({ 
+        label: d, 
+        value: d,
+        actions: d !== 'Employee' ? (
+          <div className="flex items-center space-x-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setEditingOldDesignation(d);
+                setDesignationInput(d);
+                setDesignationModalOpen(true);
+              }}
+              className="p-1 text-gray-400 hover:bg-gray-200 hover:text-blue-600 rounded transition-colors"
+              title="Edit"
+            >
+              <Edit className="w-3 h-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (window.confirm(`Are you sure you want to delete designation "${d}"?`)) {
+                  setCustomDesignations(prev => prev.filter(x => x !== d));
+                  if (formData.designation === d) {
+                    setFormData(prev => ({ ...prev, designation: 'Employee' }));
+                  }
+                }
+              }}
+              className="p-1 text-gray-400 hover:bg-gray-200 hover:text-red-600 rounded transition-colors"
+              title="Delete"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ) : null
+      }));
+    options.push({ label: '+ Add New Designation', value: 'ADD_NEW', className: 'text-brand-accent font-bold bg-brand-primary/5' });
+    return options;
+  }, [users, customDesignations, formData.designation]);
 
   const handleAdminPasswordChange = async (e) => {
     e.preventDefault();
@@ -100,6 +153,12 @@ export default function Settings() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'designation' && value === 'ADD_NEW') {
+      setDesignationInput('');
+      setEditingOldDesignation(null);
+      setDesignationModalOpen(true);
+      return;
+    }
     const finalValue = name === 'password' ? value : value.toUpperCase();
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
@@ -300,14 +359,12 @@ export default function Settings() {
                   required
                   value={formData.designation}
                   onChange={handleChange}
-                  options={[
-                    { label: 'Employee', value: 'Employee' }
-                  ]}
+                  options={designationOptions}
                   placeholder="Select designation"
                 />
               </div>
 
-              {formData.designation === 'Employee' && (
+              {formData.designation !== 'Administrator' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Module Access</label>
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-64 overflow-y-auto space-y-2">
@@ -532,12 +589,59 @@ export default function Settings() {
 
       <ConfirmDeleteModal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setUserToDelete(null);
+        }}
         onConfirm={confirmDelete}
         title="Delete User"
         message="Are you sure you want to delete this user? This action cannot be undone."
         isLoading={loading}
       />
+      {designationModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <h3 className="font-bold text-gray-900">{editingOldDesignation ? 'Edit Designation' : 'Add New Designation'}</h3>
+              <button onClick={() => setDesignationModalOpen(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={(e) => {
+               e.preventDefault();
+               if (!designationInput.trim()) return;
+               const trimmed = designationInput.trim().toUpperCase();
+               if (editingOldDesignation) {
+                  setCustomDesignations(prev => prev.map(d => d === editingOldDesignation ? trimmed : d));
+                  if (formData.designation === editingOldDesignation) {
+                     setFormData(prev => ({ ...prev, designation: trimmed }));
+                  }
+               } else {
+                  setCustomDesignations(prev => Array.from(new Set([...prev, trimmed])));
+                  setFormData(prev => ({ ...prev, designation: trimmed }));
+               }
+               setDesignationModalOpen(false);
+            }} className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Designation Name *</label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={designationInput}
+                  onChange={e => setDesignationInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors text-sm"
+                  placeholder="e.g. MANAGER"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
+                <button type="button" onClick={() => setDesignationModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-200">Cancel</button>
+                <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-[#1b2f63] hover:bg-[#12224d] rounded-lg transition-colors">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

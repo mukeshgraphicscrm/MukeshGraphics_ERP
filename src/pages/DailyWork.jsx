@@ -208,9 +208,9 @@ export default function DailyWork() {
             />
           </div>
           
-          <div className="flex items-center gap-2 w-full sm:w-[220px] relative z-20">
+          <div className="flex items-center gap-2 w-full sm:w-[280px] relative z-20">
             <User className="w-5 h-5 text-gray-400 shrink-0" />
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <CustomSelect
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}

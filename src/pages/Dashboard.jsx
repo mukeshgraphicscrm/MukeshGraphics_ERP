@@ -184,16 +184,32 @@ export default function Dashboard() {
       }
 
       const finalAudioUrls = [...(taskFormData.audioUrls || []), ...newUrls];
+      const assignedBy = currentUser?.profile?.name || currentUser?.displayName || 'Admin';
 
       const payload = {
         ...taskFormData,
         audioUrls: finalAudioUrls,
         audioUrl: finalAudioUrls.length > 0 ? finalAudioUrls[0] : null,
-        assignedBy: employeeName || 'Admin'
+        assignedBy
       };
 
       await api.post('/tasks', payload);
       toast.success('Task created successfully');
+
+      if (taskFormData.assignedTo) {
+        try {
+          await api.post('/notifications', {
+            title: 'New Task Assigned',
+            message: `A new task "${taskFormData.title}" has been assigned to you by ${assignedBy}.`,
+            employee: taskFormData.assignedTo,
+            read: false,
+            createdAt: new Date().toISOString()
+          });
+        } catch (notifErr) {
+          console.error('Failed to send notification:', notifErr);
+        }
+      }
+
       setIsTaskModalOpen(false);
     } catch (err) {
       console.error('Error saving task:', err);
@@ -1340,6 +1356,182 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Quick Assign Task Modal */}
+      {isTaskModalOpen && createPortal(
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsTaskModalOpen(false); }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden transform transition-all relative z-[70]">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <h2 className="text-xl font-bold text-gray-900">Create Task</h2>
+              <button onClick={() => setIsTaskModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                &times;
+              </button>
+            </div>
+
+            <form onSubmit={handleTaskSubmit} className="p-6 space-y-4 text-left">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={taskFormData.title}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, title: e.target.value.toUpperCase() })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63]"
+                  placeholder="TASK TITLE"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  {!isTaskRecording && (
+                    <button
+                      type="button"
+                      onClick={startTaskRecording}
+                      className="text-xs flex items-center gap-1 font-medium transition-colors text-blue-500 hover:text-blue-600"
+                    >
+                      <Mic className="w-3.5 h-3.5" /> Add Voice Note
+                    </button>
+                  )}
+                  {isTaskRecording && (
+                    <button
+                      type="button"
+                      onClick={stopTaskRecording}
+                      className="text-xs flex items-center gap-1 font-medium transition-colors text-red-500 hover:text-red-600 animate-pulse"
+                    >
+                      <Square className="w-3.5 h-3.5 fill-current" /> Stop Recording
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={3}
+                  value={taskFormData.description}
+                  onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value.toUpperCase() })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
+                  placeholder="PROVIDE TASK DETAILS..."
+                />
+
+                {/* Render Audio Notes */}
+                {((taskFormData.audioUrls && taskFormData.audioUrls.length > 0) || taskAudioBlobs.length > 0) && (
+                  <div className="space-y-2 mt-2">
+                    {taskFormData.audioUrls && taskFormData.audioUrls.map((url, idx) => (
+                      <div key={`url-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <Mic className="w-4 h-4" />
+                          </div>
+                          <audio src={url} controls className="h-8 max-w-[200px]" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTaskFormData(prev => ({
+                              ...prev,
+                              audioUrls: prev.audioUrls.filter((_, i) => i !== idx)
+                            }));
+                          }}
+                          className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    {taskAudioBlobs.map((blob, idx) => (
+                      <div key={`new-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                            <Mic className="w-4 h-4" />
+                          </div>
+                          <audio src={URL.createObjectURL(blob)} controls className="h-8 max-w-[200px]" />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTaskAudioBlobs(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
+                  <CustomSelect
+                    options={[
+                      ...(isAdmin ? [{ label: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT', value: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT' }] : []),
+                      ...users.map(u => ({ label: u.name, value: u.name }))
+                    ]}
+                    value={taskFormData.assignedTo}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, assignedTo: e.target.value })}
+                    placeholder="Select User"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <CustomSelect
+                    options={[
+                      { label: 'High', value: 'High' },
+                      { label: 'Medium', value: 'Medium' },
+                      { label: 'Low', value: 'Low' },
+                    ]}
+                    value={taskFormData.priority}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, priority: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                  <input
+                    type="datetime-local"
+                    value={taskFormData.dueDate}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <CustomSelect
+                    options={[
+                      { label: 'Pending', value: 'Pending' },
+                      { label: 'In Progress', value: 'In Progress' },
+                      { label: 'Completed', value: 'Completed' },
+                    ]}
+                    value={taskFormData.status}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, status: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsTaskModalOpen(false)}
+                  className="px-4 py-2 text-gray-700 font-medium hover:bg-gray-50 rounded-lg transition-colors border border-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={taskSaving}
+                  className="btn-add disabled:opacity-50"
+                >
+                  {taskSaving ? 'Saving...' : 'Create Task'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

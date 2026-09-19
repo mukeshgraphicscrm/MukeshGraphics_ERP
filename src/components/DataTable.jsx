@@ -11,7 +11,8 @@ export default function DataTable({
   onRowClick,
   searchPlaceholder = "Search records...",
   toolbarExtra,
-  isLoading = false
+  isLoading = false,
+  rowClassName
 }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
@@ -263,11 +264,11 @@ export default function DataTable({
               filteredData.map((row, idx) => (
                 <tr
                   key={row.id || idx}
-                  className={`hover:bg-gray-50/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+                  className={`text-gray-900 hover:bg-gray-50/50 transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${rowClassName ? rowClassName(row) : ''}`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((col, colIdx) => (
-                    <td key={colIdx} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td key={colIdx} className="px-6 py-4 whitespace-nowrap text-sm">
                       {col.render ? col.render(row) : col.accessor(row)}
                     </td>
                   ))}

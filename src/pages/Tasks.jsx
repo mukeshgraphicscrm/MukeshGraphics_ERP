@@ -513,8 +513,12 @@ export default function Tasks() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                  <CustomSelect
-                    options={users.map(u => ({ label: u.name, value: u.name }))}
+                    <CustomSelect
+                      options={[
+                        ...(isAdmin ? [{ label: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT', value: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT' }] : []),
+                        ...users
+                          .map(u => ({ label: u.name, value: u.name }))
+                      ]}
                     value={formData.assignedTo}
                     onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
                     placeholder="Select User"

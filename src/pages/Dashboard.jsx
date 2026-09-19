@@ -29,6 +29,7 @@ export default function Dashboard() {
   } = useData();
   const { currentUser } = useAuth();
   const isEmployee = currentUser?.profile?.designation === 'Employee';
+  const isAdmin = !currentUser?.profile || currentUser?.profile?.designation?.toUpperCase() === 'ADMINISTRATOR';
   const employeeName = currentUser?.profile?.name || '';
   const accessibleModules = currentUser?.profile?.accessibleModules || [];
 
@@ -1016,7 +1017,11 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
                     <CustomSelect
-                      options={users.map(u => ({ label: u.name, value: u.name }))}
+                      options={[
+                        ...(isAdmin ? [{ label: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT', value: currentUser?.profile?.name || currentUser?.displayName || 'BHUPAT BHUT' }] : []),
+                        ...users
+                          .map(u => ({ label: u.name, value: u.name }))
+                      ]}
                       value={taskFormData.assignedTo}
                       onChange={(e) => setTaskFormData({ ...taskFormData, assignedTo: e.target.value })}
                       placeholder="Select User"

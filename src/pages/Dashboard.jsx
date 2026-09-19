@@ -60,12 +60,14 @@ export default function Dashboard() {
     assignedTo: employeeName,
     priority: 'Medium',
     status: 'Pending',
-    dueDate: ''
+    dueDate: '',
+    audioUrls: [],
+    audioUrl: null
   });
+  const [taskAudioBlobs, setTaskAudioBlobs] = useState([]);
+  const [isTaskRecording, setIsTaskRecording] = useState(false);
+  const [taskMediaRecorder, setTaskMediaRecorder] = useState(null);
   const [taskSaving, setTaskSaving] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
-  const [mediaRecorder, setMediaRecorder] = useState(null);
   const [realtimeOrders, setRealtimeOrders] = useState([]);
   const [realtimeJobs, setRealtimeJobs] = useState([]);
   const [realtimeLeads, setRealtimeLeads] = useState([]);
@@ -126,13 +128,15 @@ export default function Dashboard() {
       assignedTo: employeeName,
       priority: 'Medium',
       status: 'Pending',
-      dueDate: ''
+      dueDate: '',
+      audioUrls: [],
+      audioUrl: null
     });
-    setAudioBlob(null);
+    setTaskAudioBlobs([]);
     setIsTaskModalOpen(true);
   };
 
-  const startRecording = async () => {
+  const startTaskRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
@@ -144,23 +148,23 @@ export default function Dashboard() {
 
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
-        setAudioBlob(blob);
+        setTaskAudioBlobs(prev => [...prev, blob]);
         stream.getTracks().forEach(track => track.stop());
       };
 
       recorder.start();
-      setMediaRecorder(recorder);
-      setIsRecording(true);
+      setTaskMediaRecorder(recorder);
+      setIsTaskRecording(true);
     } catch (err) {
       console.error('Error accessing microphone:', err);
       toast.error('Could not access microphone');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorder && isRecording) {
-      mediaRecorder.stop();
-      setIsRecording(false);
+  const stopTaskRecording = () => {
+    if (taskMediaRecorder && isTaskRecording) {
+      taskMediaRecorder.stop();
+      setIsTaskRecording(false);
     }
   };
 
@@ -169,17 +173,23 @@ export default function Dashboard() {
     setTaskSaving(true);
 
     try {
-      let audioUrl = null;
-      if (audioBlob) {
-        const audioRef = ref(storage, `task-audio/${Date.now()}.webm`);
-        await uploadBytes(audioRef, audioBlob);
-        audioUrl = await getDownloadURL(audioRef);
+      let newUrls = [];
+      if (taskAudioBlobs.length > 0) {
+        for (const blob of taskAudioBlobs) {
+          const audioRef = ref(storage, `task-audio/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.webm`);
+          await uploadBytes(audioRef, blob);
+          const url = await getDownloadURL(audioRef);
+          newUrls.push(url);
+        }
       }
+
+      const finalAudioUrls = [...(taskFormData.audioUrls || []), ...newUrls];
 
       const payload = {
         ...taskFormData,
-        assignedBy: currentUser?.profile?.name || 'Self',
-        ...(audioUrl && { audioUrl })
+        audioUrls: finalAudioUrls,
+        audioUrl: finalAudioUrls.length > 0 ? finalAudioUrls[0] : null,
+        assignedBy: employeeName || 'Admin'
       };
 
       await api.post('/tasks', payload);
@@ -973,17 +983,22 @@ export default function Dashboard() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <label className="block text-sm font-medium text-gray-700">Description</label>
-                    {!audioBlob && (
+                    {!isTaskRecording && (
                       <button
                         type="button"
-                        onClick={isRecording ? stopRecording : startRecording}
-                        className={`text-xs flex items-center gap-1 font-medium transition-colors ${isRecording ? 'text-red-500 hover:text-red-600' : 'text-blue-500 hover:text-blue-600'}`}
+                        onClick={startTaskRecording}
+                        className="text-xs flex items-center gap-1 font-medium transition-colors text-blue-500 hover:text-blue-600"
                       >
-                        {isRecording ? (
-                          <><Square className="w-3.5 h-3.5 fill-current" /> Stop Recording</>
-                        ) : (
-                          <><Mic className="w-3.5 h-3.5" /> Add Voice Note</>
-                        )}
+                        <Mic className="w-3.5 h-3.5" /> Add Voice Note
+                      </button>
+                    )}
+                    {isTaskRecording && (
+                      <button
+                        type="button"
+                        onClick={stopTaskRecording}
+                        className="text-xs flex items-center gap-1 font-medium transition-colors text-red-500 hover:text-red-600 animate-pulse"
+                      >
+                        <Square className="w-3.5 h-3.5 fill-current" /> Stop Recording
                       </button>
                     )}
                   </div>
@@ -994,21 +1009,54 @@ export default function Dashboard() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                     placeholder="PROVIDE TASK DETAILS..."
                   />
-                  {audioBlob && (
-                    <div className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
-                          <Mic className="w-4 h-4" />
+
+                  {/* Render Audio Notes */}
+                  {((taskFormData.audioUrls && taskFormData.audioUrls.length > 0) || taskAudioBlobs.length > 0) && (
+                    <div className="space-y-2 mt-2">
+                      {/* Existing Notes */}
+                      {taskFormData.audioUrls && taskFormData.audioUrls.map((url, idx) => (
+                        <div key={`url-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                              <Mic className="w-4 h-4" />
+                            </div>
+                            <audio src={url} controls className="h-8 max-w-[200px]" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTaskFormData(prev => ({
+                                ...prev,
+                                audioUrls: prev.audioUrls.filter((_, i) => i !== idx)
+                              }));
+                            }}
+                            className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
-                        <audio src={URL.createObjectURL(audioBlob)} controls className="h-8 max-w-[200px]" />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setAudioBlob(null)}
-                        className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      ))}
+
+                      {/* New Recorded Notes */}
+                      {taskAudioBlobs.map((blob, idx) => (
+                        <div key={`new-${idx}`} className="p-3 bg-gray-50 border border-gray-200 rounded-lg flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center">
+                              <Mic className="w-4 h-4" />
+                            </div>
+                            <audio src={URL.createObjectURL(blob)} controls className="h-8 max-w-[200px]" />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTaskAudioBlobs(prev => prev.filter((_, i) => i !== idx));
+                            }}
+                            className="text-red-500 hover:text-red-600 p-1.5 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
@@ -1046,7 +1094,7 @@ export default function Dashboard() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
                     <input
-                      type="date"
+                      type="datetime-local"
                       value={taskFormData.dueDate}
                       onChange={(e) => setTaskFormData({ ...taskFormData, dueDate: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"

@@ -128,7 +128,9 @@ export default function Logs() {
   };
 
   const filteredLogs = logs.filter(log => {
-    const searchString = `${log.userName} ${log.module} ${log.action} ${log.details}`.toLowerCase();
+    const mod = log.module?.toLowerCase() === 'artworks' ? 'designs' : log.module;
+    const det = log.details ? log.details.replace(/ARTWORKS/gi, 'DESIGNS') : '';
+    const searchString = `${log.userName} ${mod} ${log.action} ${det}`.toLowerCase();
     return searchString.includes(searchTerm.toLowerCase());
   }).sort((a, b) => {
     let aVal = a[sortField];
@@ -328,8 +330,8 @@ export default function Logs() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 capitalize">
-                        {log.module}
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-gray-100 text-gray-700">
+                        {log.module?.toLowerCase() === 'artworks' ? 'Designs' : log.module}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -341,7 +343,7 @@ export default function Logs() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
-                      {log.details}
+                      {log.details ? log.details.replace(/ARTWORKS/g, 'DESIGNS').replace(/Artworks/g, 'Designs') : ''}
                     </td>
                   </tr>
                 ))
@@ -420,7 +422,7 @@ export default function Logs() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Module</label>
-                <div className="text-sm text-gray-900 capitalize">{viewLog.module}</div>
+                <div className="text-sm text-gray-900 capitalize">{viewLog.module?.toLowerCase() === 'artworks' ? 'Designs' : viewLog.module}</div>
               </div>
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Action</label>
@@ -434,7 +436,7 @@ export default function Logs() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Details</label>
                 <div className="text-sm text-gray-900 whitespace-pre-wrap bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  {viewLog.details}
+                  {viewLog.details ? viewLog.details.replace(/ARTWORKS/g, 'DESIGNS').replace(/Artworks/g, 'Designs') : ''}
                 </div>
               </div>
               {viewLog.fullDetails && (

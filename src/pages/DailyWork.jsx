@@ -82,7 +82,9 @@ export default function DailyWork() {
     if (log.module === 'notifications') return false;
 
     const matchesUser = selectedUser === 'All' || (log.userName && selectedUser && log.userName.trim().toLowerCase() === selectedUser.trim().toLowerCase());
-    const searchString = `${log.module} ${log.action} ${log.details}`.toLowerCase();
+    const mod = log.module?.toLowerCase() === 'artworks' ? 'designs' : log.module;
+    const det = log.details ? log.details.replace(/ARTWORKS/gi, 'DESIGNS') : '';
+    const searchString = `${mod} ${log.action} ${det}`.toLowerCase();
     const matchesSearch = searchString.includes(searchTerm.toLowerCase());
     return matchesUser && matchesSearch;
   });
@@ -266,7 +268,7 @@ export default function DailyWork() {
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold bg-gray-100 text-gray-700 capitalize border border-gray-200">
-                          {log.module}
+                          {log.module?.toLowerCase() === 'artworks' ? 'Designs' : log.module}
                         </span>
                         <span className={cn(
                           "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset",
@@ -275,8 +277,8 @@ export default function DailyWork() {
                           {log.action}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-700 mt-1">
-                        {log.details}
+                      <p className="text-sm text-gray-700 mt-1 uppercase">
+                        {log.details ? log.details.replace(/ARTWORKS/gi, 'DESIGNS') : ''}
                       </p>
                       {log.fullDetails && renderFullDetails(log.fullDetails)}
                     </div>

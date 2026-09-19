@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
-  
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -1018,7 +1018,7 @@ export default function Dashboard() {
                     <CustomSelect
                       options={users.map(u => ({ label: u.name, value: u.name }))}
                       value={taskFormData.assignedTo}
-                      onChange={(e) => setTaskFormData({...taskFormData, assignedTo: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, assignedTo: e.target.value })}
                       placeholder="Select User"
                       required
                     />

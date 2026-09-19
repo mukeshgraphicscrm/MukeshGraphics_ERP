@@ -19,11 +19,11 @@ export default function Tasks() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
-  
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -46,10 +46,10 @@ export default function Tasks() {
         id: doc.id,
         ...doc.data()
       }));
-      
+
       if (!isAdmin) {
-        fetchedTasks = fetchedTasks.filter(t => 
-          t.assignedTo === currentUser?.profile?.name || 
+        fetchedTasks = fetchedTasks.filter(t =>
+          t.assignedTo === currentUser?.profile?.name ||
           t.assignedToEmail === currentUser?.email
         );
       }
@@ -97,7 +97,7 @@ export default function Tasks() {
         assignedTo: task.assignedTo || '',
         priority: task.priority || 'Medium',
         status: task.status || 'Pending',
-        dueDate: task.dueDate ? (function(d){ return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0,16); })(new Date(task.dueDate)) : '',
+        dueDate: task.dueDate ? (function (d) { return new Date(d.getTime() - (d.getTimezoneOffset() * 60000)).toISOString().slice(0, 16); })(new Date(task.dueDate)) : '',
         audioUrls: urls,
         audioUrl: task.audioUrl || null
       });
@@ -124,17 +124,17 @@ export default function Tasks() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const recorder = new MediaRecorder(stream);
       const chunks = [];
-      
+
       recorder.ondataavailable = (e) => {
         if (e.data.size > 0) chunks.push(e.data);
       };
-      
+
       recorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' });
         setAudioBlobs(prev => [...prev, blob]);
         stream.getTracks().forEach(track => track.stop());
       };
-      
+
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
@@ -154,7 +154,7 @@ export default function Tasks() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
-    
+
     try {
       let newUrls = [];
       if (audioBlobs.length > 0) {
@@ -181,7 +181,7 @@ export default function Tasks() {
       } else {
         await api.post('/tasks', payload);
         toast.success('Task created successfully');
-        
+
         if (formData.assignedTo) {
           try {
             await api.post('/notifications', {
@@ -230,23 +230,23 @@ export default function Tasks() {
   };
 
   const filteredTasks = tasks.filter(t => {
-    const matchesSearch = (t.title || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (t.assignedTo || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (t.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (t.assignedTo || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
   const getStatusColor = (status) => {
-    switch(status) {
+    switch (status) {
       case 'Completed': return 'bg-green-100 text-green-700';
       case 'In Progress': return 'bg-blue-100 text-blue-700';
       case 'Pending': return 'bg-yellow-100 text-yellow-700';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
-  
+
   const getPriorityColor = (priority) => {
-    switch(priority) {
+    switch (priority) {
       case 'High': return 'text-red-600 bg-red-50 ring-red-500/20';
       case 'Medium': return 'text-yellow-600 bg-yellow-50 ring-yellow-500/20';
       case 'Low': return 'text-green-600 bg-green-50 ring-green-500/20';
@@ -269,7 +269,7 @@ export default function Tasks() {
             {isAdmin ? 'Manage and assign tasks to your team.' : 'View and update tasks assigned to you.'}
           </p>
         </div>
-        
+
         <button
           onClick={() => handleOpenModal()}
           className="btn-add"
@@ -337,12 +337,12 @@ export default function Tasks() {
                   </button>
                 </div>
               </div>
-              
+
               <h3 className="font-bold text-gray-900 text-lg mb-2">{task.title}</h3>
               <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-1">
                 {task.description}
               </p>
-              
+
               {task.audioUrls && task.audioUrls.length > 0 ? (
                 <div className="mb-3 space-y-2">
                   {task.audioUrls.map((url, idx) => (
@@ -354,7 +354,7 @@ export default function Tasks() {
                   <audio src={task.audioUrl} controls className="w-full h-8" />
                 </div>
               ) : null}
-              
+
               <div className="space-y-2 mt-auto pt-4 border-t border-gray-100">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-gray-500">Priority:</span>
@@ -384,14 +384,14 @@ export default function Tasks() {
 
               {!isAdmin && (
                 <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                  <button 
+                  <button
                     onClick={() => handleStatusChange(task.id, 'In Progress')}
                     disabled={task.status === 'In Progress' || task.status === 'Completed'}
                     className={`flex-1 py-1.5 text-xs font-medium rounded-lg flex justify-center items-center gap-1.5 transition-colors ${task.status === 'In Progress' || task.status === 'Completed' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200'}`}
                   >
                     <Clock className="w-3.5 h-3.5" /> Start
                   </button>
-                  <button 
+                  <button
                     onClick={() => handleStatusChange(task.id, 'Completed')}
                     disabled={task.status === 'Completed'}
                     className={`flex-1 py-1.5 text-xs font-medium rounded-lg flex justify-center items-center gap-1.5 transition-colors ${task.status === 'Completed' ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-green-50 text-green-600 hover:bg-green-100 border border-green-200'}`}
@@ -415,7 +415,7 @@ export default function Tasks() {
                 &times;
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
@@ -423,18 +423,18 @@ export default function Tasks() {
                   type="text"
                   required
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value.toUpperCase()})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value.toUpperCase() })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63]"
                   placeholder="TASK TITLE"
                 />
               </div>
-              
+
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-sm font-medium text-gray-700">Description</label>
                   {!isRecording && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={startRecording}
                       className="text-xs flex items-center gap-1 font-medium transition-colors text-blue-500 hover:text-blue-600"
                     >
@@ -442,8 +442,8 @@ export default function Tasks() {
                     </button>
                   )}
                   {isRecording && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={stopRecording}
                       className="text-xs flex items-center gap-1 font-medium transition-colors text-red-500 hover:text-red-600 animate-pulse"
                     >
@@ -454,11 +454,11 @@ export default function Tasks() {
                 <textarea
                   rows={3}
                   value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value.toUpperCase()})}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value.toUpperCase() })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] resize-none"
                   placeholder="PROVIDE TASK DETAILS..."
                 />
-                
+
                 {/* Render Audio Notes */}
                 {((formData.audioUrls && formData.audioUrls.length > 0) || audioBlobs.length > 0) && (
                   <div className="space-y-2 mt-2">
@@ -471,8 +471,8 @@ export default function Tasks() {
                           </div>
                           <audio src={url} controls className="h-8 max-w-[200px]" />
                         </div>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => {
                             setFormData(prev => ({
                               ...prev,
@@ -485,7 +485,7 @@ export default function Tasks() {
                         </button>
                       </div>
                     ))}
-                    
+
                     {/* New Notes */}
                     {audioBlobs.map((blob, idx) => (
                       <div key={`blob-${idx}`} className="p-3 bg-blue-50/50 border border-blue-100 rounded-lg flex items-center justify-between">
@@ -495,8 +495,8 @@ export default function Tasks() {
                           </div>
                           <audio src={URL.createObjectURL(blob)} controls className="h-8 max-w-[200px]" />
                         </div>
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => {
                             setAudioBlobs(prev => prev.filter((_, i) => i !== idx));
                           }}
@@ -513,13 +513,13 @@ export default function Tasks() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign To *</label>
-                    <CustomSelect
-                      options={users.map(u => ({ label: u.name, value: u.name }))}
-                      value={formData.assignedTo}
-                      onChange={(e) => setFormData({...formData, assignedTo: e.target.value})}
-                      placeholder="Select User"
-                      required
-                    />
+                  <CustomSelect
+                    options={users.map(u => ({ label: u.name, value: u.name }))}
+                    value={formData.assignedTo}
+                    onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+                    placeholder="Select User"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
@@ -530,7 +530,7 @@ export default function Tasks() {
                       { label: 'Low', value: 'Low' },
                     ]}
                     value={formData.priority}
-                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
                   />
                 </div>
               </div>
@@ -541,7 +541,7 @@ export default function Tasks() {
                   <input
                     type="datetime-local"
                     value={formData.dueDate}
-                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1b2f63]/50 focus:border-[#1b2f63] text-sm"
                   />
                 </div>
@@ -554,7 +554,7 @@ export default function Tasks() {
                       { label: 'Completed', value: 'Completed' },
                     ]}
                     value={formData.status}
-                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                   />
                 </div>
               </div>

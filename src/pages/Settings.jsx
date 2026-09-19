@@ -22,7 +22,7 @@ export default function Settings() {
   const { settings, setSettings } = useData();
 
   // Protect the route
-  if (currentUser?.profile?.designation === 'Employee') {
+  if (currentUser?.profile?.designation?.toUpperCase() === 'EMPLOYEE') {
     return <Navigate to="/" replace />;
   }
   const [users, setUsers] = useState([]);
@@ -47,7 +47,7 @@ export default function Settings() {
     mobile: '',
     email: '',
     password: '',
-    designation: 'Employee',
+    designation: 'EMPLOYEE',
     accessibleModules: []
   });
 
@@ -70,14 +70,14 @@ export default function Settings() {
   }, [designationModalOpen]);
 
   const designationOptions = useMemo(() => {
-    const existing = users.map(u => u.designation).filter(Boolean);
-    const allUnique = Array.from(new Set(['Employee', ...existing, ...customDesignations]));
+    const existing = users.map(u => u.designation).filter(Boolean).map(d => d.toUpperCase());
+    const allUnique = Array.from(new Set(['EMPLOYEE', ...existing, ...customDesignations.map(d => d.toUpperCase())]));
     const options = allUnique
-      .filter(d => d !== 'Administrator')
+      .filter(d => d !== 'ADMINISTRATOR')
       .map(d => ({ 
         label: d, 
         value: d,
-        actions: d !== 'Employee' ? (closeDropdown) => (
+        actions: d !== 'EMPLOYEE' ? (closeDropdown) => (
           <div className="flex items-center space-x-1">
             <button
               type="button"
@@ -211,7 +211,7 @@ export default function Settings() {
       mobile: user.mobile || '',
       email: user.email || '',
       password: '', // Leave blank when editing
-      designation: user.designation || 'Employee',
+      designation: user.designation ? user.designation.toUpperCase() : 'EMPLOYEE',
       accessibleModules: user.accessibleModules || []
     });
   };
@@ -376,7 +376,7 @@ export default function Settings() {
                 />
               </div>
 
-              {formData.designation !== 'Administrator' && (
+              {formData.designation !== 'ADMINISTRATOR' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Module Access</label>
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 h-64 overflow-y-auto space-y-2">
@@ -485,7 +485,7 @@ export default function Settings() {
           )}
 
           {/* Goals Settings Form */}
-          {(!currentUser?.profile || currentUser?.profile?.designation === 'Administrator') && (
+          {(!currentUser?.profile || currentUser?.profile?.designation?.toUpperCase() === 'ADMINISTRATOR') && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center space-x-2 bg-gray-50/50">
                 <Target className="w-5 h-5 text-[#1b2f63]" />
@@ -615,10 +615,10 @@ export default function Settings() {
         onClose={() => setDesignationToDelete(null)}
         onConfirm={() => {
           if (!designationToDelete) return;
-          const d = designationToDelete;
+          const d = designationToDelete.toUpperCase();
           setCustomDesignations(prev => prev.filter(x => x !== d));
-          if (formData.designation === d) {
-            setFormData(prev => ({ ...prev, designation: 'Employee' }));
+          if (formData.designation.toUpperCase() === d) {
+            setFormData(prev => ({ ...prev, designation: 'EMPLOYEE' }));
           }
           toast.success(`Designation "${d}" deleted`);
           setDesignationToDelete(null);

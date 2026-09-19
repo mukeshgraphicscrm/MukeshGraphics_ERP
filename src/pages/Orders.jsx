@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import DataTable from '../components/DataTable';
 import StatusBadge from '../components/StatusBadge';
 import CreateOrderModal from '../components/CreateOrderModal';
@@ -8,6 +8,7 @@ import ViewOrderModal from '../components/ViewOrderModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 import api from '../lib/api';
 import { useData } from '../contexts/DataContext';
+import { generateOrdersListPDF } from '../lib/pdfGenerator';
 import toast from 'react-hot-toast';
 
 export default function Orders() {
@@ -161,6 +162,20 @@ export default function Orders() {
     setData((prev) => prev.filter(o => o.id !== orderId));
   };
 
+  const handleDownloadPDF = async () => {
+    try {
+      if (filteredOrders.length === 0) {
+        toast.error('No orders found to export!');
+        return;
+      }
+      await generateOrdersListPDF(filteredOrders, customers, products, fromDate, toDate);
+      toast.success('PDF generated successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    }
+  };
+
   const dateFilterToolbar = (
     <div className="flex items-center space-x-2">
       <input 
@@ -176,6 +191,14 @@ export default function Orders() {
         value={toDate}
         onChange={(e) => setToDate(e.target.value)}
       />
+      <button 
+        onClick={handleDownloadPDF} 
+        className="flex items-center space-x-2 px-4 py-2 border border-gray-200 rounded-lg bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm ml-2"
+        title="Download PDF"
+      >
+        <Download className="w-4 h-4" />
+        <span className="hidden sm:inline">Export PDF</span>
+      </button>
     </div>
   );
 

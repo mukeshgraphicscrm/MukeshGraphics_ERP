@@ -81,7 +81,7 @@ export default function DailyWork() {
     if (log.userRole?.toLowerCase().includes('admin')) return false;
     if (log.module === 'notifications') return false;
 
-    const matchesUser = selectedUser === 'All' || log.userName === selectedUser;
+    const matchesUser = selectedUser === 'All' || (log.userName && selectedUser && log.userName.trim().toLowerCase() === selectedUser.trim().toLowerCase());
     const searchString = `${log.module} ${log.action} ${log.details}`.toLowerCase();
     const matchesSearch = searchString.includes(searchTerm.toLowerCase());
     return matchesUser && matchesSearch;

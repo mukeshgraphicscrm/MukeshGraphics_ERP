@@ -59,13 +59,13 @@ export function AuthProvider({ children }) {
               ...prev,
               profile: profileData
             } : null);
-            api.defaults.headers.common['x-user-name'] = profileData.name || user.displayName || 'BHUPAT BHUT';
-            api.defaults.headers.common['x-user-role'] = profileData.designation || 'Administrator';
+            localStorage.setItem('x-user-name', profileData.name || user.displayName || 'BHUPAT BHUT');
+            localStorage.setItem('x-user-role', profileData.designation || 'Administrator');
           }
         }, (error) => {
           console.error('Failed to listen to user profile data:', error);
-          api.defaults.headers.common['x-user-name'] = user.displayName || 'BHUPAT BHUT';
-          api.defaults.headers.common['x-user-role'] = 'Administrator';
+          localStorage.setItem('x-user-name', user.displayName || 'BHUPAT BHUT');
+          localStorage.setItem('x-user-role', 'Administrator');
         });
       } else {
         if (profileUnsubscribe) {
@@ -74,8 +74,8 @@ export function AuthProvider({ children }) {
         }
         setCurrentUser(null);
         setLoading(false);
-        api.defaults.headers.common['x-user-name'] = 'BHUPAT BHUT';
-        api.defaults.headers.common['x-user-role'] = 'Administrator';
+        localStorage.removeItem('x-user-name');
+        localStorage.removeItem('x-user-role');
       }
     });
 

@@ -11,6 +11,16 @@ api.interceptors.request.use(async (config) => {
   // if (token) {
   //   config.headers.Authorization = `Bearer ${token}`;
   // }
+  const userName = localStorage.getItem('x-user-name');
+  const userRole = localStorage.getItem('x-user-role');
+  
+  if (userName) {
+    config.headers['x-user-name'] = userName;
+  }
+  if (userRole) {
+    config.headers['x-user-role'] = userRole;
+  }
+
   return config;
 }, (error) => {
   return Promise.reject(error);

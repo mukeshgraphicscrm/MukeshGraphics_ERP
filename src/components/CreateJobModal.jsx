@@ -233,6 +233,16 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
         toast.success('Job updated successfully!');
       } else {
+        // Check for duplicate Job Card No. before creating
+        const isDuplicate = jobs.some(j => 
+          String(j.jobCardNo).trim().toLowerCase() === String(formData.jobCardNo).trim().toLowerCase()
+        );
+        if (isDuplicate) {
+          setError(`Job Card No. "${formData.jobCardNo}" already exists. Please use a different number.`);
+          toast.error(`Job No. "${formData.jobCardNo}" already exists!`);
+          setLoading(false);
+          return;
+        }
         const res = await api.post('/productionJobs', payload);
         if (onJobAdded) onJobAdded(res.data);
         

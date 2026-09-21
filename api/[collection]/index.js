@@ -125,6 +125,17 @@ export default async function handler(req, res) {
         };
       }
 
+      // Prevent duplicate Job Card Numbers in productionJobs
+      if (collection === 'productionJobs' && finalData.jobCardNo) {
+        const dupCheck = await db.collection(collection)
+          .where('jobCardNo', '==', String(finalData.jobCardNo).trim())
+          .limit(1)
+          .get();
+        if (!dupCheck.empty) {
+          return res.status(409).json({ error: `Job Card No. "${finalData.jobCardNo}" already exists. Please use a different number.` });
+        }
+      }
+
       const docRef = await db.collection(collection).add(finalData);
 
       // Trigger a background sweep just in case there are missed ones from external direct DB writes

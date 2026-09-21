@@ -39,6 +39,7 @@ export default async function handler(req, res) {
 
       const data = { ...req.body };
       delete data.id;
+      delete data.createdAt; // Prevent overwriting original creation date
       await db.collection(collection).doc(id).update(data);
       const updatedDoc = await db.collection(collection).doc(id).get();
       res.json({ id, ...updatedDoc.data() });

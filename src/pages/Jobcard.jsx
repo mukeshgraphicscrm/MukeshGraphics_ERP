@@ -10,7 +10,7 @@ export default function Jobcard() {
 
   // Filter for jobs that are 100% complete and compute if they are late
   const completedJobs = useMemo(() => {
-    return jobs.filter(job => Number(job.progress) === 100).map(job => {
+    const mapped = jobs.filter(job => Number(job.progress) === 100).map(job => {
       // Logic to check if job is late
       let isLate = false;
       const customer = Object.values(customerMap || {}).find(c =>
@@ -59,6 +59,17 @@ export default function Jobcard() {
 
       return { ...job, isLate };
     });
+
+    // Deduplicate by jobCardNo — keep only one entry per job card (the one with the latest createdAt)
+    const seen = new Map();
+    mapped.forEach(job => {
+      const key = job.jobCardNo || job.id;
+      const existing = seen.get(key);
+      if (!existing || new Date(job.createdAt) > new Date(existing.createdAt)) {
+        seen.set(key, job);
+      }
+    });
+    return Array.from(seen.values());
   }, [jobs, orders, customerMap, products, dispatches]);
 
   const columns = [

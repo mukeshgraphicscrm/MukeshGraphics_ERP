@@ -119,6 +119,17 @@ const createCrudRouter = (collectionName) => {
         }
       }
 
+      // Prevent duplicate Job Card Numbers in productionJobs
+      if (collectionName === 'productionJobs' && data.jobCardNo) {
+        const dupCheck = await db.collection(collectionName)
+          .where('jobCardNo', '==', String(data.jobCardNo).trim())
+          .limit(1)
+          .get();
+        if (!dupCheck.empty) {
+          return res.status(409).json({ error: `Job Card No. "${data.jobCardNo}" already exists. Please use a different number.` });
+        }
+      }
+
       const docRef = await db.collection(collectionName).add(data);
 
       if (isContactFormCollection(collectionName)) {
@@ -148,7 +159,8 @@ const createCrudRouter = (collectionName) => {
     }
     try {
       const data = req.body;
-      delete data.id; // Prevent updating the ID
+      delete data.id;        // Prevent updating the ID
+      delete data.createdAt; // Prevent overwriting the original creation date
       
       const oldDoc = await db.collection(collectionName).doc(req.params.id).get();
       const oldData = oldDoc.exists ? oldDoc.data() : {};

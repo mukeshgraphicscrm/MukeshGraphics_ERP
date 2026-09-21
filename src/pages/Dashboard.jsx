@@ -1357,6 +1357,85 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Designation-wise Users Section */}
+      {users.length > 0 && (() => {
+        const DESG_COLORS = [
+          { bg: 'bg-blue-50', border: 'border-blue-200', badge: 'bg-blue-100 text-blue-700', dot: 'bg-blue-500', avatar: 'bg-blue-100 text-blue-700' },
+          { bg: 'bg-purple-50', border: 'border-purple-200', badge: 'bg-purple-100 text-purple-700', dot: 'bg-purple-500', avatar: 'bg-purple-100 text-purple-700' },
+          { bg: 'bg-emerald-50', border: 'border-emerald-200', badge: 'bg-emerald-100 text-emerald-700', dot: 'bg-emerald-500', avatar: 'bg-emerald-100 text-emerald-700' },
+          { bg: 'bg-orange-50', border: 'border-orange-200', badge: 'bg-orange-100 text-orange-700', dot: 'bg-orange-500', avatar: 'bg-orange-100 text-orange-700' },
+          { bg: 'bg-pink-50', border: 'border-pink-200', badge: 'bg-pink-100 text-pink-700', dot: 'bg-pink-500', avatar: 'bg-pink-100 text-pink-700' },
+          { bg: 'bg-cyan-50', border: 'border-cyan-200', badge: 'bg-cyan-100 text-cyan-700', dot: 'bg-cyan-500', avatar: 'bg-cyan-100 text-cyan-700' },
+          { bg: 'bg-amber-50', border: 'border-amber-200', badge: 'bg-amber-100 text-amber-700', dot: 'bg-amber-500', avatar: 'bg-amber-100 text-amber-700' },
+        ];
+
+        // Group users by designation
+        const grouped = {};
+        users.forEach(u => {
+          const desg = u.designation || 'Unassigned';
+          if (!grouped[desg]) grouped[desg] = [];
+          grouped[desg].push(u);
+        });
+        const groups = Object.entries(grouped).sort((a, b) => b[1].length - a[1].length);
+
+        return (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Team by Designation</h2>
+                <p className="text-sm text-gray-500 mt-0.5">{users.length} total registered users across {groups.length} designation{groups.length !== 1 ? 's' : ''}</p>
+              </div>
+              {/* Summary badges */}
+              <div className="hidden sm:flex flex-wrap gap-2">
+                {groups.map(([desg, members], i) => {
+                  const c = DESG_COLORS[i % DESG_COLORS.length];
+                  return (
+                    <span key={desg} className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${c.badge} border ${c.border}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`}></span>
+                      {desg} · {members.length}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {groups.map(([desg, members], i) => {
+                const c = DESG_COLORS[i % DESG_COLORS.length];
+                return (
+                  <div key={desg} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden shadow-sm hover:shadow-md transition-shadow`}>
+                    {/* Header */}
+                    <div className={`px-4 py-3 flex items-center justify-between border-b ${c.border}`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${c.dot}`}></span>
+                        <h3 className="font-bold text-gray-800 text-sm truncate">{desg}</h3>
+                      </div>
+                      <span className={`ml-2 flex-shrink-0 text-xs font-bold px-2.5 py-0.5 rounded-full ${c.badge}`}>
+                        {members.length} {members.length === 1 ? 'user' : 'users'}
+                      </span>
+                    </div>
+                    {/* User list */}
+                    <div className="p-3 space-y-2 max-h-52 overflow-y-auto">
+                      {members.map(u => (
+                        <div key={u._id || u.email} className="flex items-center gap-2.5 bg-white/70 rounded-lg px-2.5 py-2 border border-white/80">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.avatar}`}>
+                            {(u.name || '?').charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-800 truncate leading-tight">{u.name}</p>
+                            <p className="text-[11px] text-gray-500 truncate leading-tight">{u.email}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Quick Assign Task Modal */}
       {isTaskModalOpen && createPortal(
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget) setIsTaskModalOpen(false); }}>

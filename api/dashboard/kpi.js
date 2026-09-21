@@ -16,10 +16,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [ordersSnapshot, customersSnapshot] = await Promise.all([
+    const [ordersSnapshot, customersSnapshot, settingsSnapshot] = await Promise.all([
       db.collection('orders').get(),
-      db.collection('customers').get()
+      db.collection('customers').get(),
+      db.collection('settings').where('type', '==', 'goals').get()
     ]);
+
+    let profitMargin = 15; // default 15%
+    if (!settingsSnapshot.empty) {
+      const goalsSetting = settingsSnapshot.docs[0].data();
+      if (goalsSetting.profitMargin) {
+        profitMargin = parseFloat(goalsSetting.profitMargin);
+      }
+    }
 
     const totalOrdersCount = ordersSnapshot.size;
     const activeCustomersCount = customersSnapshot.size;
@@ -64,7 +73,7 @@ export default async function handler(req, res) {
     });
 
     const revenueLakhs = (totalRevenue / 100000).toFixed(2);
-    const profitLakhs = (totalRevenue * 0.15 / 100000).toFixed(2);
+    const profitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2);
 
     const kpi = {
       totalOrders: { value: totalOrdersCount, subtitle: 'Total orders placed' },
@@ -73,7 +82,7 @@ export default async function handler(req, res) {
       pendingDispatches: { value: pendingCount, subtitle: 'Pending processing' },
       pendingPayments: { value: `₹${totalOutstanding.toLocaleString('en-IN')}`, subtitle: 'Total outstanding' },
       monthlyRevenue: { value: `₹${revenueLakhs}L`, subtitle: 'Current Month' },
-      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: 'Estimated (15% margin)' },
+      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: `Estimated (${profitMargin}% margin)` },
       activeCustomers: { value: activeCustomersCount, subtitle: 'Total clients' },
     };
 

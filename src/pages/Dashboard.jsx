@@ -28,8 +28,8 @@ export default function Dashboard() {
     artworks, dispatches, inventory, invoices, jobPreparations
   } = useData();
   const { currentUser } = useAuth();
-  const isEmployee = currentUser?.profile?.designation === 'Employee';
   const isAdmin = !currentUser?.profile || currentUser?.profile?.designation?.toUpperCase() === 'ADMINISTRATOR';
+  const isEmployee = !isAdmin;
   const employeeName = currentUser?.profile?.name || '';
   const accessibleModules = currentUser?.profile?.accessibleModules || [];
 
@@ -428,7 +428,7 @@ export default function Dashboard() {
     return (
       <div className="space-y-6 pb-12">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Employee Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900 capitalize">{currentUser?.profile?.designation?.toLowerCase() || 'Employee'} Dashboard</h1>
           <p className="text-gray-500 mt-1">Welcome back, {employeeName || currentUser?.displayName || 'User'} — here is your assigned work.</p>
         </div>
 

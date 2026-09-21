@@ -53,14 +53,14 @@ router.post('/', async (req, res) => {
     
     // 1. Create user in Firebase Auth
     const userRecord = await auth.createUser({
-      email,
+      email: email.toLowerCase(),
       password,
       displayName: name,
     });
 
     // 2. Save user data to Firestore (without password)
     const data = { 
-      email, 
+      email: email.toLowerCase(), 
       name, 
       mobile, 
       designation, 
@@ -99,7 +99,7 @@ router.put('/:id', async (req, res) => {
     // Update in Auth if email, name, or password changed
     if (auth && (data.email || data.name || newPassword)) {
       const updateParams = {};
-      if (data.email) updateParams.email = data.email;
+      if (data.email) updateParams.email = data.email.toLowerCase();
       if (data.name) updateParams.displayName = data.name;
       if (newPassword) updateParams.password = newPassword;
       try {

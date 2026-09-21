@@ -217,7 +217,14 @@ export default function Settings() {
       setDesignationModalOpen(true);
       return;
     }
-    const finalValue = name === 'password' ? value : value.toUpperCase();
+    
+    let finalValue = value;
+    if (name === 'email') {
+      finalValue = value.toLowerCase();
+    } else if (name !== 'password') {
+      finalValue = value.toUpperCase();
+    }
+
     setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 

@@ -219,9 +219,7 @@ export default function Settings() {
     }
     
     let finalValue = value;
-    if (name === 'email') {
-      finalValue = value.toLowerCase();
-    } else if (name !== 'password') {
+    if (name !== 'password' && name !== 'email') {
       finalValue = value.toUpperCase();
     }
 
@@ -810,7 +808,8 @@ export default function Settings() {
                     required
                     value={formData.email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b2f63]/20 focus:border-[#1b2f63] transition-colors text-sm bg-gray-50/50"
+                    style={{ textTransform: 'none' }}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b2f63]/20 focus:border-[#1b2f63] transition-colors text-sm bg-gray-50/50 normal-case"
                     placeholder="e.g. john@example.com"
                   />
                 </div>
@@ -825,7 +824,8 @@ export default function Settings() {
                       required={!userToEdit}
                       value={formData.password}
                       onChange={handleChange}
-                      className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b2f63]/20 focus:border-[#1b2f63] transition-colors text-sm bg-gray-50/50"
+                      style={{ textTransform: 'none' }}
+                      className="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1b2f63]/20 focus:border-[#1b2f63] transition-colors text-sm bg-gray-50/50 normal-case"
                       placeholder={userToEdit ? 'Leave blank to keep same' : 'Enter a secure password'}
                     />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">

@@ -113,7 +113,7 @@ const collections = [
   'artworks', 'productionJobs', 'inventory', 'suppliers',
   'purchaseOrders', 'grn', 'dispatches', 'invoices', 'categories',
   'contact form', 'contact_form', 'notifications', 'settings', 'job_posted',
-  'application_received', 'custom_package', 'logs', 'tasks', 'paperSizes', 'payments', 'job_preparations'
+  'application_received', 'custom_package', 'logs', 'tasks', 'paperSizes', 'payments', 'job_preparations', 'reviews'
 ];
 
 app.use('/api/users', usersRouter);

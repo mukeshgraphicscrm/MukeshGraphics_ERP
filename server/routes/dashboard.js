@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/kpi', async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not initialized' });
-  
+
   try {
     const [ordersSnapshot, customersSnapshot, jobsSnapshot, settingsSnapshot, invoicesSnapshot] = await Promise.all([
       db.collection('orders').get(),
@@ -32,7 +32,7 @@ router.get('/kpi', async (req, res) => {
     let delayedCount = 0;
     let totalRevenue = 0;
     let currentMonthRevenue = 0;
-    
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth();
     const currentYear = currentDate.getFullYear();
@@ -75,7 +75,7 @@ router.get('/kpi', async (req, res) => {
       if (orderDate) {
         const m = orderDate.getMonth();
         const y = orderDate.getFullYear();
-        
+
         if (m === currentMonth && y === currentYear) {
           currentMonthRevenue += numericAmount;
         }
@@ -84,7 +84,7 @@ router.get('/kpi', async (req, res) => {
         if (monthObj) {
           monthObj.value += (numericAmount / 100000); // in lakhs
         }
-        
+
         activities.push({
           id: `order_${doc.id}`,
           text: `New order created for ${order.customerName || 'customer'}`,
@@ -95,17 +95,17 @@ router.get('/kpi', async (req, res) => {
     });
 
     let totalOutstanding = 0;
-    
+
     // First try calculating from unpaid invoices, which is more accurate
     invoicesSnapshot.forEach(doc => {
       const inv = doc.data();
       const status = (inv.status || 'Pending').toLowerCase();
-      
+
       if (status !== 'paid') {
         const amt = parseFloat(inv.amount || 0) || 0;
         const gst = parseFloat(inv.gst || 0) || 0;
         const advance = parseFloat(inv.advancePaymentAmount || 0) || 0;
-        
+
         totalOutstanding += (amt + gst - advance);
       }
     });
@@ -136,7 +136,7 @@ router.get('/kpi', async (req, res) => {
       } else if (job.stage) {
         stageCounts[job.stage] = 1;
       }
-      
+
       // Calculate active running jobs here instead of order statuses
       if (job.stage !== 'Dispatched' && job.status !== 'Completed') {
         runningCount++;
@@ -166,7 +166,7 @@ router.get('/kpi', async (req, res) => {
       const diffMins = Math.floor(diffMs / 60000);
       const diffHours = Math.floor(diffMins / 60);
       const diffDays = Math.floor(diffHours / 24);
-      
+
       let timeStr = 'Just now';
       if (diffDays > 0) timeStr = `${diffDays}d ago`;
       else if (diffHours > 0) timeStr = `${diffHours}h ago`;
@@ -184,20 +184,20 @@ router.get('/kpi', async (req, res) => {
       runningJobs: { value: runningCount, subtitle: 'Active in production' },
       completedMonth: { value: completedCount, subtitle: 'Completed or Ready' },
       pendingDispatches: { value: pendingCount, subtitle: 'Pending processing' },
-      pendingPayments: { 
-        value: totalOutstanding >= 100000 ? `₹${(totalOutstanding / 100000).toFixed(2)}L` : `₹${Math.round(totalOutstanding).toLocaleString('en-IN')}`, 
+      pendingPayments: {
+        value: totalOutstanding >= 100000 ? `₹${(totalOutstanding / 100000).toFixed(2)}L` : `₹${Math.round(totalOutstanding).toLocaleString('en-IN')}`,
         exactValue: `₹${totalOutstanding.toLocaleString('en-IN')}`,
-        subtitle: 'Total outstanding' 
+        subtitle: 'Total outstanding'
       },
-      monthlyRevenue: { 
-        value: `₹${revenueLakhs}L`, 
+      monthlyRevenue: {
+        value: `₹${revenueLakhs}L`,
         exactValue: `₹${currentMonthRevenue.toLocaleString('en-IN')}`,
-        subtitle: 'Current Month' 
+        subtitle: 'Current Month'
       },
-      monthlyProfit: { 
-        value: `₹${profitLakhs}L`, 
+      monthlyProfit: {
+        value: `₹${profitLakhs}L`,
         exactValue: `₹${(currentMonthRevenue * (profitMargin / 100)).toLocaleString('en-IN')}`,
-        subtitle: `Estimated (${profitMargin}% margin)` 
+        subtitle: `Estimated (${profitMargin}% margin)`
       },
       allTimeRevenue: {
         value: `₹${allTimeRevenueLakhs}L`,

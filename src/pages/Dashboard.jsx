@@ -1296,7 +1296,7 @@ export default function Dashboard() {
               </div>
               <div className="text-3xl font-extrabold text-gray-900 leading-none">{kpi.totalOrders.value}</div>
               <p className="text-xs text-gray-400 mt-2 font-medium">Total Orders Placed</p>
-              <div className="mt-3 h-1 w-full bg-blue-50 rounded-full"><div className="h-1 bg-blue-500 rounded-full" style={{width:'70%'}} /></div>
+              <div className="mt-3 h-1 w-full bg-blue-50 rounded-full"><div className="h-1 bg-blue-500 rounded-full" style={{ width: '70%' }} /></div>
             </div>
           </div>
 
@@ -1312,7 +1312,7 @@ export default function Dashboard() {
               </div>
               <div className="text-3xl font-extrabold text-gray-900 leading-none">{kpi.runningJobs.value}</div>
               <p className="text-xs text-gray-400 mt-2 font-medium">Active in Production</p>
-              <div className="mt-3 h-1 w-full bg-sky-50 rounded-full"><div className="h-1 bg-sky-400 rounded-full" style={{width:'55%'}} /></div>
+              <div className="mt-3 h-1 w-full bg-sky-50 rounded-full"><div className="h-1 bg-sky-400 rounded-full" style={{ width: '55%' }} /></div>
             </div>
           </div>
 
@@ -1328,7 +1328,7 @@ export default function Dashboard() {
               </div>
               <div className="text-3xl font-extrabold text-gray-900 leading-none">{kpi.completedMonth.value}</div>
               <p className="text-xs text-gray-400 mt-2 font-medium">Completed or Ready</p>
-              <div className="mt-3 h-1 w-full bg-green-50 rounded-full"><div className="h-1 bg-green-500 rounded-full" style={{width:'80%'}} /></div>
+              <div className="mt-3 h-1 w-full bg-green-50 rounded-full"><div className="h-1 bg-green-500 rounded-full" style={{ width: '80%' }} /></div>
             </div>
           </div>
 
@@ -1344,7 +1344,7 @@ export default function Dashboard() {
               </div>
               <div className="text-3xl font-extrabold text-gray-900 leading-none">{kpi.pendingDispatches.value}</div>
               <p className="text-xs text-gray-400 mt-2 font-medium">Pending Processing</p>
-              <div className="mt-3 h-1 w-full bg-amber-50 rounded-full"><div className="h-1 bg-amber-400 rounded-full" style={{width:'40%'}} /></div>
+              <div className="mt-3 h-1 w-full bg-amber-50 rounded-full"><div className="h-1 bg-amber-400 rounded-full" style={{ width: '40%' }} /></div>
             </div>
           </div>
 
@@ -1387,8 +1387,8 @@ export default function Dashboard() {
                 <p className="text-xs text-amber-100 font-medium">
                   {timeframe === 'month' ? 'Current Month' : 'All-Time Revenue'}
                 </p>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setTimeframe(t => t === 'month' ? 'all' : 'month'); }} 
+                <button
+                  onClick={(e) => { e.stopPropagation(); setTimeframe(t => t === 'month' ? 'all' : 'month'); }}
                   className="text-[10px] font-semibold bg-black/10 hover:bg-black/20 transition-colors px-2.5 py-0.5 rounded-full text-white"
                 >
                   {timeframe === 'month' ? 'View All-Time' : 'View Month'}
@@ -1419,8 +1419,8 @@ export default function Dashboard() {
                 <p className="text-xs text-emerald-100 font-medium">
                   {timeframe === 'month' ? 'Est. 10% Margin' : 'All-Time Est. 10%'}
                 </p>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); setTimeframe(t => t === 'month' ? 'all' : 'month'); }} 
+                <button
+                  onClick={(e) => { e.stopPropagation(); setTimeframe(t => t === 'month' ? 'all' : 'month'); }}
                   className="text-[10px] font-semibold bg-black/10 hover:bg-black/20 transition-colors px-2.5 py-0.5 rounded-full text-white"
                 >
                   {timeframe === 'month' ? 'View All-Time' : 'View Month'}
@@ -1441,7 +1441,7 @@ export default function Dashboard() {
               </div>
               <div className="text-3xl font-extrabold text-gray-900 leading-none">{kpi.activeCustomers.value}</div>
               <p className="text-xs text-gray-400 mt-2 font-medium">Total Clients</p>
-              <div className="mt-3 h-1 w-full bg-indigo-50 rounded-full"><div className="h-1 bg-indigo-500 rounded-full" style={{width:'90%'}} /></div>
+              <div className="mt-3 h-1 w-full bg-indigo-50 rounded-full"><div className="h-1 bg-indigo-500 rounded-full" style={{ width: '90%' }} /></div>
             </div>
           </div>
         </div>
@@ -1598,7 +1598,7 @@ export default function Dashboard() {
                 <RechartsTooltip cursor={{ fill: 'rgba(27,47,99,0.04)' }} contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', fontSize: 12 }} />
                 <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={18}>
                   {charts.productionStages.map((entry, index) => (
-                    <Cell key={`bar-${index}`} fill={['#1b2f63','#2a4494','#4f6fbd','#7896d4','#a8b9e8','#d0daef'][index % 6]} />
+                    <Cell key={`bar-${index}`} fill={['#1b2f63', '#2a4494', '#4f6fbd', '#7896d4', '#a8b9e8', '#d0daef'][index % 6]} />
                   ))}
                 </Bar>
               </BarChart>
@@ -1721,7 +1721,7 @@ export default function Dashboard() {
                     <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
                       <div
                         className="h-1.5 rounded-full transition-all duration-700"
-                        style={{ width: `${c.pct}%`, backgroundColor: ['#1b2f63','#2a4494','#4f6fbd','#7896d4','#a8b9e8','#d0daef'][i] }}
+                        style={{ width: `${c.pct}%`, backgroundColor: ['#1b2f63', '#2a4494', '#4f6fbd', '#7896d4', '#a8b9e8', '#d0daef'][i] }}
                       />
                     </div>
                     <p className="text-[10px] text-gray-400 mt-0.5">{c.count} order{c.count !== 1 ? 's' : ''}</p>
@@ -1777,7 +1777,7 @@ export default function Dashboard() {
             </div>
             <div className="text-center">
               <p className="text-lg font-extrabold text-emerald-600">
-                ₹{(() => { const rev = monthlyOrderTrend[monthlyOrderTrend.length - 1]?.revenue || 0; return rev >= 100000 ? `${(rev/100000).toFixed(1)}L` : Math.round(rev/1000) + 'K'; })()}
+                ₹{(() => { const rev = monthlyOrderTrend[monthlyOrderTrend.length - 1]?.revenue || 0; return rev >= 100000 ? `${(rev / 100000).toFixed(1)}L` : Math.round(rev / 1000) + 'K'; })()}
               </p>
               <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Revenue</p>
             </div>
@@ -1825,11 +1825,11 @@ export default function Dashboard() {
           {(() => {
             const allStages = ['New Inquiry', 'Follow Up', 'Quotation Sent', 'Won', 'Lost'];
             const stageColors = {
-              'New Inquiry':    { bg: '#6366f1', light: '#eef2ff', text: '#4338ca', border: '#c7d2fe' },
-              'Follow Up':      { bg: '#3b82f6', light: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
+              'New Inquiry': { bg: '#6366f1', light: '#eef2ff', text: '#4338ca', border: '#c7d2fe' },
+              'Follow Up': { bg: '#3b82f6', light: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
               'Quotation Sent': { bg: '#f59e0b', light: '#fffbeb', text: '#b45309', border: '#fde68a' },
-              'Won':            { bg: '#10b981', light: '#ecfdf5', text: '#065f46', border: '#a7f3d0' },
-              'Lost':           { bg: '#ef4444', light: '#fef2f2', text: '#991b1b', border: '#fecaca' },
+              'Won': { bg: '#10b981', light: '#ecfdf5', text: '#065f46', border: '#a7f3d0' },
+              'Lost': { bg: '#ef4444', light: '#fef2f2', text: '#991b1b', border: '#fecaca' },
             };
             const pipelineMap = {};
             leadPipeline.forEach(s => { pipelineMap[s.name] = s; });
@@ -1871,7 +1871,7 @@ export default function Dashboard() {
           </div>
           <div className="h-2.5 w-full bg-gray-100 rounded-full overflow-hidden flex">
             {leadPipeline.filter(s => s.pct > 0).map((stage, idx, arr) => {
-              const colors = { 'New Inquiry':'#6366f1','Follow Up':'#3b82f6','Quotation Sent':'#f59e0b','Won':'#10b981','Lost':'#ef4444' };
+              const colors = { 'New Inquiry': '#6366f1', 'Follow Up': '#3b82f6', 'Quotation Sent': '#f59e0b', 'Won': '#10b981', 'Lost': '#ef4444' };
               return (
                 <div
                   key={stage.name}
@@ -1883,9 +1883,9 @@ export default function Dashboard() {
             })}
           </div>
           <div className="flex flex-wrap gap-4 mt-2.5">
-            {['New Inquiry','Follow Up','Quotation Sent','Won','Lost'].map(stageName => {
+            {['New Inquiry', 'Follow Up', 'Quotation Sent', 'Won', 'Lost'].map(stageName => {
               const stage = leadPipeline.find(s => s.name === stageName) || { value: 0 };
-              const colors = { 'New Inquiry':'#6366f1','Follow Up':'#3b82f6','Quotation Sent':'#f59e0b','Won':'#10b981','Lost':'#ef4444' };
+              const colors = { 'New Inquiry': '#6366f1', 'Follow Up': '#3b82f6', 'Quotation Sent': '#f59e0b', 'Won': '#10b981', 'Lost': '#ef4444' };
               return (
                 <div key={stageName} className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: colors[stageName] }} />
@@ -1930,16 +1930,16 @@ export default function Dashboard() {
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-2 mt-1">
-            {[{label:'Paid', count: invoiceHealth.count.Paid, amount: invoiceHealth.amounts.Paid, color:'bg-emerald-500'},
-              {label:'Pending', count: invoiceHealth.count.Pending, amount: invoiceHealth.amounts.Pending, color:'bg-amber-500'},
-              {label:'Overdue', count: invoiceHealth.count.Overdue, amount: invoiceHealth.amounts.Overdue, color:'bg-red-500'}].map(row => (
+            {[{ label: 'Paid', count: invoiceHealth.count.Paid, amount: invoiceHealth.amounts.Paid, color: 'bg-emerald-500' },
+            { label: 'Pending', count: invoiceHealth.count.Pending, amount: invoiceHealth.amounts.Pending, color: 'bg-amber-500' },
+            { label: 'Overdue', count: invoiceHealth.count.Overdue, amount: invoiceHealth.amounts.Overdue, color: 'bg-red-500' }].map(row => (
               <div key={row.label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`w-2 h-2 rounded-full ${row.color}`} />
                   <span className="text-xs text-gray-600 font-medium">{row.label}</span>
                   <span className="text-[10px] text-gray-400">({row.count})</span>
                 </div>
-                <span className="text-xs font-bold text-gray-900">₹{row.amount >= 100000 ? `${(row.amount/100000).toFixed(1)}L` : row.amount.toLocaleString('en-IN')}</span>
+                <span className="text-xs font-bold text-gray-900">₹{row.amount >= 100000 ? `${(row.amount / 100000).toFixed(1)}L` : row.amount.toLocaleString('en-IN')}</span>
               </div>
             ))}
           </div>
@@ -1978,7 +1978,7 @@ export default function Dashboard() {
           <div className="mt-4 pt-4 border-t border-gray-50">
             <div className="flex justify-between text-xs">
               <span className="text-gray-400 font-medium">Total Active Jobs</span>
-              <span className="font-extrabold text-gray-900">{productionHealth.reduce((a,b)=>a+b.count,0)}</span>
+              <span className="font-extrabold text-gray-900">{productionHealth.reduce((a, b) => a + b.count, 0)}</span>
             </div>
           </div>
         </div>
@@ -2008,7 +2008,7 @@ export default function Dashboard() {
                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" />
                       <p className="text-xs font-semibold text-gray-800 truncate">{c.customerName}</p>
                     </div>
-                    <span className="text-xs font-bold text-red-600 flex-shrink-0 ml-2">₹{c.amount >= 100000 ? `${(c.amount/100000).toFixed(1)}L` : c.amount.toLocaleString('en-IN')}</span>
+                    <span className="text-xs font-bold text-red-600 flex-shrink-0 ml-2">₹{c.amount >= 100000 ? `${(c.amount / 100000).toFixed(1)}L` : c.amount.toLocaleString('en-IN')}</span>
                   </div>
                 ))}
                 {lowStockItems.slice(0, 3).map(item => (

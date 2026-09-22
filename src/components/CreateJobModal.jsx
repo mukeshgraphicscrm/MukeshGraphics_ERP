@@ -31,6 +31,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
   const { customers, products } = useData();
   const [formData, setFormData] = useState({
     jobCardNo: '',
+    jobType: 'SPECIAL JOB',
     productName: '',
     customerName: '',
     units: '',
@@ -93,6 +94,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
       if (jobToEdit) {
         setFormData({
           jobCardNo: jobToEdit.jobCardNo || '',
+          jobType: jobToEdit.jobType || 'SPECIAL JOB',
           productName: jobToEdit.productName || '',
           customerName: jobToEdit.customerName || '',
           units: jobToEdit.units || '',
@@ -125,6 +127,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
         // Reset form on open
         setFormData({
           jobCardNo: nextJobNo,
+          jobType: 'SPECIAL JOB',
           productName: '',
           customerName: '',
           units: '',
@@ -339,7 +342,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onMouseDown={(e) => { if (e.target === e.currentTarget && typeof onClose === "function") onClose(); }}>
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden">
+      <div className={`${formData.jobType === 'MIX JOB' ? 'bg-amber-50' : 'bg-white'} rounded-xl shadow-lg w-full max-w-2xl flex flex-col max-h-[calc(100dvh-4rem)] md:max-h-[90vh] overflow-hidden transition-colors duration-300`}>
         <div className="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-100 shrink-0">
           <h2 className="text-lg font-bold text-gray-900">{jobToEdit ? 'Edit Job' : 'Create Job'}</h2>
           
@@ -397,6 +400,20 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent transition-colors"
                 placeholder="e.g. JC-2024-001"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Order Type *</label>
+              <CustomSelect
+                name="jobType"
+                value={formData.jobType}
+                onChange={handleChange}
+                options={[
+                  { label: 'SPECIAL JOB', value: 'SPECIAL JOB' },
+                  { label: 'MIX JOB', value: 'MIX JOB' }
+                ]}
+                required
               />
             </div>
 

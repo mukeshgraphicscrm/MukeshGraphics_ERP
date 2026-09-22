@@ -100,6 +100,10 @@ export default function ViewMaterialModal({ isOpen, onClose, material, onEditCli
                 {material.min != null ? material.min.toLocaleString('en-IN') : '-'}
               </p>
             </div>
+            <div className="col-span-2">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">Notes</p>
+              <p className="text-base font-semibold text-gray-900 whitespace-pre-wrap">{material.notes || '-'}</p>
+            </div>
           </div>
         </div>
       </div>

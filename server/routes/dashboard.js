@@ -7,11 +7,12 @@ router.get('/kpi', async (req, res) => {
   if (!db) return res.status(503).json({ error: 'Database not initialized' });
   
   try {
-    const [ordersSnapshot, customersSnapshot, jobsSnapshot, settingsSnapshot] = await Promise.all([
+    const [ordersSnapshot, customersSnapshot, jobsSnapshot, settingsSnapshot, invoicesSnapshot] = await Promise.all([
       db.collection('orders').get(),
       db.collection('customers').get(),
       db.collection('productionJobs').get(),
-      db.collection('settings').where('type', '==', 'goals').get()
+      db.collection('settings').where('type', '==', 'goals').get(),
+      db.collection('invoices').get()
     ]);
 
     let profitMargin = 15; // default 15%
@@ -30,6 +31,11 @@ router.get('/kpi', async (req, res) => {
     let pendingCount = 0;
     let delayedCount = 0;
     let totalRevenue = 0;
+    let currentMonthRevenue = 0;
+    
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
 
     const last6Months = Array.from({ length: 6 }, (_, i) => {
       const d = new Date();
@@ -50,8 +56,6 @@ router.get('/kpi', async (req, res) => {
 
       if (status.includes('complet') || status.includes('ready') || status.includes('dispatch')) {
         completedCount++;
-      } else if (status.includes('run') || status.includes('progress') || status.includes('active')) {
-        runningCount++;
       } else if (status.includes('delay') || status.includes('hold')) {
         delayedCount++;
       } else {
@@ -71,6 +75,11 @@ router.get('/kpi', async (req, res) => {
       if (orderDate) {
         const m = orderDate.getMonth();
         const y = orderDate.getFullYear();
+        
+        if (m === currentMonth && y === currentYear) {
+          currentMonthRevenue += numericAmount;
+        }
+
         const monthObj = last6Months.find(lm => lm.monthIndex === m && lm.year === y);
         if (monthObj) {
           monthObj.value += (numericAmount / 100000); // in lakhs
@@ -86,15 +95,33 @@ router.get('/kpi', async (req, res) => {
     });
 
     let totalOutstanding = 0;
-    customersSnapshot.forEach(doc => {
-      const customer = doc.data();
-      const outstanding = customer.outstanding || 0;
-      if (typeof outstanding === 'number') {
-        totalOutstanding += outstanding;
-      } else if (typeof outstanding === 'string') {
-        totalOutstanding += parseFloat(outstanding.replace(/[^0-9.-]+/g, "")) || 0;
+    
+    // First try calculating from unpaid invoices, which is more accurate
+    invoicesSnapshot.forEach(doc => {
+      const inv = doc.data();
+      const status = (inv.status || 'Pending').toLowerCase();
+      
+      if (status !== 'paid') {
+        const amt = parseFloat(inv.amount || 0) || 0;
+        const gst = parseFloat(inv.gst || 0) || 0;
+        const advance = parseFloat(inv.advancePaymentAmount || 0) || 0;
+        
+        totalOutstanding += (amt + gst - advance);
       }
     });
+
+    // Fallback: If no unpaid invoices were found, try summing customer balances
+    if (totalOutstanding === 0) {
+      customersSnapshot.forEach(doc => {
+        const customer = doc.data();
+        const outstanding = customer.outstanding || 0;
+        if (typeof outstanding === 'number') {
+          totalOutstanding += outstanding;
+        } else if (typeof outstanding === 'string') {
+          totalOutstanding += parseFloat(outstanding.replace(/[^0-9.-]+/g, "")) || 0;
+        }
+      });
+    }
 
     // Process Jobs for stages and activities
     const stageCounts = {
@@ -109,6 +136,11 @@ router.get('/kpi', async (req, res) => {
       } else if (job.stage) {
         stageCounts[job.stage] = 1;
       }
+      
+      // Calculate active running jobs here instead of order statuses
+      if (job.stage !== 'Dispatched' && job.status !== 'Completed') {
+        runningCount++;
+      }
 
       const jobDate = job.createdAt ? new Date(job.createdAt) : null;
       if (jobDate) {
@@ -121,8 +153,11 @@ router.get('/kpi', async (req, res) => {
       }
     });
 
-    const revenueLakhs = (totalRevenue / 100000).toFixed(2);
-    const profitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2); // Estimated profit margin
+    const revenueLakhs = (currentMonthRevenue / 100000).toFixed(2);
+    const profitLakhs = (currentMonthRevenue * (profitMargin / 100) / 100000).toFixed(2); // Estimated profit margin
+
+    const allTimeRevenueLakhs = (totalRevenue / 100000).toFixed(2);
+    const allTimeProfitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2);
 
     // Sort activities by time desc and get top 5
     activities.sort((a, b) => b.time - a.time);
@@ -149,9 +184,31 @@ router.get('/kpi', async (req, res) => {
       runningJobs: { value: runningCount, subtitle: 'Active in production' },
       completedMonth: { value: completedCount, subtitle: 'Completed or Ready' },
       pendingDispatches: { value: pendingCount, subtitle: 'Pending processing' },
-      pendingPayments: { value: `₹${totalOutstanding.toLocaleString('en-IN')}`, subtitle: 'Total outstanding' },
-      monthlyRevenue: { value: `₹${revenueLakhs}L`, subtitle: 'Current Month' },
-      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: `Estimated (${profitMargin}% margin)` },
+      pendingPayments: { 
+        value: totalOutstanding >= 100000 ? `₹${(totalOutstanding / 100000).toFixed(2)}L` : `₹${Math.round(totalOutstanding).toLocaleString('en-IN')}`, 
+        exactValue: `₹${totalOutstanding.toLocaleString('en-IN')}`,
+        subtitle: 'Total outstanding' 
+      },
+      monthlyRevenue: { 
+        value: `₹${revenueLakhs}L`, 
+        exactValue: `₹${currentMonthRevenue.toLocaleString('en-IN')}`,
+        subtitle: 'Current Month' 
+      },
+      monthlyProfit: { 
+        value: `₹${profitLakhs}L`, 
+        exactValue: `₹${(currentMonthRevenue * (profitMargin / 100)).toLocaleString('en-IN')}`,
+        subtitle: `Estimated (${profitMargin}% margin)` 
+      },
+      allTimeRevenue: {
+        value: `₹${allTimeRevenueLakhs}L`,
+        exactValue: `₹${totalRevenue.toLocaleString('en-IN')}`,
+        subtitle: 'All-Time Revenue'
+      },
+      allTimeProfit: {
+        value: `₹${allTimeProfitLakhs}L`,
+        exactValue: `₹${(totalRevenue * (profitMargin / 100)).toLocaleString('en-IN')}`,
+        subtitle: `Estimated (${profitMargin}% margin)`
+      },
       activeCustomers: { value: activeCustomersCount, subtitle: 'Total clients' },
     };
 

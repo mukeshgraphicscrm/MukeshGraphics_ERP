@@ -541,7 +541,7 @@ export default function CreateJobModal({ isOpen, onClose, onJobAdded, onJobUpdat
                 type="button"
                 onClick={() => setIsDeleteModalOpen(true)}
                 disabled={loading}
-                className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-transparent rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 w-full sm:w-auto"
+                className="flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-md hover:bg-red-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/50 w-full sm:w-auto"
               >
                 <span className="whitespace-nowrap">Delete Job</span>
               </button>

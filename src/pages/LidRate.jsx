@@ -7,17 +7,17 @@ const PANCHING_VALUES = [
 ];
 
 const LID_SIZES = [
-  { size: '72mm', factor: 50, cartoonCharge: 2.40 },
-  { size: '71mm', factor: 53, cartoonCharge: 2.40 },
-  { size: '61mm', factor: 72, cartoonCharge: 2.22 },
-  { size: '59mm', factor: 76, cartoonCharge: 2.00 },
-  { size: '58mm', factor: 76, cartoonCharge: 2.00 },
-  { size: '54mm', factor: 90, cartoonCharge: 1.88 },
-  { size: '52 & 51mm', factor: 95, cartoonCharge: 1.76 },
-  { size: '47mm', factor: 115, cartoonCharge: 1.58 },
-  { size: '45mm', factor: 120, cartoonCharge: 1.50 },
-  { size: '43mm', factor: 138, cartoonCharge: 1.33 },
-  { size: '41.5mm', factor: 143, cartoonCharge: 1.20 }
+  { size: '72mm', factor: 50, cartoonCharge: 2.40, rateAddition: (f) => 0 },
+  { size: '71mm', factor: 53, cartoonCharge: 2.40, rateAddition: (f) => 0 },
+  { size: '61mm', factor: 72, cartoonCharge: 2.22, rateAddition: (f) => 0 },
+  { size: '59mm', factor: 76, cartoonCharge: 2.00, rateAddition: (f) => 0 },
+  { size: '58mm', factor: 76, cartoonCharge: 2.00, rateAddition: (f) => 2 },
+  { size: '54mm', factor: 90, cartoonCharge: 1.88, rateAddition: (f) => f },
+  { size: '52 & 51mm', factor: 95, cartoonCharge: 1.76, rateAddition: (f) => f + 1 },
+  { size: '47mm', factor: 115, cartoonCharge: 1.58, rateAddition: (f) => f + 2 },
+  { size: '45mm', factor: 120, cartoonCharge: 1.50, rateAddition: (f) => f + 3 },
+  { size: '43mm', factor: 138, cartoonCharge: 1.33, rateAddition: (f) => f + 4 },
+  { size: '41.5mm', factor: 143, cartoonCharge: 1.20, rateAddition: (f) => f + 5 }
 ];
 
 export default function LidRate() {
@@ -220,14 +220,14 @@ export default function LidRate() {
               {mainTable.map((row) => (
                 <tr key={row.qty} className="hover:bg-blue-50/30 transition-colors">
                   <td className="px-4 py-2.5 font-bold text-gray-900 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb]">{fmtInt(row.qty)}</td>
-                  <td className="px-4 py-2.5 text-right font-medium text-gray-600">{fmt(row.amount)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-600">{fmt(row.printing)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-600">{fmt(row.panching)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-600">{fmt(row.lidPacking)}</td>
-                  <td className="px-4 py-2.5 text-right text-gray-600">{fmt(row.fright)}</td>
-                  <td className="px-4 py-2.5 text-right font-bold text-blue-700 bg-blue-50/20">{fmt(row.totalAmount)}</td>
+                  <td className="px-4 py-2.5 text-right font-medium text-gray-600">{fmtInt(row.amount)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.printing)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.panching)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.lidPacking)}</td>
+                  <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.fright)}</td>
+                  <td className="px-4 py-2.5 text-right font-bold text-blue-700 bg-blue-50/20">{fmtInt(row.totalAmount)}</td>
                   <td className="px-4 py-2.5 text-right font-semibold text-orange-600">{row.pr.toFixed(2)}</td>
-                  <td className="px-4 py-2.5 text-right font-extrabold text-green-700 bg-green-50/30">₹{fmt(row.finalRate)}</td>
+                  <td className="px-4 py-2.5 text-right font-extrabold text-green-700 bg-green-50/30">₹{fmtInt(row.finalRate)}</td>
                 </tr>
               ))}
             </tbody>
@@ -270,10 +270,10 @@ export default function LidRate() {
                   <td className="px-3 py-1.5 font-bold text-slate-700 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb] z-10">{fmtInt(row.qty)}</td>
                   {LID_SIZES.map((lid, idx) => {
                     const lidQty = lid.factor * row.qty;
-                    const lidRate = (row.finalRate / lidQty) * 1000;
+                    const lidRate = (row.finalRate / lidQty) * 1000 + lid.rateAddition(Number(params.smallLidFactor) || 0);
                     return (
                       <React.Fragment key={idx}>
-                        <td className="px-3 py-1.5 text-right font-bold text-teal-700 border-l border-gray-100 bg-teal-50/20">{fmt(lidRate)}</td>
+                        <td className="px-3 py-1.5 text-right font-bold text-teal-700 border-l border-gray-100 bg-teal-50/20">{fmtInt(lidRate)}</td>
                         <td className="px-3 py-1.5 text-right text-gray-600 text-xs">{fmtInt(lidQty)}</td>
                       </React.Fragment>
                     )

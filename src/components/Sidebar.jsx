@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, GitBranch, FileText,
   ShoppingCart, Package, Factory,
   Boxes, Truck, ShoppingBag, IndianRupee, ChevronLeft,
-  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box, History, CheckSquare, PenTool, FilePlus, Star
+  Settings, Layers, ChevronDown, ClipboardList, Briefcase, Box, History, CheckSquare, PenTool, FilePlus, Star, Calculator
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -15,6 +15,7 @@ const navItems = [
   { name: 'Products', path: '/products', icon: Package },
   { name: 'Quotations', path: '/quotations', icon: FileText },
   { name: 'Orders', path: '/orders', icon: ShoppingCart },
+  { name: 'Lid Rate', path: '/lid-rate', icon: Calculator },
   { name: 'Design', path: '/design', icon: PenTool },
   { name: 'Job Preparation', path: '/job-preparation', icon: FilePlus },
   { name: 'Production', path: '/production', icon: Factory },

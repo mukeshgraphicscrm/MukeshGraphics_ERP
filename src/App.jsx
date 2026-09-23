@@ -30,6 +30,7 @@ import Tasks from './pages/Tasks';
 import DailyWork from './pages/DailyWork';
 import JobPreparation from './pages/JobPreparation';
 import Reviews from './pages/Reviews';
+import LidRate from './pages/LidRate';
 
 function App() {
   return (
@@ -62,6 +63,7 @@ function App() {
                 <Route path="tasks" element={<Tasks />} />
                 <Route path="job-preparation" element={<JobPreparation />} />
                 <Route path="reviews" element={<Reviews />} />
+                <Route path="lid-rate" element={<LidRate />} />
               </Route>
             </Route>
           </Routes>

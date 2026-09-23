@@ -16,10 +16,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [ordersSnapshot, customersSnapshot, settingsSnapshot] = await Promise.all([
+    const [ordersSnapshot, customersSnapshot, jobsSnapshot, settingsSnapshot, invoicesSnapshot] = await Promise.all([
       db.collection('orders').get(),
       db.collection('customers').get(),
-      db.collection('settings').where('type', '==', 'goals').get()
+      db.collection('productionJobs').get(),
+      db.collection('settings').where('type', '==', 'goals').get(),
+      db.collection('invoices').get()
     ]);
 
     let profitMargin = 15; // default 15%
@@ -38,6 +40,24 @@ export default async function handler(req, res) {
     let pendingCount = 0;
     let delayedCount = 0;
     let totalRevenue = 0;
+    let currentMonthRevenue = 0;
+
+    const currentDate = new Date();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    const last6Months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date();
+      d.setMonth(d.getMonth() - (5 - i));
+      return {
+        monthIndex: d.getMonth(),
+        year: d.getFullYear(),
+        name: d.toLocaleString('default', { month: 'short' }),
+        value: 0
+      };
+    });
+
+    const activities = [];
 
     ordersSnapshot.forEach(doc => {
       const order = doc.data();
@@ -45,8 +65,6 @@ export default async function handler(req, res) {
 
       if (status.includes('complet') || status.includes('ready') || status.includes('dispatch')) {
         completedCount++;
-      } else if (status.includes('run') || status.includes('progress') || status.includes('active')) {
-        runningCount++;
       } else if (status.includes('delay') || status.includes('hold')) {
         delayedCount++;
       } else {
@@ -54,47 +72,157 @@ export default async function handler(req, res) {
       }
 
       const amount = order.amount || 0;
+      let numericAmount = 0;
       if (typeof amount === 'number') {
-        totalRevenue += amount;
+        numericAmount = amount;
       } else if (typeof amount === 'string') {
-        totalRevenue += parseFloat(amount.replace(/[^0-9.-]+/g, "")) || 0;
+        numericAmount = parseFloat(amount.replace(/[^0-9.-]+/g, "")) || 0;
+      }
+      totalRevenue += numericAmount;
+
+      const orderDate = order.createdAt ? new Date(order.createdAt) : (order.date ? new Date(order.date) : null);
+      if (orderDate) {
+        const m = orderDate.getMonth();
+        const y = orderDate.getFullYear();
+
+        if (m === currentMonth && y === currentYear) {
+          currentMonthRevenue += numericAmount;
+        }
+
+        const monthObj = last6Months.find(lm => lm.monthIndex === m && lm.year === y);
+        if (monthObj) {
+          monthObj.value += (numericAmount / 100000); // in lakhs
+        }
+
+        activities.push({
+          id: `order_${doc.id}`,
+          text: `New order created for ${order.customerName || 'customer'}`,
+          time: orderDate,
+          type: 'order'
+        });
       }
     });
 
     let totalOutstanding = 0;
-    customersSnapshot.forEach(doc => {
-      const customer = doc.data();
-      const outstanding = customer.outstanding || 0;
-      if (typeof outstanding === 'number') {
-        totalOutstanding += outstanding;
-      } else if (typeof outstanding === 'string') {
-        totalOutstanding += parseFloat(outstanding.replace(/[^0-9.-]+/g, "")) || 0;
+
+    // First try calculating from unpaid invoices, which is more accurate
+    invoicesSnapshot.forEach(doc => {
+      const inv = doc.data();
+      const status = (inv.status || 'Pending').toLowerCase();
+
+      if (status !== 'paid') {
+        const amt = parseFloat(inv.amount || 0) || 0;
+        const gst = parseFloat(inv.gst || 0) || 0;
+        const advance = parseFloat(inv.advancePaymentAmount || 0) || 0;
+
+        totalOutstanding += (amt + gst - advance);
       }
     });
 
-    const revenueLakhs = (totalRevenue / 100000).toFixed(2);
-    const profitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2);
+    // Fallback: If no unpaid invoices were found, try summing customer balances
+    if (totalOutstanding === 0) {
+      customersSnapshot.forEach(doc => {
+        const customer = doc.data();
+        const outstanding = customer.outstanding || 0;
+        if (typeof outstanding === 'number') {
+          totalOutstanding += outstanding;
+        } else if (typeof outstanding === 'string') {
+          totalOutstanding += parseFloat(outstanding.replace(/[^0-9.-]+/g, "")) || 0;
+        }
+      });
+    }
+
+    // Process Jobs for stages and activities
+    const stageCounts = {
+      'Printing': 0, 'Lamination': 0, 'Punching': 0, 'Striping': 0,
+      'Pasting': 0, 'Ready To Dispatch': 0, 'Dispatched': 0, 'Start': 0
+    };
+
+    jobsSnapshot.forEach(doc => {
+      const job = doc.data();
+      if (job.stage && stageCounts[job.stage] !== undefined) {
+        stageCounts[job.stage]++;
+      } else if (job.stage) {
+        stageCounts[job.stage] = 1;
+      }
+
+      // Calculate active running jobs here instead of order statuses
+      if (job.stage !== 'Dispatched' && job.status !== 'Completed') {
+        runningCount++;
+      }
+
+      const jobDate = job.createdAt ? new Date(job.createdAt) : null;
+      if (jobDate) {
+        activities.push({
+          id: `job_${doc.id}`,
+          text: `Production job ${job.jobCardNo || ''} started`,
+          time: jobDate,
+          type: 'job'
+        });
+      }
+    });
+
+    const revenueLakhs = (currentMonthRevenue / 100000).toFixed(2);
+    const profitLakhs = (currentMonthRevenue * (profitMargin / 100) / 100000).toFixed(2); // Estimated profit margin
+
+    const allTimeRevenueLakhs = (totalRevenue / 100000).toFixed(2);
+    const allTimeProfitLakhs = (totalRevenue * (profitMargin / 100) / 100000).toFixed(2);
+
+    // Sort activities by time desc and get top 5
+    activities.sort((a, b) => b.time - a.time);
+    const recentActivities = activities.slice(0, 5).map(a => {
+      const diffMs = new Date() - a.time;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHours / 24);
+
+      let timeStr = 'Just now';
+      if (diffDays > 0) timeStr = `${diffDays}d ago`;
+      else if (diffHours > 0) timeStr = `${diffHours}h ago`;
+      else if (diffMins > 0) timeStr = `${diffMins}m ago`;
+
+      return { id: a.id, text: a.text, time: timeStr };
+    });
+
+    if (recentActivities.length === 0) {
+      recentActivities.push({ id: 1, text: 'No recent activity.', time: '' });
+    }
 
     const kpi = {
       totalOrders: { value: totalOrdersCount, subtitle: 'Total orders placed' },
       runningJobs: { value: runningCount, subtitle: 'Active in production' },
       completedMonth: { value: completedCount, subtitle: 'Completed or Ready' },
       pendingDispatches: { value: pendingCount, subtitle: 'Pending processing' },
-      pendingPayments: { value: `₹${totalOutstanding.toLocaleString('en-IN')}`, subtitle: 'Total outstanding' },
-      monthlyRevenue: { value: `₹${revenueLakhs}L`, subtitle: 'Current Month' },
-      monthlyProfit: { value: `₹${profitLakhs}L`, subtitle: `Estimated (${profitMargin}% margin)` },
+      pendingPayments: {
+        value: totalOutstanding >= 100000 ? `₹${(totalOutstanding / 100000).toFixed(2)}L` : `₹${Math.round(totalOutstanding).toLocaleString('en-IN')}`,
+        exactValue: `₹${totalOutstanding.toLocaleString('en-IN')}`,
+        subtitle: 'Total outstanding'
+      },
+      monthlyRevenue: {
+        value: `₹${revenueLakhs}L`,
+        exactValue: `₹${currentMonthRevenue.toLocaleString('en-IN')}`,
+        subtitle: 'Current Month'
+      },
+      monthlyProfit: {
+        value: `₹${profitLakhs}L`,
+        exactValue: `₹${(currentMonthRevenue * (profitMargin / 100)).toLocaleString('en-IN')}`,
+        subtitle: `Estimated (${profitMargin}% margin)`
+      },
+      allTimeRevenue: {
+        value: `₹${allTimeRevenueLakhs}L`,
+        exactValue: `₹${totalRevenue.toLocaleString('en-IN')}`,
+        subtitle: 'All-Time Revenue'
+      },
+      allTimeProfit: {
+        value: `₹${allTimeProfitLakhs}L`,
+        exactValue: `₹${(totalRevenue * (profitMargin / 100)).toLocaleString('en-IN')}`,
+        subtitle: `Estimated (${profitMargin}% margin)`
+      },
       activeCustomers: { value: activeCustomersCount, subtitle: 'Total clients' },
     };
 
     const charts = {
-      revenueLine: [
-        { name: 'Jan', value: 0 },
-        { name: 'Feb', value: 0 },
-        { name: 'Mar', value: 0 },
-        { name: 'Apr', value: 0 },
-        { name: 'May', value: 0 },
-        { name: 'Jun', value: parseFloat(revenueLakhs) || 0 },
-      ],
+      revenueLine: last6Months.map(lm => ({ name: lm.name, value: parseFloat(lm.value.toFixed(2)) })),
       orderStatus: [
         { name: 'Completed', value: completedCount, color: '#16A34A' },
         { name: 'Running', value: runningCount, color: '#2563EB' },
@@ -102,17 +230,16 @@ export default async function handler(req, res) {
         { name: 'Delayed', value: delayedCount, color: '#DC2626' },
       ],
       productionStages: [
-        { name: 'Printing', value: runningCount > 0 ? 1 : 0 },
-        { name: 'Lamination', value: 0 },
-        { name: 'Punching', value: 0 },
-        { name: 'Striping', value: 0 },
-        { name: 'Pasting', value: 0 },
-        { name: 'Ready To Dispatch', value: 0 },
-        { name: 'Dispatched', value: completedCount > 0 ? 1 : 0 },
-      ],
-      recentActivities: [
-        { id: 1, text: 'Dashboard statistics updated.', time: 'Just now' }
-      ]
+        { name: 'Start', value: stageCounts['Start'] || 0 },
+        { name: 'Printing', value: stageCounts['Printing'] || 0 },
+        { name: 'Lamination', value: stageCounts['Lamination'] || 0 },
+        { name: 'Punching', value: stageCounts['Punching'] || 0 },
+        { name: 'Striping', value: stageCounts['Striping'] || 0 },
+        { name: 'Pasting', value: stageCounts['Pasting'] || 0 },
+        { name: 'Ready To Dispatch', value: stageCounts['Ready To Dispatch'] || 0 },
+        { name: 'Dispatched', value: stageCounts['Dispatched'] || 0 },
+      ].filter(s => s.value > 0 || ['Printing', 'Lamination', 'Punching'].includes(s.name)),
+      recentActivities
     };
 
     res.json({ kpi, charts });

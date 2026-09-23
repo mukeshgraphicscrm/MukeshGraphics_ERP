@@ -7,17 +7,17 @@ const PANCHING_VALUES = [
 ];
 
 const LID_SIZES = [
-  { size: '72mm', factor: 50 },
-  { size: '71mm', factor: 53 },
-  { size: '61mm', factor: 72 },
-  { size: '59mm', factor: 76 },
-  { size: '58mm', factor: 76 },
-  { size: '54mm', factor: 90 },
-  { size: '52 & 51mm', factor: 95 },
-  { size: '47mm', factor: 115 },
-  { size: '45mm', factor: 120 },
-  { size: '43mm', factor: 138 },
-  { size: '41.5mm', factor: 143 }
+  { size: '72mm', factor: 50, cartoonCharge: 2.40 },
+  { size: '71mm', factor: 53, cartoonCharge: 2.40 },
+  { size: '61mm', factor: 72, cartoonCharge: 2.22 },
+  { size: '59mm', factor: 76, cartoonCharge: 2.00 },
+  { size: '58mm', factor: 76, cartoonCharge: 2.00 },
+  { size: '54mm', factor: 90, cartoonCharge: 1.88 },
+  { size: '52 & 51mm', factor: 95, cartoonCharge: 1.76 },
+  { size: '47mm', factor: 115, cartoonCharge: 1.58 },
+  { size: '45mm', factor: 120, cartoonCharge: 1.50 },
+  { size: '43mm', factor: 138, cartoonCharge: 1.33 },
+  { size: '41.5mm', factor: 143, cartoonCharge: 1.20 }
 ];
 
 export default function LidRate() {
@@ -281,6 +281,18 @@ export default function LidRate() {
                 </tr>
               ))}
             </tbody>
+            <tfoot className="bg-gray-100/80 font-semibold text-gray-700">
+              <tr>
+                <td className="px-3 py-3 sticky left-0 bg-gray-200 shadow-[1px_0_0_0_#d1d5db] z-20 text-[11px] uppercase tracking-wider">
+                  Cartoon Charge<br/><span className="text-[9px] text-gray-500">Per 1000</span>
+                </td>
+                {LID_SIZES.map((lid, idx) => (
+                  <td key={idx} colSpan={2} className="px-3 py-3 text-center border-l border-gray-300 first:border-l-0 text-slate-800 bg-slate-200/50">
+                    {lid.cartoonCharge.toFixed(2)}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>

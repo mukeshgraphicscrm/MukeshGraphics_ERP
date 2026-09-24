@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Calculator, Settings, TableProperties, Download, Printer } from 'lucide-react';
+import XLSX from 'xlsx-js-style';
 
 const PANCHING_VALUES = [
   1500, 2000, 2500, 2700, 2900, 3100, 3350, 3600, 3850, 4100, 
@@ -110,9 +111,154 @@ export default function LidRate() {
     return Number(num).toLocaleString('en-IN', { maximumFractionDigits: 0 });
   };
 
-  return (
-    <div className="space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+  const handleExport = () => {
+    const ws = {};
+    ws['!merges'] = [];
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 29, c: 31 } });
+
+    const setCell = (r, c, val, style = {}) => {
+      const cellRef = XLSX.utils.encode_cell({ r, c });
+      ws[cellRef] = { v: val, s: style, t: typeof val === 'number' ? 'n' : 's' };
+    };
+
+    const addMergedCell = (s, e, value, style) => {
+      for (let R = s.r; R <= e.r; ++R) {
+        for (let C = s.c; C <= e.c; ++C) {
+          if (R === s.r && C === s.c) {
+            setCell(R, C, value, style);
+          } else {
+            setCell(R, C, "", style);
+          }
+        }
+      }
+      ws['!merges'].push({ s, e });
+    };
+
+    const borderAll = {
+      top: { style: 'thin' },
+      bottom: { style: 'thin' },
+      left: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+
+    const bgYellow = { fgColor: { rgb: "FFF2CC" } };
+    const bgGray = { fgColor: { rgb: "D9D9D9" } };
+    const bgDarkGray = { fgColor: { rgb: "595959" } };
+    const bgTitleGray = { fgColor: { rgb: "808080" } };
+    const bgRed = { fgColor: { rgb: "FF0000" } };
+    const bgOrange = { fgColor: { rgb: "F4B084" } };
+    const bgLightGray = { fgColor: { rgb: "E7E6E6" } };
+
+    const styleLabel = { fill: bgYellow, border: borderAll, font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } };
+    const styleValue = { border: borderAll, alignment: { horizontal: "center", vertical: "center" } };
+    const styleHeader = { fill: bgGray, border: borderAll, font: { bold: true }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+    const styleData = { border: borderAll, alignment: { horizontal: "right", vertical: "center" } };
+
+    // Set column widths
+    ws['!cols'] = [];
+    for(let i=0; i<=31; i++) ws['!cols'].push({ wch: 9 });
+    ws['!cols'][0] = { wch: 10 };
+    ws['!cols'][9] = { wch: 2 }; // Empty separator column J
+
+    // Left block
+    addMergedCell({ r: 0, c: 1 }, { r: 0, c: 2 }, "INCH", { fill: { fgColor: { rgb: "FFC000" } }, border: borderAll, font: { bold: true }, alignment: { horizontal: "center" } });
+    
+    setCell(1, 0, "JOB SIZE", styleLabel);
+    setCell(1, 1, params.jobSizeL, styleValue);
+    setCell(1, 2, params.jobSizeW, styleValue);
+    
+    setCell(2, 0, "QUALITY", styleLabel);
+    setCell(2, 1, params.quality, styleValue);
+    
+    setCell(3, 0, "PAPER GMS", styleLabel);
+    setCell(3, 1, params.paperGsm, styleValue);
+    
+    setCell(4, 0, "RATE", styleLabel);
+    setCell(4, 1, params.rate, { fill: bgRed, border: borderAll, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center" } });
+    
+    setCell(5, 0, "PAPER Wt.", styleLabel);
+    setCell(5, 1, Number(paperWt.toFixed(2)), { ...styleValue, font: { color: { rgb: "00B050" } } });
+    setCell(5, 2, "FRIGHT", styleHeader);
+    addMergedCell({ r: 4, c: 4 }, { r: 4, c: 5 }, "FOR SMALL LID", { font: { bold: true }, alignment: { horizontal: "center", vertical: "center" } });
+    
+    setCell(6, 0, "AMOUNT", styleLabel);
+    setCell(6, 1, Number(baseAmount.toFixed(2)), styleValue);
+    setCell(6, 2, params.fright, { fill: bgOrange, border: borderAll, alignment: { horizontal: "center", vertical: "center" } });
+    setCell(6, 4, params.smallLidFactor, { fill: bgGray, border: borderAll, font: { bold: true, color: { rgb: "FF0000" } }, alignment: { horizontal: "center", vertical: "center" } });
+    setCell(6, 5, "", styleValue);
+
+    // Main table headers
+    const headersLeft = ["QTY.", "AMOUNT", "PRINTING", "PANCHING", "LID PAKING", "FRIGHT", "AMOUNT", "PR", "FINAL RATE"];
+    headersLeft.forEach((h, i) => setCell(7, i, h, styleHeader));
+    
+    // Right block
+    const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+    addMergedCell({ r: 1, c: 10 }, { r: 4, c: 31 }, `FBB LID RATE ${dateStr}`, { fill: bgTitleGray, border: borderAll, font: { bold: true, sz: 16 }, alignment: { horizontal: "center", vertical: "center" } });
+
+    LID_SIZES.forEach((lid, idx) => {
+      const col = 10 + idx * 2;
+      addMergedCell({ r: 5, c: col }, { r: 5, c: col + 1 }, lid.size, { fill: bgDarkGray, font: { color: { rgb: "FFFFFF" }, bold: true }, border: borderAll, alignment: { horizontal: "center", vertical: "center" } });
       
+      setCell(6, col, lid.factor, { fill: bgLightGray, border: borderAll, alignment: { horizontal: "center", vertical: "center" } });
+      const addVal = lid.rateAddition(Number(params.smallLidFactor) || 0);
+      setCell(6, col + 1, `${addVal}   ${lid.size}`, { fill: bgLightGray, border: borderAll, alignment: { horizontal: "center", vertical: "center" } });
+      
+      setCell(7, col, "RATE", styleHeader);
+      setCell(7, col + 1, "QTY.", styleHeader);
+    });
+
+    // Data rows
+    mainTable.forEach((row, i) => {
+      const r = 8 + i;
+      setCell(r, 0, row.qty, styleData);
+      setCell(r, 1, Math.round(row.amount), styleData);
+      setCell(r, 2, Math.round(row.printing), styleData);
+      setCell(r, 3, Math.round(row.panching), styleData);
+      setCell(r, 4, Math.round(row.lidPacking), styleData);
+      setCell(r, 5, Math.round(row.fright), styleData);
+      setCell(r, 6, Math.round(row.totalAmount), styleData);
+      
+      const prStyle = (i === 0) ? { fill: bgOrange, border: borderAll, font: { bold: true }, alignment: { horizontal: "right", vertical: "center" } } : styleData;
+      setCell(r, 7, row.pr, prStyle);
+      
+      setCell(r, 8, Math.round(row.finalRate), styleData);
+
+      LID_SIZES.forEach((lid, idx) => {
+        const col = 10 + idx * 2;
+        const lidQty = lid.factor * row.qty;
+        const lidRate = (row.finalRate / lidQty) * 1000 + lid.rateAddition(Number(params.smallLidFactor) || 0);
+        
+        setCell(r, col, Math.round(lidRate), styleData);
+        setCell(r, col + 1, lidQty, styleData);
+      });
+    });
+
+    // Bottom cartoon charge
+    addMergedCell({ r: 28, c: 7 }, { r: 29, c: 8 }, "CARTOON CHARGE\nPER 1000", styleHeader);
+    LID_SIZES.forEach((lid, idx) => {
+      const col = 10 + idx * 2;
+      addMergedCell({ r: 28, c: col }, { r: 29, c: col + 1 }, Number(lid.cartoonCharge.toFixed(2)), styleHeader);
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LidRate");
+    XLSX.writeFile(wb, `Lid_Rate_${dateStr}.xlsx`);
+  };
+
+  return (
+    <div id="lid-rate-content" className="space-y-6 pb-12 animate-in fade-in slide-in-from-bottom-4 duration-500 bg-gray-50/50 p-2 sm:p-0 rounded-2xl sm:rounded-none">
+      <style>{`
+        @media print {
+          @page {
+            size: landscape;
+            margin: 10mm;
+          }
+          body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+        }
+      `}</style>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -122,14 +268,20 @@ export default function LidRate() {
               Lid Rate Calculator
             </h1>
           </div>
-          <p className="text-gray-500 ml-4 text-sm font-medium">Real-time computation for FBB Lid Rates</p>
+          <p className="text-gray-500 ml-4 text-sm font-medium print:hidden">Real-time computation for FBB Lid Rates</p>
         </div>
-        <div className="flex gap-2">
-          <button className="btn-secondary whitespace-nowrap hidden sm:flex">
-            <Download className="w-4 h-4 mr-2" /> Export
+        <div className="flex gap-3 print:hidden">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors shadow-sm font-semibold text-sm"
+          >
+            <Download className="w-4 h-4" /> Export
           </button>
-          <button className="btn-secondary whitespace-nowrap hidden sm:flex" onClick={() => window.print()}>
-            <Printer className="w-4 h-4 mr-2" /> Print
+          <button 
+            onClick={() => window.print()}
+            className="flex items-center gap-2 px-4 py-2 bg-[#1b2f63] text-white rounded-lg hover:bg-[#12224d] transition-colors shadow-sm font-semibold text-sm"
+          >
+            <Printer className="w-4 h-4" /> Print
           </button>
         </div>
       </div>
@@ -138,7 +290,7 @@ export default function LidRate() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Input Parameters */}
-        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="lg:col-span-8 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:break-inside-avoid print:border-gray-300">
           <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center gap-2">
             <Settings className="w-5 h-5 text-blue-600" />
             <h2 className="font-bold text-gray-900">Job Parameters</h2>
@@ -178,7 +330,7 @@ export default function LidRate() {
         </div>
 
         {/* Calculated Totals */}
-        <div className="lg:col-span-4 grid grid-rows-2 gap-4">
+        <div className="lg:col-span-4 grid grid-rows-2 gap-4 print:break-inside-avoid">
           <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 p-5 shadow-md flex flex-col justify-center relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-10"><Calculator className="w-16 h-16 text-white" /></div>
             <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 relative z-10">Paper Wt.</p>
@@ -193,7 +345,7 @@ export default function LidRate() {
       </div>
 
       {/* Main Calculation Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300">
         <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/80 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <TableProperties className="w-5 h-5 text-indigo-600" />
@@ -218,8 +370,8 @@ export default function LidRate() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {mainTable.map((row) => (
-                <tr key={row.qty} className="hover:bg-blue-50/30 transition-colors">
-                  <td className="px-4 py-2.5 font-bold text-gray-900 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb]">{fmtInt(row.qty)}</td>
+                <tr key={row.qty} className="hover:bg-blue-50/30 transition-colors print:break-inside-avoid">
+                  <td className="px-4 py-2.5 font-bold text-gray-900 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb] print:shadow-none print:border-r print:border-gray-200">{fmtInt(row.qty)}</td>
                   <td className="px-4 py-2.5 text-right font-medium text-gray-600">{fmtInt(row.amount)}</td>
                   <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.printing)}</td>
                   <td className="px-4 py-2.5 text-right text-gray-600">{fmtInt(row.panching)}</td>
@@ -236,66 +388,68 @@ export default function LidRate() {
       </div>
 
       {/* Lid Size Matrix */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
-          <h2 className="font-bold text-gray-900 flex items-center gap-2">
-            <TableProperties className="w-5 h-5 text-teal-600" />
-            Lid Size Matrix
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="text-[11px] uppercase tracking-wider text-gray-600 font-bold border-b border-gray-200">
-              <tr className="bg-gray-100">
-                <th className="px-3 py-2 bg-gray-200 sticky left-0 shadow-[1px_0_0_0_#d1d5db] z-20">Size</th>
-                {LID_SIZES.map(lid => (
-                  <th key={lid.size} colSpan={2} className="px-3 py-2 text-center border-l border-gray-300 first:border-l-0 text-slate-800">
-                    {lid.size} <span className="text-gray-400 block text-[9px] mt-0.5">F: {lid.factor}</span>
-                  </th>
-                ))}
-              </tr>
-              <tr className="bg-gray-50">
-                <th className="px-3 py-2 bg-gray-100 sticky left-0 shadow-[1px_0_0_0_#e5e7eb] z-20 text-gray-500">Base QTY</th>
-                {LID_SIZES.map((lid, idx) => (
-                  <React.Fragment key={idx}>
-                    <th className="px-3 py-2 text-right border-l border-gray-200 text-teal-700 w-24">RATE</th>
-                    <th className="px-3 py-2 text-right text-gray-500 w-24">QTY</th>
-                  </React.Fragment>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {mainTable.map((row) => (
-                <tr key={row.qty} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-3 py-1.5 font-bold text-slate-700 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb] z-10">{fmtInt(row.qty)}</td>
-                  {LID_SIZES.map((lid, idx) => {
-                    const lidQty = lid.factor * row.qty;
-                    const lidRate = (row.finalRate / lidQty) * 1000 + lid.rateAddition(Number(params.smallLidFactor) || 0);
-                    return (
-                      <React.Fragment key={idx}>
-                        <td className="px-3 py-1.5 text-right font-bold text-teal-700 border-l border-gray-100 bg-teal-50/20">{fmtInt(lidRate)}</td>
-                        <td className="px-3 py-1.5 text-right text-gray-600 text-xs">{fmtInt(lidQty)}</td>
-                      </React.Fragment>
-                    )
-                  })}
+      {[LID_SIZES.slice(0, 6), LID_SIZES.slice(6)].map((lidSizesChunk, chunkIdx) => (
+        <div key={chunkIdx} className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden print:break-inside-avoid print:shadow-none print:border-gray-300">
+          <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/80">
+            <h2 className="font-bold text-gray-900 flex items-center gap-2">
+              <TableProperties className="w-5 h-5 text-teal-600" />
+              Lid Size Matrix <span className="text-gray-500 font-medium text-sm ml-2">{chunkIdx === 0 ? '(72mm to 54mm)' : '(52&51mm to 41.5mm)'}</span>
+            </h2>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-[11px] uppercase tracking-wider text-gray-600 font-bold border-b border-gray-200">
+                <tr className="bg-gray-100">
+                  <th className="px-3 py-2 bg-gray-200 sticky left-0 shadow-[1px_0_0_0_#d1d5db] z-20">Size</th>
+                  {lidSizesChunk.map(lid => (
+                    <th key={lid.size} colSpan={2} className="px-3 py-2 text-center border-l border-gray-300 first:border-l-0 text-slate-800">
+                      {lid.size} <span className="text-gray-400 block text-[9px] mt-0.5">F: {lid.factor}</span>
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-            <tfoot className="bg-gray-100/80 font-semibold text-gray-700">
-              <tr>
-                <td className="px-3 py-3 sticky left-0 bg-gray-200 shadow-[1px_0_0_0_#d1d5db] z-20 text-[11px] uppercase tracking-wider">
-                  Cartoon Charge<br/><span className="text-[9px] text-gray-500">Per 1000</span>
-                </td>
-                {LID_SIZES.map((lid, idx) => (
-                  <td key={idx} colSpan={2} className="px-3 py-3 text-center border-l border-gray-300 first:border-l-0 text-slate-800 bg-slate-200/50">
-                    {lid.cartoonCharge.toFixed(2)}
-                  </td>
+                <tr className="bg-gray-50">
+                  <th className="px-3 py-2 bg-gray-100 sticky left-0 shadow-[1px_0_0_0_#e5e7eb] z-20 text-gray-500">Base QTY</th>
+                  {lidSizesChunk.map((lid, idx) => (
+                    <React.Fragment key={idx}>
+                      <th className="px-3 py-2 text-right border-l border-gray-200 text-teal-700 w-24">RATE</th>
+                      <th className="px-3 py-2 text-right text-gray-500 w-24">QTY</th>
+                    </React.Fragment>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {mainTable.map((row) => (
+                  <tr key={row.qty} className="hover:bg-slate-50 transition-colors print:break-inside-avoid">
+                    <td className="px-3 py-1.5 font-bold text-slate-700 bg-white sticky left-0 shadow-[1px_0_0_0_#e5e7eb] z-10 print:shadow-none print:border-r print:border-gray-200">{fmtInt(row.qty)}</td>
+                    {lidSizesChunk.map((lid, idx) => {
+                      const lidQty = lid.factor * row.qty;
+                      const lidRate = (row.finalRate / lidQty) * 1000 + lid.rateAddition(Number(params.smallLidFactor) || 0);
+                      return (
+                        <React.Fragment key={idx}>
+                          <td className="px-3 py-1.5 text-right font-bold text-teal-700 border-l border-gray-100 bg-teal-50/20">{fmtInt(lidRate)}</td>
+                          <td className="px-3 py-1.5 text-right text-gray-600 text-xs">{fmtInt(lidQty)}</td>
+                        </React.Fragment>
+                      )
+                    })}
+                  </tr>
                 ))}
-              </tr>
-            </tfoot>
-          </table>
+              </tbody>
+              <tfoot className="bg-gray-100/80 font-semibold text-gray-700">
+                <tr>
+                  <td className="px-3 py-3 sticky left-0 bg-gray-200 shadow-[1px_0_0_0_#d1d5db] z-20 text-[11px] uppercase tracking-wider">
+                    Cartoon Charge<br/><span className="text-[9px] text-gray-500">Per 1000</span>
+                  </td>
+                  {lidSizesChunk.map((lid, idx) => (
+                    <td key={idx} colSpan={2} className="px-3 py-3 text-center border-l border-gray-300 first:border-l-0 text-slate-800 bg-slate-200/50">
+                      {lid.cartoonCharge.toFixed(2)}
+                    </td>
+                  ))}
+                </tr>
+              </tfoot>
+            </table>
+          </div>
         </div>
-      </div>
+      ))}
       
     </div>
   );

@@ -16,7 +16,7 @@ import useScrollLock from '../hooks/useScrollLock';
 
 const AVAILABLE_MODULES = [
   'Dashboard', 'Leads', 'Customers', 'Products', 'Quotations',
-  'Orders', 'Design', 'Job Preparation', 'Production', 'Dispatch', 'Inventory',
+  'Orders', 'Lid Rate', 'Design', 'Job Preparation', 'Production', 'Dispatch', 'Inventory',
   'Purchase', 'Accounts', 'Job Data', 'Tasks', 'Daily Work',
   'Customize Packaging Request', 'Job Inquiry'
 ];

@@ -16,6 +16,7 @@ const navItems = [
   { name: 'Quotations', path: '/quotations', icon: FileText },
   { name: 'Orders', path: '/orders', icon: ShoppingCart },
   { name: 'Lid Rate', path: '/lid-rate', icon: Calculator },
+  { name: 'Single Variant', path: '/single-variant', icon: Calculator },
   { name: 'Design', path: '/design', icon: PenTool },
   { name: 'Job Preparation', path: '/job-preparation', icon: FilePlus },
   { name: 'Production', path: '/production', icon: Factory },

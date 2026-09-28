@@ -31,6 +31,7 @@ import DailyWork from './pages/DailyWork';
 import JobPreparation from './pages/JobPreparation';
 import Reviews from './pages/Reviews';
 import LidRate from './pages/LidRate';
+import SingleVariant from './pages/SingleVariant';
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
                 <Route path="job-preparation" element={<JobPreparation />} />
                 <Route path="reviews" element={<Reviews />} />
                 <Route path="lid-rate" element={<LidRate />} />
+                <Route path="single-variant" element={<SingleVariant />} />
               </Route>
             </Route>
           </Routes>

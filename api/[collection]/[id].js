@@ -1,6 +1,7 @@
 import { getDb } from '../lib/firebase.js';
 import mockData from '../lib/mockData.js';
 import { handleCors } from '../lib/cors.js';
+import { addLog, getRecordName } from '../lib/logger.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -37,12 +38,32 @@ export default async function handler(req, res) {
         return res.status(404).json({ error: 'Not found' });
       }
 
+      const oldDoc = await db.collection(collection).doc(id).get();
+      const oldData = oldDoc.exists ? oldDoc.data() : {};
+
       const data = { ...req.body };
       delete data.id;
       delete data.createdAt; // Prevent overwriting original creation date
       await db.collection(collection).doc(id).update(data);
       const updatedDoc = await db.collection(collection).doc(id).get();
-      res.json({ id, ...updatedDoc.data() });
+      const newData = updatedDoc.data();
+
+      if (collection !== 'logs') {
+        const changes = {};
+        for (const key in data) {
+          if (JSON.stringify(oldData[key]) !== JSON.stringify(data[key])) {
+            changes[key] = {
+              from: oldData[key] !== undefined ? oldData[key] : '',
+              to: data[key] !== undefined ? data[key] : ''
+            };
+          }
+        }
+        const recordName = getRecordName(newData);
+        const detailStr = recordName ? `Updated "${recordName}" in ${collection}` : `Updated a record in ${collection}`;
+        await addLog(db, collection, 'Update', detailStr, req, Object.keys(changes).length > 0 ? changes : data);
+      }
+
+      res.json({ id, ...newData });
     }
     else if (req.method === 'DELETE') {
       if (!db) {
@@ -50,7 +71,16 @@ export default async function handler(req, res) {
         return res.json({ message: 'Deleted successfully' });
       }
 
+      const doc = await db.collection(collection).doc(id).get();
+      const recordName = doc.exists ? getRecordName(doc.data()) : '';
+
       await db.collection(collection).doc(id).delete();
+
+      if (collection !== 'logs') {
+        const detailStr = recordName ? `Deleted "${recordName}" from ${collection}` : `Deleted a record from ${collection}`;
+        await addLog(db, collection, 'Delete', detailStr, req, doc.exists ? doc.data() : null);
+      }
+
       res.json({ message: 'Deleted successfully' });
     }
     else {
@@ -61,3 +91,4 @@ export default async function handler(req, res) {
     res.status(500).json({ error: error.message || 'Internal server error' });
   }
 }
+

@@ -1,6 +1,7 @@
 import { getDb } from '../lib/firebase.js';
 import mockData from '../lib/mockData.js';
 import { handleCors } from '../lib/cors.js';
+import { addLog, getRecordName } from '../lib/logger.js';
 
 const isContactFormCollection = (collectionName = '') => {
   const normalized = String(collectionName).toLowerCase().replace(/\s+/g, '_');
@@ -143,7 +144,44 @@ export default async function handler(req, res) {
         syncContactFormLeads(db).catch(console.error);
       }
 
+      if (collection !== 'logs') {
+        const recordName = getRecordName(finalData);
+        const detailStr = recordName ? `Created "${recordName}" in ${collection}` : `Created a new record in ${collection}`;
+        await addLog(db, collection, 'Create', detailStr, req, finalData);
+      }
+
       res.status(201).json({ id: docRef.id, ...finalData });
+    }
+    else if (req.method === 'DELETE') {
+      if (collection !== 'logs') {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+      if (!db) {
+        mockData[collection] = [];
+        return res.json({ message: 'All logs deleted successfully' });
+      }
+      const snapshot = await db.collection(collection).get();
+      const batches = [];
+      let batch = db.batch();
+      let count = 0;
+      
+      snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+        count++;
+        if (count === 490) {
+          batches.push(batch.commit());
+          batch = db.batch();
+          count = 0;
+        }
+      });
+      
+      if (count > 0) {
+        batches.push(batch.commit());
+      }
+      
+      await Promise.all(batches);
+      return res.json({ message: 'All logs deleted successfully' });
     }
     else {
       res.status(405).json({ error: 'Method not allowed' });

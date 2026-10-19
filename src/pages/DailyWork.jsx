@@ -1,10 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import api from '../lib/api';
-import { Calendar, User, History, Search, ClipboardList } from 'lucide-react';
+import { Calendar, User, History, Search, ClipboardList, RefreshCw } from 'lucide-react';
 import { cn } from '../lib/utils';
 import CustomSelect from '../components/CustomSelect';
+
+const isSameDay = (dateStr, targetDateStr) => {
+  if (!dateStr || !targetDateStr) return false;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return false;
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}` === targetDateStr;
+};
+
+const formatTime = (isoString) => {
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return '--:--';
+    return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).format(d);
+  } catch {
+    return '--:--';
+  }
+};
 
 export default function DailyWork() {
   const [logs, setLogs] = useState([]);
@@ -14,7 +34,10 @@ export default function DailyWork() {
   // Filters
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   });
   const [selectedUser, setSelectedUser] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +47,8 @@ export default function DailyWork() {
     const fetchUsers = async () => {
       try {
         const res = await api.get('/users');
-        const filteredUsers = res.data.filter(u => !u.designation?.toLowerCase().includes('admin'));
+        const userList = Array.isArray(res.data) ? res.data : [];
+        const filteredUsers = userList.filter(u => !u.designation?.toLowerCase().includes('admin'));
         setUsers(filteredUsers);
       } catch (err) {
         console.error('Error fetching users:', err);
@@ -33,38 +57,46 @@ export default function DailyWork() {
     fetchUsers();
   }, []);
 
-  // Fetch Logs based on Date
+  // Fetch Logs via API (reliable in production with Admin SDK)
+  const fetchLogs = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
+    try {
+      const res = await api.get('/logs');
+      if (Array.isArray(res.data)) {
+        setLogs(res.data);
+      }
+    } catch (err) {
+      console.error('Error fetching logs via API:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch logs on mount and listen for realtime updates
   useEffect(() => {
-    setLoading(true);
-    
-    // Create Date objects for start and end of selected date
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    fetchLogs(true);
 
-    const q = query(
-      collection(db, 'logs'),
-      where('createdAt', '>=', startOfDay.toISOString()),
-      where('createdAt', '<=', endOfDay.toISOString()),
-      orderBy('createdAt', 'desc')
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const logsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setLogs(logsData);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching daily logs:', error);
-      setLoading(false);
-    });
+    let unsubscribe = () => {};
+    try {
+      const q = query(collection(db, 'logs'), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        const logsData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setLogs(logsData);
+        setLoading(false);
+      }, (error) => {
+        // In deployed production, client Firestore SDK may lack direct read rules;
+        // we smoothly fall back to backend API data fetched by fetchLogs.
+        console.warn('Realtime snapshot unavailable, falling back to API logs:', error?.message);
+      });
+    } catch (e) {
+      console.warn('Firestore subscription failed, using API:', e);
+    }
 
     return () => unsubscribe();
-  }, [selectedDate]);
+  }, [fetchLogs]);
 
   const getActionColor = (action) => {
     switch (action?.toLowerCase()) {
@@ -75,11 +107,14 @@ export default function DailyWork() {
     }
   };
 
-  // Filter logs based on user, search term, and exclude admins/notifications
+  // Filter logs based on date, user, search term, and exclude admins/notifications
   const filteredLogs = logs.filter(log => {
     // Exclude logs from administrators and notification module
     if (log.userRole?.toLowerCase().includes('admin')) return false;
     if (log.module === 'notifications') return false;
+
+    // Filter by selected date
+    if (selectedDate && !isSameDay(log.createdAt, selectedDate)) return false;
 
     const matchesUser = selectedUser === 'All' || (log.userName && selectedUser && log.userName.trim().toLowerCase() === selectedUser.trim().toLowerCase());
     const mod = log.module?.toLowerCase() === 'artworks' ? 'designs' : log.module;
@@ -201,13 +236,21 @@ export default function DailyWork() {
         
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-gray-400" />
+            <Calendar className="w-5 h-5 text-gray-400 shrink-0" />
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white"
+              className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white text-sm"
             />
+            <button
+              type="button"
+              onClick={() => fetchLogs(true)}
+              title="Refresh logs"
+              className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 text-gray-600 transition-colors flex items-center justify-center shrink-0"
+            >
+              <RefreshCw className={cn("w-5 h-5", loading && "animate-spin text-indigo-600")} />
+            </button>
           </div>
           
           <div className="flex items-center gap-2 w-full sm:w-[280px] relative z-20">
@@ -253,7 +296,7 @@ export default function DailyWork() {
                   </div>
                   <div>
                     <h3 className="font-bold text-gray-900 text-lg">{userName}</h3>
-                    <p className="text-xs text-gray-500">{userLogs.length} actions today</p>
+                    <p className="text-xs text-gray-500">{userLogs.length} actions</p>
                   </div>
                 </div>
               </div>
@@ -262,7 +305,7 @@ export default function DailyWork() {
                 {userLogs.map((log) => (
                   <div key={log.id} className="p-4 hover:bg-gray-50/50 transition-colors flex flex-col sm:flex-row gap-4 sm:items-center">
                     <div className="w-full sm:w-24 shrink-0 text-sm font-medium text-gray-500">
-                      {new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).format(new Date(log.createdAt))}
+                      {formatTime(log.createdAt)}
                     </div>
                     
                     <div className="flex-1 space-y-1">
